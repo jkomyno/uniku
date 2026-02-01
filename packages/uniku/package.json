@@ -72,7 +72,6 @@
     "clean": "rimraf build .turbo",
     "build": "tsdown --config-loader unrun",
     "build:watch": "tsdown --config-loader unrun --watch",
-    "check:exports": "attw --pack . --profile esm-only",
     "test": "vitest run",
     "test:unit": "vitest --project unit run",
     "bench": "vitest bench"
