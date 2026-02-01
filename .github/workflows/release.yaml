@@ -1,7 +1,10 @@
 name: "  📦 Release"
 
 on:
-  push:
+  workflow_run:
+    workflows: ["  ▶️  CI Workflow"]
+    types:
+      - completed
     branches:
       - main
 
@@ -19,6 +22,8 @@ jobs:
   release:
     name: Version & Publish
     runs-on: ubuntu-latest
+    # Only run if CI workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Prepare git
         run: git config --global core.autocrlf false
@@ -30,6 +35,9 @@ jobs:
       - name: "💽 Setup (Node.js)"
         uses: ./.github/actions/setup-node
 
+      - name: "🏗️ Build"
+        run: pnpm build
+
       - name: "📦 Create Release PR or Publish"
         id: changesets
         uses: changesets/action@v1
@@ -40,3 +48,4 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
