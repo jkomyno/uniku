@@ -15,6 +15,7 @@
     "clean": "turbo run clean",
     "lint:ci": "biome ci",
     "lint": "biome check --fix --unsafe",
+    "lint:fix": "biome check --fix --unsafe",
     "test": "pnpm -r --if-present test",
     "test:unit": "pnpm -r --if-present test:unit",
     "test:integration": "pnpm -r --if-present test:integration",
