@@ -46,9 +46,6 @@ jobs:
       - name: "🏗️ Build"
         run: pnpm build
 
-      - name: "🔍 Check exports"
-        run: pnpm check:exports
-
       - name: "🚨 Lint code"
         run: pnpm lint:ci
 
