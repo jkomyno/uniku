@@ -1,18 +1,17 @@
 {
   "private": true,
   "type": "module",
-  "name": "@jkomyno/pnpm-monorepo-example",
   "description": "Practical example of a `TypeScript` monorepo with `pnpm`, `turborepo`, and `vitest`",
-  "repository": "https://github.com/jkomyno/pnpm-monorepo-example.git",
+  "repository": "https://github.com/jkomyno/uniku.git",
   "author": {
     "name": "Alberto Schiabel",
     "email": "alberto.schiabel@gmail.com"
   },
   "license": "MIT",
   "scripts": {
+    "bench": "turbo run bench",
     "build": "turbo run build",
     "build:watch": "turbo run build:watch",
-    "check:exports": "turbo run check:exports",
     "clean": "turbo run clean",
     "lint:ci": "biome ci",
     "lint": "biome check --fix --unsafe",

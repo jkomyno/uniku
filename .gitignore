@@ -284,3 +284,5 @@ build/
 
 # Build cache manifests
 *.tsbuildinfo
+
+bench-results.json

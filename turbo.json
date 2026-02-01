@@ -2,13 +2,14 @@
   "$schema": "https://turborepo.org/schema.json",
   "tasks": {
     "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**"]
+    },
+    "bench": {
       "dependsOn": ["^build"]
     },
     "build:watch": {},
     "check:exports": {
-      "dependsOn": ["^build"]
-    },
-    "app#watch": {
       "dependsOn": ["^build"]
     },
     "clean": {

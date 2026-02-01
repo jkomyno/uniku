@@ -1,0 +1,80 @@
+{
+  "private": false,
+  "name": "uniku",
+  "version": "0.0.0",
+  "description": "Minimal, tree-shakeable UUID utilities for every JavaScript runtime",
+  "author": {
+    "name": "Alberto Schiabel",
+    "email": "alberto.schiabel@gmail.com",
+    "url": "https://github.com/jkomyno"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jkomyno/uniku.git",
+    "directory": "packages/uniku"
+  },
+  "homepage": "https://github.com/jkomyno/uniku#readme",
+  "bugs": {
+    "url": "https://github.com/jkomyno/uniku/issues"
+  },
+  "keywords": [
+    "uuid",
+    "uuidv4",
+    "uuidv7",
+    "unique",
+    "id",
+    "identifier",
+    "random",
+    "rfc4122",
+    "rfc9562",
+    "esm",
+    "typescript",
+    "tree-shakeable",
+    "edge",
+    "cloudflare-workers",
+    "bun",
+    "webcrypto"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24.13.0"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "build",
+    "README.md"
+  ],
+  "exports": {
+    "./uuid/v4": {
+      "types": "./build/v4.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/uuid/v4.ts",
+        "default": "./build/v4.mjs"
+      },
+      "default": "./build/v4.mjs"
+    },
+    "./uuid/v7": {
+      "types": "./build/v7.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/uuid/v7.ts",
+        "default": "./build/v7.mjs"
+      },
+      "default": "./build/v7.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "clean": "rimraf build .turbo",
+    "build": "tsdown --config-loader unrun",
+    "build:watch": "tsdown --config-loader unrun --watch",
+    "check:exports": "attw --pack . --profile esm-only",
+    "test": "vitest run",
+    "test:unit": "vitest --project unit run",
+    "bench": "vitest bench"
+  }
+}

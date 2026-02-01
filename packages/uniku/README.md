@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/uniku.svg)](https://www.npmjs.com/package/uniku)
 [![CI](https://github.com/jkomyno/uniku/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/jkomyno/uniku/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/uniku)](https://bundlephobia.com/package/uniku)
 
 Minimal, tree-shakeable UUID utilities for every JavaScript runtime.
 
@@ -42,85 +43,35 @@ With npm:
 npm install uniku
 ```
 
-### Preview releases
-
-Every pull request gets a preview release via [pkg.pr.new](https://pkg.pr.new). Install directly from a PR:
-
-```bash
-pnpm add https://pkg.pr.new/jkomyno/uniku@<pr-number>
-```
-
-## Usage
+## Quick Start
 
 ### UUID v4 (random)
 
 ```ts
 import { uuidv4 } from 'uniku/uuid/v4'
 
-// Generate a UUID string
 const id = uuidv4()
 // => "550e8400-e29b-41d4-a716-446655440000"
 
-// Convert to bytes
+// Convert to/from bytes
 const bytes = uuidv4.toBytes(id)
-// => Uint8Array(16)
-
-// Convert back to string
 const str = uuidv4.fromBytes(bytes)
-// => "550e8400-e29b-41d4-a716-446655440000"
-```
-
-For advanced use cases, you can provide custom random bytes or write directly to a buffer:
-
-```ts
-import { uuidv4 } from 'uniku/uuid/v4'
-
-// Custom random source (note: bytes at index 6 and 8 will be modified for version/variant bits)
-const id = uuidv4({ random: myRandomBytes })
-
-// Write to existing buffer at offset
-const buffer = new Uint8Array(32)
-uuidv4(undefined, buffer, 8) // writes 16 bytes starting at offset 8
 ```
 
 ### UUID v7 (time-ordered)
 
-UUID v7 embeds a timestamp, making IDs sortable by creation time - ideal for database primary keys:
-
 ```ts
 import { uuidv7 } from 'uniku/uuid/v7'
 
-// Generate a time-ordered UUID
 const id = uuidv7()
 // => "018e5e5c-7c8a-7000-8000-000000000000"
 
-// IDs generated in sequence are lexicographically sortable
+// IDs are lexicographically sortable by creation time
 const ids = [uuidv7(), uuidv7(), uuidv7()]
 ids.sort() // Already in creation order
-
-// Byte conversions work the same way
-const bytes = uuidv7.toBytes(id)
-const str = uuidv7.fromBytes(bytes)
 ```
 
-For testing or advanced use cases:
-
-```ts
-import { uuidv7 } from 'uniku/uuid/v7'
-
-// Specify timestamp and sequence
-const id = uuidv7({
-  msecs: 1702387456789,
-  seq: 0,
-  random: new Uint8Array(16)
-})
-
-// Write to buffer
-const buffer = new Uint8Array(32)
-uuidv7(undefined, buffer, 8)
-```
-
-## API
+## API Reference
 
 ### `uuidv4` (from `uniku/uuid/v4`)
 
@@ -133,7 +84,7 @@ uuidv4.fromBytes(bytes: Uint8Array): string
 ```
 
 **Options:**
-- `random?: Uint8Array` - 16 bytes of random data (note: bytes at index 6 and 8 will be modified in-place)
+- `random?: Uint8Array` - 16 bytes of random data
 
 ### `uuidv7` (from `uniku/uuid/v7`)
 
@@ -150,22 +101,10 @@ uuidv7.fromBytes(bytes: Uint8Array): string
 - `seq?: number` - Sequence number for monotonicity
 - `random?: Uint8Array` - 16 bytes of random data
 
-## Related projects
+## Documentation
 
-- [uuid](https://github.com/uuidjs/uuid): one of the main ispirations for this library
-- [pnpm-monorepo-template](https://github.com/jkomyno/pnpm-monorepo-template): the template I used to create this library
-
-## Author
-
-Hi, I'm Alberto Schiabel, you can follow me on:
-
-- Github: [@jkomyno](https://github.com/jkomyno)
-- X: [@jkomyno](https://x.com/jkomyno)
-
-## Show your support
-
-Give a star if this project helped or inspired you!
+For advanced usage, examples, and contributing guidelines, see the [full documentation on GitHub](https://github.com/jkomyno/uniku).
 
 ## License
 
-MIT - see [LICENSE](./LICENSE)
+MIT - see [LICENSE](https://github.com/jkomyno/uniku/blob/main/LICENSE)

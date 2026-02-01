@@ -8,17 +8,17 @@ export const baseConfig = {
   entry: ['src/index.ts'],
   outDir: 'build',
 
-  outExtensions: (ctx: OutExtensionContext) => ({
-    js: ctx.format === 'es' ? '.mjs' : '.js',
-    dts: ctx.format === 'es' ? '.d.mts' : '.d.ts',
+  outExtensions: (_ctx: OutExtensionContext) => ({
+    js: '.mjs',
+    dts: '.d.mts',
   }),
 
-  format: ['esm', 'cjs'],
+  format: ['esm'],
   dts: true,
   clean: true,
   sourcemap: true,
   minify: false,
-  target: 'es2022',
+  target: 'ES2023',
 
   onSuccess() {
     console.info('Build succeeded!')
@@ -29,7 +29,7 @@ export const baseConfig = {
     entrypoints: ['.'],
     enabled: true,
     level: 'error',
-    profile: 'node16',
+    profile: 'esm-only',
   },
 
   publint: {

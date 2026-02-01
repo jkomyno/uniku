@@ -57,7 +57,9 @@
       "test",
       "testIf",
       "it",
-      "expect"
+      "expect",
+      "vi",
+      "bench"
     ],
     "linter": {
       "enabled": true
