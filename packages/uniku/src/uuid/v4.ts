@@ -72,12 +72,16 @@ function v4<TBuf extends Uint8Array = Uint8Array>(
   return buf ?? formatUuid(bytes)
 }
 
+function isValid(id: string): boolean {
+  return UUID_V4_REGEX.test(id)
+}
+
 /**
  * Generate a UUID v4 string or write the bytes into a buffer.
  * It also includes helpers to convert to and from byte arrays.
  */
 export const uuidv4: UuidV4 = Object.assign(v4, {
-  toBytes: (id: string) => parseUuid(id),
-  fromBytes: (bytes: Uint8Array) => formatUuid(bytes),
-  isValid: (id: string) => UUID_V4_REGEX.test(id),
+  toBytes: parseUuid,
+  fromBytes: formatUuid,
+  isValid,
 })

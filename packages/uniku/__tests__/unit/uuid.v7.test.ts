@@ -34,6 +34,12 @@ describe('uuidv7', () => {
     expect(decoded).toBe(ms)
   })
 
+  it('extracts the timestamp from a UUID v7 string', () => {
+    const ms = 1_702_387_456_789
+    const id = uuidv7({ msecs: ms, seq: 0, random: new Uint8Array(16) })
+    expect(uuidv7.timestamp(id)).toBe(ms)
+  })
+
   it('increases lexicographically within the same millisecond', () => {
     const ms = 1_702_387_456_789
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)

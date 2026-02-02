@@ -162,6 +162,8 @@ uuidv7(options: Version7Options | undefined, buf: Uint8Array, offset?: number): 
 
 uuidv7.toBytes(id: string): Uint8Array
 uuidv7.fromBytes(bytes: Uint8Array): string
+uuidv7.timestamp(id: string): number
+uuidv7.isValid(id: string): boolean
 ```
 
 **Options:**

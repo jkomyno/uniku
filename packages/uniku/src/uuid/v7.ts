@@ -17,6 +17,7 @@ export type UuidV7 = {
   (options?: Version7Options, buf?: undefined, offset?: number): string
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
+  timestamp(id: string): number
   isValid(id: string): boolean
 }
 
@@ -138,12 +139,26 @@ function v7<TBuf extends Uint8Array = Uint8Array>(
   return buf ?? formatUuid(bytes)
 }
 
+function timestamp(id: string): number {
+  const bytes = parseUuid(id)
+  let msecs = 0
+  for (let i = 0; i < 6; i += 1) {
+    msecs = msecs * 256 + bytes[i]
+  }
+  return msecs
+}
+
+function isValid(id: string): boolean {
+  return UUID_V7_REGEX.test(id)
+}
+
 /**
  * Generate a UUID v7 string or write the bytes into a buffer.
  * It also includes helpers to convert to and from byte arrays.j
  */
 export const uuidv7: UuidV7 = Object.assign(v7, {
-  toBytes: (id: string) => parseUuid(id),
-  fromBytes: (bytes: Uint8Array) => formatUuid(bytes),
-  isValid: (id: string) => UUID_V7_REGEX.test(id),
+  toBytes: parseUuid,
+  fromBytes: formatUuid,
+  timestamp,
+  isValid,
 })
