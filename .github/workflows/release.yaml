@@ -1,13 +1,11 @@
 name: Release
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches:
       - main
-    paths-ignore:
-      - "**.md"
-      - ".vscode/**"
-      - "LICENSE"
   workflow_dispatch:
 
 concurrency:
@@ -27,6 +25,8 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Run on manual dispatch OR when CI succeeded
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
