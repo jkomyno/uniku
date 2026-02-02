@@ -1,51 +1,51 @@
-name: "  📦 Release"
+name: Release
 
 on:
-  workflow_run:
-    workflows: ["  ▶️  CI Workflow"]
-    types:
-      - completed
+  push:
     branches:
       - main
+    paths-ignore:
+      - "**.md"
+      - ".vscode/**"
+      - "LICENSE"
   workflow_dispatch:
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+concurrency:
+  group: release
+  cancel-in-progress: false # Never cancel release in progress
 
 permissions:
   contents: write
   pull-requests: write
-  id-token: write  # Required for npm trusted publishing (OIDC)
+  id-token: write # Required for npm OIDC trusted publishing
 
 env:
   CI: "true"
 
 jobs:
   release:
-    name: Version & Publish
+    name: Release
     runs-on: ubuntu-latest
-    # Only run if CI workflow succeeded, or if manually triggered
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 15
     steps:
-      - name: Prepare git
-        run: git config --global core.autocrlf false
-
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
 
-      - name: "💽 Setup (Node.js)"
+      - name: Setup Node.js
         uses: ./.github/actions/setup-node
 
-      - name: "🏗️ Build"
+      - name: Build
         run: pnpm build
 
-      - name: "📦 Create Release PR or Publish"
+      - name: Create Release PR or Publish
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@c8bada60c408975afd1a20b3db81d6eee6789308 # v1.4.9
         with:
           version: pnpm version-packages
           publish: pnpm release
-          commit: "chore: version packages"
-          title: "chore: version packages"
+          commit: "chore(release): version packages"
+          title: "chore(release): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

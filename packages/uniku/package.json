@@ -22,6 +22,7 @@
     "uuid",
     "uuidv4",
     "uuidv7",
+    "ulid",
     "unique",
     "id",
     "identifier",
@@ -51,20 +52,28 @@
   ],
   "exports": {
     "./uuid/v4": {
-      "types": "./build/v4.d.mts",
+      "types": "./build/uuid/v4.d.mts",
       "import": {
         "@jkomyno/source": "./src/uuid/v4.ts",
-        "default": "./build/v4.mjs"
+        "default": "./build/uuid/v4.mjs"
       },
-      "default": "./build/v4.mjs"
+      "default": "./build/uuid/v4.mjs"
     },
     "./uuid/v7": {
-      "types": "./build/v7.d.mts",
+      "types": "./build/uuid/v7.d.mts",
       "import": {
         "@jkomyno/source": "./src/uuid/v7.ts",
-        "default": "./build/v7.mjs"
+        "default": "./build/uuid/v7.mjs"
       },
-      "default": "./build/v7.mjs"
+      "default": "./build/uuid/v7.mjs"
+    },
+    "./ulid": {
+      "types": "./build/ulid/ulid.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/ulid/ulid.ts",
+        "default": "./build/ulid/ulid.mjs"
+      },
+      "default": "./build/ulid/ulid.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -74,6 +83,7 @@
     "build:watch": "tsdown --config-loader unrun --watch",
     "test": "vitest run",
     "test:unit": "vitest --project unit run",
-    "bench": "vitest bench"
+    "bench": "vitest bench",
+    "typecheck": "tsc --noEmit"
   }
 }

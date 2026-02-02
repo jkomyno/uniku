@@ -19,6 +19,7 @@
     "test": "pnpm -r --if-present test",
     "test:unit": "pnpm -r --if-present test:unit",
     "test:integration": "pnpm -r --if-present test:integration",
+    "typecheck": "turbo run typecheck",
     "changeset": "changeset",
     "version-packages": "changeset version && pnpm install",
     "prerelease": "pnpm build",

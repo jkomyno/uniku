@@ -15,7 +15,10 @@ export type UuidV4 = {
   (options?: Version4Options, buf?: undefined, offset?: number): string
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
+  isValid(id: string): boolean
 }
+
+const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function v4Bytes(rnds: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
   if (rnds.length < 16) {
@@ -69,11 +72,16 @@ function v4<TBuf extends Uint8Array = Uint8Array>(
   return buf ?? formatUuid(bytes)
 }
 
+function isValid(id: string): boolean {
+  return UUID_V4_REGEX.test(id)
+}
+
 /**
  * Generate a UUID v4 string or write the bytes into a buffer.
  * It also includes helpers to convert to and from byte arrays.
  */
 export const uuidv4: UuidV4 = Object.assign(v4, {
-  toBytes: (id: string) => parseUuid(id),
-  fromBytes: (bytes: Uint8Array) => formatUuid(bytes),
+  toBytes: parseUuid,
+  fromBytes: formatUuid,
+  isValid,
 })

@@ -4,7 +4,7 @@
 [![CI](https://github.com/jkomyno/uniku/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/jkomyno/uniku/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Minimal, tree-shakeable UUID utilities for every JavaScript runtime.
+Minimal, tree-shakeable UUID and ULID utilities for every JavaScript runtime.
 
 > *uniku* means "unique" in Maltese.
 
@@ -21,6 +21,7 @@ Minimal, tree-shakeable UUID utilities for every JavaScript runtime.
 
 - UUID v4 ([RFC 4122](./rfcs/rfc4122))
 - UUID v7 ([RFC 9562](./rfcs/rfc9562), time-ordered, monotonic sequencing)
+- ULID ([spec](https://github.com/ulid/spec), time-ordered, monotonic sequencing)
 
 ## Installation
 
@@ -120,6 +121,24 @@ const buffer = new Uint8Array(32)
 uuidv7(undefined, buffer, 8)
 ```
 
+### ULID (time-ordered)
+
+ULID is a 26-character, lexicographically sortable identifier:
+
+```ts
+import { ulid } from 'uniku/ulid'
+
+// Generate a ULID string
+const id = ulid()
+// => "01HW9T2W9W9YJ3JZ1H4P4M2T8Q"
+
+// Convert to bytes
+const bytes = ulid.toBytes(id)
+
+// Convert back to string
+const str = ulid.fromBytes(bytes)
+```
+
 ## API
 
 ### `uuidv4` (from `uniku/uuid/v4`)
@@ -143,12 +162,30 @@ uuidv7(options: Version7Options | undefined, buf: Uint8Array, offset?: number): 
 
 uuidv7.toBytes(id: string): Uint8Array
 uuidv7.fromBytes(bytes: Uint8Array): string
+uuidv7.timestamp(id: string): number
+uuidv7.isValid(id: string): boolean
 ```
 
 **Options:**
 - `msecs?: number` - Timestamp in milliseconds (defaults to `Date.now()`)
 - `seq?: number` - Sequence number for monotonicity
 - `random?: Uint8Array` - 16 bytes of random data
+
+### `ulid` (from `uniku/ulid`)
+
+```ts
+ulid(options?: UlidOptions): string
+ulid(options: UlidOptions | undefined, buf: Uint8Array, offset?: number): Uint8Array
+
+ulid.toBytes(id: string): Uint8Array
+ulid.fromBytes(bytes: Uint8Array): string
+ulid.timestamp(id: string): number
+ulid.isValid(id: string): boolean
+```
+
+**Options:**
+- `msecs?: number` - Timestamp in milliseconds (defaults to `Date.now()`)
+- `random?: Uint8Array` - 16 bytes of random data (only first 10 bytes used)
 
 ## Related projects
 

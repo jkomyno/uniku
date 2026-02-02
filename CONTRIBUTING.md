@@ -60,14 +60,6 @@ pnpm lint:ci
 pnpm lint
 ```
 
-### Checking Exports
-
-Verify that package exports are correctly configured:
-
-```bash
-pnpm check:exports
-```
-
 ## Making Changes
 
 1. Create a branch for your changes
