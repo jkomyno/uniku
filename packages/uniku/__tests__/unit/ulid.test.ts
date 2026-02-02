@@ -1,0 +1,171 @@
+import { ulid } from '../../src/ulid/ulid'
+
+function compareBytes(left: Uint8Array, right: Uint8Array): number {
+  for (let i = 0; i < left.length; i += 1) {
+    if (left[i] !== right[i]) {
+      return left[i] - right[i]
+    }
+  }
+  return 0
+}
+
+describe('ulid', () => {
+  it('generates a valid ULID string', () => {
+    const id = ulid()
+    expect(id).toMatch(/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i)
+    expect(id.length).toBe(26)
+  })
+
+  it('generates uppercase output', () => {
+    const id = ulid()
+    expect(id).toBe(id.toUpperCase())
+  })
+
+  it('generates unique ids in small sample', () => {
+    const ids = new Set<string>()
+    for (let i = 0; i < 10_000; i += 1) {
+      ids.add(ulid())
+    }
+    expect(ids.size).toBe(10_000)
+  })
+
+  it('encodes the timestamp in the first 6 bytes', () => {
+    const ms = 1_702_387_456_789
+    const bytes = ulid.toBytes(ulid({ msecs: ms, random: new Uint8Array(10) }))
+
+    let decoded = 0
+    for (let i = 0; i < 6; i += 1) {
+      decoded = decoded * 256 + bytes[i]
+    }
+
+    expect(decoded).toBe(ms)
+  })
+
+  it('extracts timestamp correctly', () => {
+    const ms = 1_702_387_456_789
+    const id = ulid({ msecs: ms, random: new Uint8Array(10) })
+    expect(ulid.timestamp(id)).toBe(ms)
+  })
+
+  it('increases lexicographically within the same millisecond', () => {
+    const ms = 1_702_387_456_789
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+    const samples = 1_000
+    const ids = new Array<string>(samples)
+
+    for (let i = 0; i < samples; i += 1) {
+      ids[i] = ulid()
+    }
+    nowSpy.mockRestore()
+
+    for (let i = 0; i < samples - 1; i += 1) {
+      // ULIDs should sort lexicographically
+      expect(ids[i] < ids[i + 1]).toBe(true)
+    }
+  })
+
+  it('increases bytes within the same millisecond', () => {
+    const ms = 1_702_387_456_789
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+    const samples = 1_000
+    const bytesList = new Array<Uint8Array>(samples)
+
+    for (let i = 0; i < samples; i += 1) {
+      bytesList[i] = ulid.toBytes(ulid())
+    }
+    nowSpy.mockRestore()
+
+    for (let i = 0; i < samples - 1; i += 1) {
+      expect(compareBytes(bytesList[i], bytesList[i + 1])).toBeLessThan(0)
+    }
+  })
+
+  it('round-trips through byte helpers', () => {
+    const id = ulid()
+    expect(ulid.fromBytes(ulid.toBytes(id))).toBe(id)
+  })
+
+  it('round-trips with lowercase input', () => {
+    const id = ulid()
+    const lower = id.toLowerCase()
+    expect(ulid.fromBytes(ulid.toBytes(lower))).toBe(id)
+  })
+
+  it('supports custom timestamp option', () => {
+    const ms = 1_500_000_000_000
+    const id = ulid({ msecs: ms })
+    expect(ulid.timestamp(id)).toBe(ms)
+  })
+
+  it('supports custom random option', () => {
+    const random = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    const id1 = ulid({ msecs: 1000, random })
+    const id2 = ulid({ msecs: 1000, random })
+    expect(id1).toBe(id2)
+  })
+
+  it('supports buffer output', () => {
+    const buffer = new Uint8Array(32)
+    const offset = 8
+
+    const result = ulid({ msecs: 1_702_387_456_789, random: new Uint8Array(10) }, buffer, offset)
+    expect(result).toBe(buffer)
+
+    const fromString = ulid.toBytes(ulid({ msecs: 1_702_387_456_789, random: new Uint8Array(10) }))
+    for (let i = 0; i < fromString.length; i += 1) {
+      expect(buffer[offset + i]).toBe(fromString[i])
+    }
+  })
+
+  it('throws on buffer bounds error', () => {
+    const buffer = new Uint8Array(10)
+    expect(() => ulid({}, buffer, 0)).toThrow(RangeError)
+  })
+
+  describe('isValid', () => {
+    it('returns true for valid ULIDs', () => {
+      expect(ulid.isValid(ulid())).toBe(true)
+      expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(true)
+      expect(ulid.isValid('7ZZZZZZZZZZZZZZZZZZZZZZZZZ')).toBe(true)
+      expect(ulid.isValid('00000000000000000000000000')).toBe(true)
+    })
+
+    it('returns true for lowercase valid ULIDs', () => {
+      expect(ulid.isValid('01arz3ndektsv4rrffq69g5fav')).toBe(true)
+    })
+
+    it('returns false for wrong length', () => {
+      expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FA')).toBe(false)
+      expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAVX')).toBe(false)
+      expect(ulid.isValid('')).toBe(false)
+    })
+
+    it('returns false for invalid characters', () => {
+      expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAI')).toBe(false) // I is invalid
+      expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAL')).toBe(false) // L is invalid
+      expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAO')).toBe(false) // O is invalid
+      expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAU')).toBe(false) // U is invalid
+    })
+
+    it('returns false for overflow (first char > 7)', () => {
+      expect(ulid.isValid('81ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(false)
+      expect(ulid.isValid('91ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(false)
+      expect(ulid.isValid('A1ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(false)
+    })
+  })
+
+  describe('timestamp edge cases', () => {
+    it('handles zero timestamp', () => {
+      const id = ulid({ msecs: 0, random: new Uint8Array(10) })
+      expect(ulid.timestamp(id)).toBe(0)
+      expect(id.slice(0, 10)).toBe('0000000000')
+    })
+
+    it('handles max safe timestamp', () => {
+      // Max ULID timestamp: 2^48 - 1 = 281474976710655
+      const maxTs = 281474976710655
+      const id = ulid({ msecs: maxTs, random: new Uint8Array(10).fill(0xff) })
+      expect(ulid.timestamp(id)).toBe(maxTs)
+    })
+  })
+})

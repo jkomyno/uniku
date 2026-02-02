@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/uniku)](https://bundlephobia.com/package/uniku)
 
-Minimal, tree-shakeable UUID utilities for every JavaScript runtime.
+Minimal, tree-shakeable UUID and ULID utilities for every JavaScript runtime.
 
 > *uniku* means "unique" in Maltese.
 
@@ -20,8 +20,9 @@ Minimal, tree-shakeable UUID utilities for every JavaScript runtime.
 
 ## Supported ID generation algorithms
 
-- UUID v4 ([RFC 4122](./rfcs/rfc4122))
-- UUID v7 ([RFC 9562](./rfcs/rfc9562), time-ordered, monotonic sequencing)
+- UUID v4 ([RFC 4122](../../rfcs/rfc4122.txt))
+- UUID v7 ([RFC 9562](../../rfcs/rfc9562.txt), time-ordered, monotonic sequencing)
+- ULID ([spec](../../rfcs/ulid.txt), time-ordered, monotonic sequencing)
 
 ## Installation
 
@@ -71,6 +72,19 @@ const ids = [uuidv7(), uuidv7(), uuidv7()]
 ids.sort() // Already in creation order
 ```
 
+### ULID (time-ordered)
+
+```ts
+import { ulid } from 'uniku/ulid'
+
+const id = ulid()
+// => "01HW9T2W9W9YJ3JZ1H4P4M2T8Q"
+
+// Convert to/from bytes
+const bytes = ulid.toBytes(id)
+const str = ulid.fromBytes(bytes)
+```
+
 ## API Reference
 
 ### `uuidv4` (from `uniku/uuid/v4`)
@@ -100,6 +114,22 @@ uuidv7.fromBytes(bytes: Uint8Array): string
 - `msecs?: number` - Timestamp in milliseconds (defaults to `Date.now()`)
 - `seq?: number` - Sequence number for monotonicity
 - `random?: Uint8Array` - 16 bytes of random data
+
+### `ulid` (from `uniku/ulid`)
+
+```ts
+ulid(options?: UlidOptions): string
+ulid(options: UlidOptions | undefined, buf: Uint8Array, offset?: number): Uint8Array
+
+ulid.toBytes(id: string): Uint8Array
+ulid.fromBytes(bytes: Uint8Array): string
+ulid.timestamp(id: string): number
+ulid.isValid(id: string): boolean
+```
+
+**Options:**
+- `msecs?: number` - Timestamp in milliseconds (defaults to `Date.now()`)
+- `random?: Uint8Array` - 16 bytes of random data (only first 10 bytes used)
 
 ## Documentation
 

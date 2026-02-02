@@ -72,4 +72,34 @@ describe('uuidv7', () => {
       expect(buffer[offset + i]).toBe(fromString[i])
     }
   })
+
+  describe('isValid', () => {
+    it('returns true for valid UUID v7 strings', () => {
+      expect(uuidv7.isValid(uuidv7())).toBe(true)
+      expect(uuidv7.isValid('01890f41-6b46-7e38-8f1d-7a5a8b7d83f1')).toBe(true)
+      expect(uuidv7.isValid('01890F41-6B46-7E38-8F1D-7A5A8B7D83F1')).toBe(true)
+    })
+
+    it('returns true for 1,000 generated ids', () => {
+      for (let i = 0; i < 1_000; i += 1) {
+        expect(uuidv7.isValid(uuidv7())).toBe(true)
+      }
+    })
+
+    it('returns false for wrong length or format', () => {
+      expect(uuidv7.isValid('01890f41-6b46-7e38-8f1d-7a5a8b7d83f')).toBe(false)
+      expect(uuidv7.isValid('01890f416b467e388f1d7a5a8b7d83f1')).toBe(false)
+      expect(uuidv7.isValid('')).toBe(false)
+    })
+
+    it('returns false for invalid characters', () => {
+      expect(uuidv7.isValid('g1890f41-6b46-7e38-8f1d-7a5a8b7d83f1')).toBe(false)
+    })
+
+    it('returns false for wrong version or variant', () => {
+      expect(uuidv7.isValid('01890f41-6b46-4e38-8f1d-7a5a8b7d83f1')).toBe(false)
+      expect(uuidv7.isValid('01890f41-6b46-7e38-7f1d-7a5a8b7d83f1')).toBe(false)
+      expect(uuidv7.isValid('01890f41-6b46-7e38-cf1d-7a5a8b7d83f1')).toBe(false)
+    })
+  })
 })
