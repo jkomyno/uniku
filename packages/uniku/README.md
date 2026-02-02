@@ -23,6 +23,7 @@ Minimal, tree-shakeable UUID and ULID utilities for every JavaScript runtime.
 - UUID v4 ([RFC 4122](../../rfcs/rfc4122.txt))
 - UUID v7 ([RFC 9562](../../rfcs/rfc9562.txt), time-ordered, monotonic sequencing)
 - ULID ([spec](../../rfcs/ulid.txt), time-ordered, monotonic sequencing)
+- CUID2 ([spec](../../rfcs/cuid2.txt), secure, non-time-ordered)
 
 ## Installation
 
@@ -85,6 +86,25 @@ const bytes = ulid.toBytes(id)
 const str = ulid.fromBytes(bytes)
 ```
 
+### CUID2 (secure, non-time-ordered)
+
+```ts
+import { cuid2 } from 'uniku/cuid2'
+
+const id = cuid2()
+// => "pfh0haxfpzowht3oi213cqos"
+
+// Custom length
+const shortId = cuid2({ length: 10 })
+// => "tz4a98xxat"
+
+// Validation (type guard)
+const maybeId: unknown = getUserInput()
+if (cuid2.isValid(maybeId)) {
+  console.log(maybeId) // TypeScript knows this is a string
+}
+```
+
 ## API Reference
 
 ### `uuidv4` (from `uniku/uuid/v4`)
@@ -132,6 +152,19 @@ ulid.isValid(id: string): boolean
 **Options:**
 - `msecs?: number` - Timestamp in milliseconds (defaults to `Date.now()`)
 - `random?: Uint8Array` - 16 bytes of random data (only first 10 bytes used)
+
+### `cuid2` (from `uniku/cuid2`)
+
+```ts
+cuid2(options?: Cuid2Options): string
+cuid2.isValid(id: unknown): id is string
+```
+
+**Options:**
+- `length?: number` - ID length (2-32, default 24)
+- `random?: Uint8Array` - Custom random bytes for testing
+
+Note: Unlike UUID and ULID, CUID2 does not provide `toBytes`/`fromBytes` because it is a string-native format with no canonical binary representation.
 
 ## Documentation
 

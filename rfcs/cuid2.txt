@@ -1,0 +1,236 @@
+# CUID2 Specification
+
+Collision-resistant Unique IDentifier (CUID), version 2.
+
+Reference: https://github.com/paralleldrive/cuid2
+
+## Overview
+
+CUID2 is a secure, collision-resistant identifier designed for horizontal scaling
+and binary search lookup performance. Unlike its predecessor (CUID), CUID2 hashes
+all entropy sources using SHA3-512 to prevent information leakage and enumeration
+attacks.
+
+## Format
+
+```
+pfh0haxfpzowht3oi213cqos
+|------------------------|
+       24 characters
+      (default length)
+```
+
+### Character Set
+
+- **Encoding:** Base36 (lowercase letters a-z, digits 0-9)
+- **First Character:** Always a lowercase letter (a-z)
+- **Pattern:** `/^[a-z][0-9a-z]+$/`
+- **Length:** Configurable from 2 to 32 characters (default: 24)
+
+The first character is always a letter to ensure the identifier is valid as:
+- JavaScript variable name
+- CSS selector
+- HTML attribute value
+
+### Examples
+
+```
+pfh0haxfpzowht3oi213cqos    (24 chars, default)
+tz4a98xxat                   (10 chars, custom)
+nc6bzmkmd014706rfj2k        (20 chars)
+ab                           (2 chars, minimum)
+```
+
+## Algorithm
+
+### Generation Process
+
+1. **Generate Random First Letter**
+   - Select random lowercase letter from alphabet (a-z)
+   - Ensures valid programming language identifier
+
+2. **Collect Entropy Sources**
+   - Timestamp: `Date.now().toString(36)`
+   - Counter: Incrementing session counter in base36
+   - Salt: Random entropy string of specified length
+   - Fingerprint: Host-specific identifier (32 chars)
+
+3. **Combine and Hash**
+   ```
+   hashInput = timestamp + salt + counter + fingerprint
+   hash = SHA3-512(hashInput)
+   base36Hash = bigIntToBase36(hash)
+   ```
+
+4. **Format Output**
+   ```
+   output = firstLetter + base36Hash.substring(1, length)
+   ```
+
+   Note: The first character of the hash is dropped to avoid histogram bias
+   in the distribution of first characters.
+
+### Entropy Sources
+
+| Source | Description | Purpose |
+|--------|-------------|---------|
+| Timestamp | Current milliseconds since epoch | Time-based entropy |
+| Counter | Incrementing value (random start) | Prevents same-millisecond collisions |
+| Salt | Random string (length = output length) | Fresh entropy per ID |
+| Fingerprint | Environment-specific hash | Distributed system uniqueness |
+
+### Counter
+
+- Initialized randomly between 0 and 476,782,367
+- Incremented with each ID generation
+- Provides ~22k hosts before 50% initial counter collision
+- Wraps on overflow (safe due to other entropy sources)
+
+### Fingerprint
+
+The fingerprint provides uniqueness across distributed systems:
+
+- **Node.js:** Hash of `Object.keys(global).toString()` + random entropy
+- **Browser:** Hash of `Object.keys(window).toString()` + random entropy
+- **Fallback:** Pure random entropy if no global object available
+
+Custom fingerprints can be provided for containerized environments where
+multiple instances may have identical global objects.
+
+## Security Properties
+
+### Information Hiding
+
+All entropy sources are hashed together, making it impossible to recover:
+- Creation timestamp
+- Counter value
+- Host fingerprint
+- Generation sequence
+
+This prevents enumeration attacks where attackers could predict or iterate
+through valid IDs.
+
+### Collision Resistance
+
+| Length | Approximate Collision Probability (Birthday Paradox) |
+|--------|-----------------------------------------------------|
+| 24 (default) | 50% at ~4 x 10^18 IDs |
+| 32 (maximum) | 50% at ~6.76 x 10^24 IDs |
+| 10 | 50% at ~51,386,368 IDs |
+
+### Not K-Sortable
+
+Unlike ULID and UUID v7, CUID2 is intentionally not sortable by creation time.
+This is a security feature that prevents:
+- Timing attacks
+- Sequential enumeration
+- Information leakage about creation order
+
+If you need time-ordered IDs, use ULID or UUID v7 instead.
+
+### Computational Cost
+
+CUID2 generation is intentionally slower than alternatives like NanoID or ULID
+due to SHA3-512 hashing. This provides:
+- Resistance to brute-force collision attacks
+- More thorough entropy mixing
+- Security-appropriate performance trade-off
+
+## Comparison with CUID (v1)
+
+| Feature | CUID (v1) | CUID2 |
+|---------|-----------|-------|
+| Hash Function | None | SHA3-512 |
+| Timestamp Visible | Yes | No |
+| Counter Visible | Yes | No |
+| Host Info Visible | Yes | No |
+| First Character | Always 'c' | Random a-z |
+| Predictable | Yes | No |
+| Secure | No | Yes |
+| Default Length | 25 | 24 |
+| Configurable Length | No | Yes |
+
+**CUID v1 is deprecated and should not be used for new projects.**
+
+## Configuration Options
+
+### Length
+
+- **Range:** 2 to 32 characters
+- **Default:** 24 characters
+- **Trade-off:** Shorter = less collision resistance
+
+### Random
+
+- **Type:** `Uint8Array`
+- **Default:** Generated via `crypto.getRandomValues()`
+- **Usage:** Provide custom bytes for deterministic testing
+
+### Fingerprint (Internal)
+
+The fingerprint is auto-generated from the environment and cached at module
+initialization. It provides uniqueness across distributed systems by hashing
+`Object.keys(globalThis)` combined with random entropy.
+
+Note: Custom fingerprint configuration may be added in future versions if
+there is demand for explicit distributed system identification.
+
+## Validation
+
+A valid CUID2 must:
+1. Start with a lowercase letter (a-z)
+2. Contain only lowercase letters and digits
+3. Be between 2 and 32 characters long
+
+```typescript
+const CUID2_REGEX = /^[a-z][0-9a-z]+$/
+
+function isValid(id: unknown): id is string {
+  return (
+    typeof id === 'string' &&
+    id.length >= 2 &&
+    id.length <= 32 &&
+    CUID2_REGEX.test(id)
+  )
+}
+```
+
+The `isValid` function acts as a TypeScript type guard, allowing safe use of
+the validated value as a string in subsequent code.
+
+## Binary Representation
+
+CUID2 does not define a standard binary format. The identifier is designed
+as a string-first format. Unlike UUID (16-byte binary) or ULID (16-byte binary),
+CUID2 has no canonical binary representation.
+
+If binary storage is required, applications should:
+1. Store as UTF-8 bytes (variable length based on ID length)
+2. Or pad to fixed 32 bytes with null terminators
+3. Or use a length-prefixed encoding
+
+Note: The uniku library does not provide `toBytes`/`fromBytes` for CUID2
+because there is no meaningful binary representation beyond UTF-8 encoding,
+which users can easily do themselves with `TextEncoder`/`TextDecoder`.
+
+## Dependencies
+
+The uniku implementation uses:
+- `@noble/hashes/sha3` - SHA3-512 (NIST-standard, security-audited)
+- Native `BigInt` - For large number to base36 conversion (no external dependency)
+
+Note: The original reference implementation uses `bignumber.js`, but modern
+JavaScript engines support native BigInt which is sufficient for this use case.
+
+## Prior Art
+
+- CUID (v1): https://github.com/ericelliott/cuid (deprecated)
+- ULID: https://github.com/ulid/spec
+- UUID v4: RFC 4122
+- NanoID: https://github.com/ai/nanoid
+
+## References
+
+- Official Repository: https://github.com/paralleldrive/cuid2
+- NPM Package: https://www.npmjs.com/package/@paralleldrive/cuid2
+- DeepWiki Documentation: https://deepwiki.com/paralleldrive/cuid2

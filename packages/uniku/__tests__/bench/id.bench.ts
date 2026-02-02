@@ -1,4 +1,5 @@
 import { bench, describe } from 'vitest'
+import { cuid2 } from '../../src/cuid2/cuid2'
 import { ulid } from '../../src/ulid/ulid'
 import { uuidv4 } from '../../src/uuid/v4'
 import { uuidv7 } from '../../src/uuid/v7'
@@ -32,6 +33,14 @@ describe('ID Generation', () => {
     'ulid',
     () => {
       ulid()
+    },
+    benchOptions,
+  )
+
+  bench(
+    'cuid2',
+    () => {
+      cuid2()
     },
     benchOptions,
   )
@@ -107,6 +116,7 @@ describe('ID isValid', () => {
   const v4String = uuidv4()
   const v7String = uuidv7()
   const ulidString = ulid()
+  const cuid2String = cuid2()
 
   bench(
     'uuidv4.isValid',
@@ -128,6 +138,14 @@ describe('ID isValid', () => {
     'ulid.isValid',
     () => {
       ulid.isValid(ulidString)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'cuid2.isValid',
+    () => {
+      cuid2.isValid(cuid2String)
     },
     benchOptions,
   )
