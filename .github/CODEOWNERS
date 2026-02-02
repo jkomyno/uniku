@@ -1,0 +1,5 @@
+# Default owner for everything
+* @jkomyno
+
+# Workflow files require explicit review
+.github/ @jkomyno

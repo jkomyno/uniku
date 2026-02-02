@@ -83,6 +83,7 @@
     "build:watch": "tsdown --config-loader unrun --watch",
     "test": "vitest run",
     "test:unit": "vitest --project unit run",
-    "bench": "vitest bench"
+    "bench": "vitest bench",
+    "typecheck": "tsc --noEmit"
   }
 }

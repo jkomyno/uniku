@@ -5,13 +5,14 @@
       "dependsOn": ["^build"],
       "outputs": ["build/**"]
     },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
     "bench": {
       "dependsOn": ["^build"]
     },
     "build:watch": {},
-    "check:exports": {
-      "dependsOn": ["^build"]
-    },
     "clean": {
       "cache": false,
       "outputs": ["packages/*/build"]
