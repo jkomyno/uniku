@@ -1,6 +1,7 @@
+import { fillRandomBytes, getRandomBytes } from '../../common/random-pool'
+
 export function randomBytes(out: Uint8Array): void {
-  const crypto = globalThis.crypto
-  crypto.getRandomValues(out)
+  fillRandomBytes(out)
 }
 
 /**
@@ -8,7 +9,5 @@ export function randomBytes(out: Uint8Array): void {
  * Used internally by UUID generators.
  */
 export function rng(): Uint8Array {
-  const bytes = new Uint8Array(16)
-  randomBytes(bytes)
-  return bytes
+  return getRandomBytes(16)
 }

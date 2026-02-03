@@ -1,3 +1,5 @@
+import { getPooledBytes, poolBytes } from '../common/random-pool'
+
 /** Default URL-safe alphabet (64 characters): A-Z, a-z, 0-9, underscore, hyphen */
 export const URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
 
@@ -8,7 +10,8 @@ const NANOID_REGEX = /^[A-Za-z0-9_-]+$/
 export type NanoidOptions = {
   /**
    * Random bytes for deterministic output (testing).
-   * Must provide enough bytes for rejection sampling (~size * 2).
+   * For power-of-2 alphabets (2, 4, 8, 16, 32, 64, 128, 256): exactly `size` bytes needed.
+   * For other alphabets: ~size * 2 bytes needed (rejection sampling).
    */
   random?: Uint8Array
   /**
@@ -76,17 +79,29 @@ function nanoidFn(): string
 function nanoidFn(size: number): string
 function nanoidFn(options: NanoidOptions): string
 function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
+  // ULTRA-FAST PATH: No arguments = default nanoid
+  // Uses thread-safe pooled random bytes for high performance
+  if (sizeOrOptions === undefined) {
+    const startOffset = getPooledBytes(21)
+    const bytes = poolBytes()
+    let id = ''
+    for (let i = startOffset; i < startOffset + 21; i++) {
+      id += URL_ALPHABET[bytes[i] & 63]
+    }
+    return id
+  }
+
   let size = DEFAULT_SIZE
   let alphabet = URL_ALPHABET
   let randomBytes: Uint8Array | undefined
 
   if (typeof sizeOrOptions === 'number') {
     size = sizeOrOptions
-  } else if (sizeOrOptions) {
+  } else {
     size = sizeOrOptions.size ?? DEFAULT_SIZE
     alphabet = sizeOrOptions.alphabet ?? URL_ALPHABET
     randomBytes = sizeOrOptions.random
-    if (sizeOrOptions.alphabet) {
+    if (sizeOrOptions.alphabet !== undefined) {
       validateAlphabet(alphabet)
     }
   }
@@ -95,10 +110,28 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
 
   if (size === 0) return ''
 
+  const alphabetLen = alphabet.length
+
+  // FAST PATH: Power-of-2 alphabet (includes default 64-char)
+  // No rejection needed - each byte maps directly to a character
+  if ((alphabetLen & (alphabetLen - 1)) === 0) {
+    const mask = alphabetLen - 1
+    if (randomBytes && randomBytes.length < size) {
+      throw new Error(`Insufficient random bytes: need ${size}, have ${randomBytes.length}`)
+    }
+    const bytes = randomBytes?.subarray(0, size) ?? globalThis.crypto.getRandomValues(new Uint8Array(size))
+    let id = ''
+    for (let i = 0; i < size; i++) {
+      id += alphabet[bytes[i] & mask]
+    }
+    return id
+  }
+
+  // SLOW PATH: Rejection sampling for non-power-of-2 alphabets
   // Calculate mask: smallest power-of-2 minus 1 that covers alphabet size
-  const mask = (2 << (31 - Math.clz32((alphabet.length - 1) | 1))) - 1
+  const mask = (2 << (31 - Math.clz32((alphabetLen - 1) | 1))) - 1
   // Calculate step: random bytes per batch (1.6x accounts for rejection)
-  const step = Math.ceil((1.6 * mask * size) / alphabet.length)
+  const step = Math.ceil((1.6 * mask * size) / alphabetLen)
 
   let id = ''
   let randomOffset = 0
@@ -119,7 +152,7 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
 
     for (let i = 0; i < bytes.length && id.length < size; i++) {
       const index = bytes[i] & mask
-      if (index < alphabet.length) {
+      if (index < alphabetLen) {
         id += alphabet[index]
       }
       // Otherwise reject and continue (no modulo bias)
