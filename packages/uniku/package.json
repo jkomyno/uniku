@@ -24,6 +24,7 @@
     "uuidv7",
     "ulid",
     "cuid2",
+    "nanoid",
     "unique",
     "id",
     "identifier",
@@ -83,6 +84,14 @@
         "default": "./build/cuid2/cuid2.mjs"
       },
       "default": "./build/cuid2/cuid2.mjs"
+    },
+    "./nanoid": {
+      "types": "./build/nanoid/nanoid.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/nanoid/nanoid.ts",
+        "default": "./build/nanoid/nanoid.mjs"
+      },
+      "default": "./build/nanoid/nanoid.mjs"
     },
     "./package.json": "./package.json"
   },

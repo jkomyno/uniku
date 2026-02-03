@@ -1,0 +1,196 @@
+# RFC: Nanoid Support for Uniku
+
+## Summary
+
+Add nanoid-style ID generation to the uniku package with custom alphabet support,
+Cloudflare Workers compatibility, and API consistency with existing generators.
+
+## Motivation
+
+Nanoid is a tiny (118 bytes), secure, URL-friendly unique string ID generator.
+It provides shorter IDs than UUID while maintaining similar collision resistance
+(126 bits of entropy vs UUID's 122 bits). Key benefits:
+
+- **Compact**: 21 characters vs 36 for UUID
+- **URL-safe**: Uses A-Za-z0-9_- alphabet by default
+- **Secure**: Uses cryptographically strong random APIs
+- **Customizable**: Supports custom alphabets and sizes
+- **Edge-compatible**: Works with Web Crypto API (Cloudflare Workers)
+
+## Design
+
+### API Surface
+
+```typescript
+import { nanoid, URL_ALPHABET } from 'uniku/nanoid'
+
+// Default: 21-character URL-safe ID
+const id = nanoid()           // "V1StGXR8_Z5jdHi6B-myT"
+
+// Custom size
+const shortId = nanoid(10)    // "IRFa-VaY2b"
+
+// Custom alphabet via options
+const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
+// => "4f90d13a42bc"
+
+// Deterministic output for testing
+const deterministicId = nanoid({ random: new Uint8Array(64).fill(42) })
+
+// Validation (default alphabet only)
+nanoid.isValid(id)            // true
+```
+
+### Type Definitions
+
+```typescript
+type NanoidOptions = {
+  random?: Uint8Array  // Custom random bytes for deterministic output
+  alphabet?: string    // Custom alphabet (2-256 printable ASCII chars)
+  size?: number        // Length of generated ID (default: 21, max: 2048)
+}
+
+type Nanoid = {
+  (): string
+  (size: number): string
+  (options: NanoidOptions): string
+  isValid(id: unknown): id is string
+}
+
+declare const nanoid: Nanoid
+declare const URL_ALPHABET: string
+```
+
+### Default Configuration
+
+- **Size**: 21 characters (max: 2048)
+- **Alphabet**: URL-safe 64 characters (A-Za-z0-9_-)
+- **Entropy**: 126 bits (21 * log2(64) = 21 * 6)
+
+### Algorithm: Bitmask Rejection Sampling
+
+To avoid modulo bias, the implementation uses bitmask rejection sampling:
+
+```typescript
+// Calculate mask: smallest power-of-2 minus 1 that covers alphabet size
+const mask = (2 << (31 - Math.clz32((alphabet.length - 1) | 1))) - 1
+
+// Calculate step: how many random bytes to request per batch
+// The 1.6 multiplier accounts for rejected values
+const step = Math.ceil((1.6 * mask * size) / alphabet.length)
+
+function generate(size: number): string {
+  let id = ''
+  while (id.length < size) {
+    const bytes = crypto.getRandomValues(new Uint8Array(step))
+    for (let i = 0; i < bytes.length && id.length < size; i++) {
+      const index = bytes[i] & mask
+      if (index < alphabet.length) {
+        id += alphabet[index]
+      }
+      // Otherwise reject and continue (no modulo bias)
+    }
+  }
+  return id
+}
+```
+
+### Validation Rules
+
+**Size parameter:**
+- Must be a non-negative integer
+- `nanoid(0)` returns empty string
+- Maximum: 2048 (prevents memory issues)
+- Negative, non-integer, or exceeding max throws `RangeError`
+
+**Alphabet parameter:**
+- Minimum 2 characters
+- Maximum 256 characters (byte value constraint)
+- No duplicate characters allowed
+- Printable ASCII only (32-126)
+- Validated when provided in options
+
+### Design Decisions
+
+**1. No `toBytes`/`fromBytes` helpers**
+
+Unlike UUID/ULID which have canonical binary representations, nanoid is purely
+string-based with no fixed binary format. The rejection sampling algorithm
+discards information, making round-tripping impossible. Omitting these helpers
+maintains semantic correctness over pattern consistency.
+
+**2. No buffer output mode**
+
+Unlike UUID (16 bytes) and ULID (16 bytes), nanoid has no canonical binary
+representation. Writing ASCII bytes to a buffer would be semantically meaningless
+and add complexity without value.
+
+**3. No `create()` factory**
+
+Pre-computing mask/step provides negligible performance gain (two arithmetic ops).
+Adding a factory would duplicate generation logic and increase cognitive load.
+Users should call `nanoid({ alphabet, size })` directly.
+
+**4. `isValid` validates default alphabet only**
+
+The `isValid(id)` method checks that all characters are from the default URL-safe
+alphabet. It does not validate IDs generated with custom alphabets. This limitation
+is documented clearly in the API.
+
+**5. Type guard on `isValid`**
+
+Returns `id is string` for better TypeScript DX, allowing type narrowing after
+validation checks.
+
+**6. Single file implementation**
+
+All code in `src/nanoid/nanoid.ts` (~70 lines). No separate common/ subdirectories
+needed for this simple implementation.
+
+## File Structure
+
+```
+packages/uniku/
+  src/
+    nanoid/
+      nanoid.ts           # All implementation (~70 lines)
+  __tests__/
+    unit/
+      nanoid.test.ts      # Unit tests
+    bench/
+      id.bench.ts         # Add nanoid benchmarks
+```
+
+## Security Considerations
+
+1. **Cryptographic randomness**: Uses `globalThis.crypto.getRandomValues()`
+2. **No modulo bias**: Bitmask rejection sampling ensures uniform distribution
+3. **Web Crypto API**: Compatible with Cloudflare Workers, no Node.js crypto
+4. **Size limit**: MAX_SIZE = 2048 prevents memory/DoS issues
+5. **Printable ASCII only**: Rejects control characters in custom alphabets
+
+## Performance
+
+Expected performance comparable to existing generators:
+- ~3-4M ops/sec for default nanoid
+- ~2-3M ops/sec for custom alphabet
+
+## Testing Strategy
+
+1. **Generation tests**: Format, length, character set
+2. **Uniqueness tests**: 100,000 IDs with no collisions
+3. **Parallel generation tests**: Concurrent ID generation
+4. **High-throughput stress tests**: 50,000 rapid generations
+5. **Validation tests**: Valid inputs, invalid inputs, non-string types
+6. **Type guard tests**: TypeScript type narrowing
+7. **Custom alphabet tests**: Various alphabets and sizes
+8. **Edge cases**: Size=0, size=1, max size, boundary conditions
+9. **Error cases**: Invalid size, invalid alphabet, insufficient random bytes
+10. **Deterministic tests**: Using custom `random` option
+
+## References
+
+- [Nanoid GitHub](https://github.com/ai/nanoid)
+- [Nano ID Collision Calculator](https://zelark.github.io/nano-id-cc/)
+- [Cloudflare Workers Web Crypto](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/)
+- [Modulo Bias Explanation](https://research.kudelskisecurity.com/2020/07/28/the-definitive-guide-to-modulo-bias-and-how-to-avoid-it/)

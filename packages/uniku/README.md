@@ -24,6 +24,7 @@ Minimal, tree-shakeable UUID and ULID utilities for every JavaScript runtime.
 - UUID v7 ([RFC 9562](../../rfcs/rfc9562.txt), time-ordered, monotonic sequencing)
 - ULID ([spec](../../rfcs/ulid.txt), time-ordered, monotonic sequencing)
 - CUID2 ([spec](../../rfcs/cuid2.txt), secure, non-time-ordered)
+- Nanoid ([spec](../../rfcs/nanoid.txt), URL-friendly, custom alphabet support)
 
 ## Installation
 
@@ -105,6 +106,27 @@ if (cuid2.isValid(maybeId)) {
 }
 ```
 
+### Nanoid (URL-friendly, custom alphabet)
+
+```ts
+import { nanoid } from 'uniku/nanoid'
+
+const id = nanoid()
+// => "V1StGXR8_Z5jdHi6B-myT"
+
+// Custom size
+const shortId = nanoid(10)
+// => "IRFa-VaY2b"
+
+// Custom alphabet and size via options
+const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
+// => "4f90d13a42bc"
+
+// Validation (default alphabet only)
+nanoid.isValid(id)
+// => true
+```
+
 ## API Reference
 
 ### `uuidv4` (from `uniku/uuid/v4`)
@@ -165,6 +187,22 @@ cuid2.isValid(id: unknown): id is string
 - `random?: Uint8Array` - Custom random bytes for testing
 
 Note: Unlike UUID and ULID, CUID2 does not provide `toBytes`/`fromBytes` because it is a string-native format with no canonical binary representation.
+
+### `nanoid` (from `uniku/nanoid`)
+
+```ts
+nanoid(): string
+nanoid(size: number): string
+nanoid(options: NanoidOptions): string
+nanoid.isValid(id: unknown): id is string
+```
+
+**Options:**
+- `size?: number` - ID length (default 21, max 2048)
+- `alphabet?: string` - Custom alphabet (2-256 printable ASCII characters)
+- `random?: Uint8Array` - Custom random bytes for testing
+
+Note: `isValid()` only validates IDs against the default URL-safe alphabet (`A-Za-z0-9_-`). IDs generated with custom alphabets cannot be validated with this method.
 
 ## Documentation
 
