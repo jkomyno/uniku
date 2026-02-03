@@ -1,9 +1,9 @@
 import { bench, describe } from 'vitest'
-import { cuid2 } from '../../src/cuid2/cuid2'
-import { nanoid } from '../../src/nanoid/nanoid'
-import { ulid } from '../../src/ulid/ulid'
-import { uuidv4 } from '../../src/uuid/v4'
-import { uuidv7 } from '../../src/uuid/v7'
+import { cuid2 } from '@/src/cuid2/cuid2'
+import { nanoid } from '@/src/nanoid/nanoid'
+import { ulid } from '@/src/ulid/ulid'
+import { uuidv4 } from '@/src/uuid/v4'
+import { uuidv7 } from '@/src/uuid/v7'
 
 const benchOptions = {
   time: 1000,

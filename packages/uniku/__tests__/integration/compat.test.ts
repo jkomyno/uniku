@@ -1,10 +1,10 @@
 import { nanoid as npmNanoid } from 'nanoid'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
-import { nanoid } from '../../src/nanoid/nanoid'
-import { ulid } from '../../src/ulid/ulid'
-import { uuidv4 } from '../../src/uuid/v4'
-import { uuidv7 } from '../../src/uuid/v7'
+import { nanoid } from '@/src/nanoid/nanoid'
+import { ulid } from '@/src/ulid/ulid'
+import { uuidv4 } from '@/src/uuid/v4'
+import { uuidv7 } from '@/src/uuid/v7'
 
 const BATCH_SIZE = 100
 

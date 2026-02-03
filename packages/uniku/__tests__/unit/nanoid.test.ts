@@ -1,4 +1,4 @@
-import { nanoid, URL_ALPHABET } from '../../src/nanoid/nanoid'
+import { nanoid, URL_ALPHABET } from '@/src/nanoid/nanoid'
 
 describe('nanoid', () => {
   it('generates a 21-character string by default', () => {

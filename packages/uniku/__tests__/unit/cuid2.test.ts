@@ -1,4 +1,4 @@
-import { cuid2 } from '../../src/cuid2/cuid2'
+import { cuid2 } from '@/src/cuid2/cuid2'
 
 describe('cuid2', () => {
   it('generates a valid CUID2 string', () => {

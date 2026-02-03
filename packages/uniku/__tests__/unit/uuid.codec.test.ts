@@ -1,4 +1,4 @@
-import { formatUuid, parseUuid } from '../../src/uuid/common/uuid'
+import { formatUuid, parseUuid } from '@/src/uuid/common/uuid'
 
 describe('uuid codec', () => {
   it('parses a uuid', () => {
