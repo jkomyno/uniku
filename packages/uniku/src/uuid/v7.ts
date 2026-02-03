@@ -1,3 +1,4 @@
+import { writeTimestamp48 } from '../common/bytes'
 import { formatUuid, parseUuid } from './common/uuid'
 
 export type Version7Options = {
@@ -72,16 +73,13 @@ function v7Bytes(
   }
 
   msecs ??= Date.now()
-  // Derive a 30-bit sequence if not provided by the caller.
-  seq ??= ((rnds[6] * 0x7f) << 24) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
+  // Derive a 31-bit sequence if not provided by the caller.
+  // Uses same formula as hot path (line 130) for consistency.
+  seq ??= (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
 
   // Timestamp (48-bit big-endian milliseconds since Unix epoch).
-  buf[offset++] = (msecs / 0x10000000000) & 0xff
-  buf[offset++] = (msecs / 0x100000000) & 0xff
-  buf[offset++] = (msecs / 0x1000000) & 0xff
-  buf[offset++] = (msecs / 0x10000) & 0xff
-  buf[offset++] = (msecs / 0x100) & 0xff
-  buf[offset++] = msecs & 0xff
+  writeTimestamp48(buf, offset, msecs)
+  offset += 6
 
   // Set version (7) and variant (10xx), then pack sequence and random tail bytes.
   buf[offset++] = 0x70 | ((seq >>> 28) & 0x0f)

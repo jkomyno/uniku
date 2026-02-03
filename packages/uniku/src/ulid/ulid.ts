@@ -1,3 +1,4 @@
+import { incrementBytes, writeTimestamp48 } from '../common/bytes'
 import { rng } from '../common/random'
 import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from './crockford'
 
@@ -45,22 +46,6 @@ const state: UlidState = {
   lastRandom: new Uint8Array(10),
 }
 
-/**
- * Increment a byte array by 1, propagating carry from LSB to MSB.
- * Returns a new array (does not modify input).
- */
-function incrementBytes(bytes: Uint8Array): Uint8Array {
-  const result = new Uint8Array(bytes)
-  for (let i = result.length - 1; i >= 0; i -= 1) {
-    if (result[i] < 255) {
-      result[i] += 1
-      return result
-    }
-    result[i] = 0
-  }
-  return result
-}
-
 function ulidBytes(time: number, random: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
   if (!buf) {
     buf = new Uint8Array(16)
@@ -70,12 +55,7 @@ function ulidBytes(time: number, random: Uint8Array, buf?: Uint8Array, offset = 
   }
 
   // Timestamp (48-bit big-endian milliseconds since Unix epoch) -> bytes 0-5
-  buf[offset] = (time / 0x10000000000) & 0xff
-  buf[offset + 1] = (time / 0x100000000) & 0xff
-  buf[offset + 2] = (time / 0x1000000) & 0xff
-  buf[offset + 3] = (time / 0x10000) & 0xff
-  buf[offset + 4] = (time / 0x100) & 0xff
-  buf[offset + 5] = time & 0xff
+  writeTimestamp48(buf, offset, time)
 
   // Random (80 bits) -> bytes 6-15
   for (let i = 0; i < 10; i += 1) {

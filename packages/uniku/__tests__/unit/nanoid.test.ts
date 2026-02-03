@@ -130,6 +130,50 @@ describe('nanoid', () => {
     })
   })
 
+  describe('non-power-of-2 alphabet (rejection sampling)', () => {
+    it('works with 26-char alphabet (letters only)', () => {
+      const ALPHA_ONLY = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      const id = nanoid({ alphabet: ALPHA_ONLY, size: 16 })
+      expect(id).toHaveLength(16)
+      expect(id).toMatch(/^[A-Z]+$/)
+    })
+
+    it('works with 10-char alphabet (digits only)', () => {
+      const DIGITS_ONLY = '0123456789'
+      const id = nanoid({ alphabet: DIGITS_ONLY, size: 20 })
+      expect(id).toHaveLength(20)
+      expect(id).toMatch(/^[0-9]+$/)
+    })
+
+    it('generates unique IDs with non-power-of-2 alphabet', () => {
+      const ALPHA_ONLY = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      const ids = new Set(Array.from({ length: 10_000 }, () => nanoid({ alphabet: ALPHA_ONLY, size: 20 })))
+      expect(ids.size).toBe(10_000)
+    })
+
+    it('has approximately uniform distribution for non-power-of-2 alphabet', () => {
+      // Verify no modulo bias: each character should appear roughly equally
+      const ALPHA = 'ABCDEFGHIJ' // 10 chars (not power of 2)
+      const counts: Record<string, number> = {}
+      for (const char of ALPHA) {
+        counts[char] = 0
+      }
+
+      // Generate many single-char IDs
+      for (let i = 0; i < 10_000; i += 1) {
+        const id = nanoid({ alphabet: ALPHA, size: 1 })
+        counts[id] += 1
+      }
+
+      // Each char should appear ~1000 times (10000 / 10)
+      // Allow 30% variance for statistical noise
+      for (const char of ALPHA) {
+        expect(counts[char]).toBeGreaterThan(700)
+        expect(counts[char]).toBeLessThan(1300)
+      }
+    })
+  })
+
   describe('power-of-2 alphabet fast path', () => {
     it('works with 16-char alphabet (hex)', () => {
       const HEX_ALPHABET = '0123456789abcdef'

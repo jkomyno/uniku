@@ -168,4 +168,37 @@ describe('ulid', () => {
       expect(ulid.timestamp(id)).toBe(maxTs)
     })
   })
+
+  describe('monotonic increment behavior', () => {
+    it('increments random portion within same millisecond', () => {
+      // Test that the internal incrementBytes function correctly handles
+      // monotonic ordering by verifying consecutive IDs are strictly increasing
+      const ms = 1_702_387_456_789
+      const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+
+      // Generate many IDs in the same millisecond
+      // The random portion should be incrementing each time
+      const ids: string[] = []
+      for (let i = 0; i < 100; i += 1) {
+        ids[i] = ulid()
+      }
+
+      nowSpy.mockRestore()
+
+      // Verify all IDs are strictly increasing (monotonic)
+      for (let i = 0; i < ids.length - 1; i += 1) {
+        expect(ids[i] < ids[i + 1]).toBe(true)
+      }
+
+      // Verify the timestamp portion is the same for all
+      const firstTimestamp = ids[0].slice(0, 10)
+      for (const id of ids) {
+        expect(id.slice(0, 10)).toBe(firstTimestamp)
+      }
+
+      // Verify the random portions are different (incremented)
+      const randomParts = new Set(ids.map((id) => id.slice(10)))
+      expect(randomParts.size).toBe(ids.length)
+    })
+  })
 })
