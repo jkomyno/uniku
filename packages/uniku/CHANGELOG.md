@@ -1,5 +1,11 @@
 # uniku
 
+## 0.0.6
+
+### Patch Changes
+
+- 1c776b2: Improved performance of nanoid, add bundle:packages script to view size impact
+
 ## 0.0.5
 
 ### Patch Changes
