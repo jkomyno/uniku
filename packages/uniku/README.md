@@ -24,17 +24,18 @@ console.log(first < second && second < third) // true
 
 ## At a Glance
 
-|                    | uniku | uuid | nanoid | ulid | cuid2 |
-|--------------------|:-----:|:----:|:------:|:----:|:-----:|
-| UUID v4            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |
-| UUID v7            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |
-| ULID               |   ✅  |  ❌  |   ❌   |  ✅  |   ❌  |
-| CUID2              |   ✅  |  ❌  |   ❌   |  ❌  |   ✅  |
-| Nanoid             |   ✅  |  ❌  |   ✅   |  ❌  |   ❌  |
-| Tree-shakeable     |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |
-| ESM-only           |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |
-| Edge/Workers       |   ✅  |  ⚠️  |   ✅   |  ⚠️  |   ✅  |
-| Byte ↔ String      |   ✅  |  ✅  |   -   |  ✅  |   -  |
+|                    | uniku | uuid | nanoid | ulid | cuid2 | ksuid |
+|--------------------|:-----:|:----:|:------:|:----:|:-----:|:-----:|
+| UUID v4            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
+| UUID v7            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
+| ULID               |   ✅  |  ❌  |   ❌   |  ✅  |   ❌  |   ❌  |
+| CUID2              |   ✅  |  ❌  |   ❌   |  ❌  |   ✅  |   ❌  |
+| Nanoid             |   ✅  |  ❌  |   ✅   |  ❌  |   ❌  |   ❌  |
+| KSUID              |   ✅  |  ❌  |   ❌   |  ❌  |   ❌  |   ✅  |
+| Tree-shakeable     |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |   ✅  |
+| ESM-only           |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |   ✅  |
+| Edge/Workers       |   ✅  |  ⚠️  |   ✅   |  ⚠️  |   ✅  |   ✅  |
+| Byte ↔ String      |   ✅  |  ✅  |   -   |  ✅   |   -  |   ✅  |
 
 > **Note**: Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
 
@@ -60,6 +61,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | UUID v4   | **1.5× faster** |
 | Nanoid    | **1.1× faster** |
 | UUID v7   |   npm 1.6× faster* |
+| KSUID   |   npm 1.8× faster* |
 
 <sub>*UUID v7 tradeoff: uniku prioritizes strict monotonic sequencing for database use cases.</sub>
 
@@ -101,6 +103,7 @@ deno install npm:uniku
 | `uniku/ulid` | ~1.5 KB |
 | `uniku/cuid2` | ~1.1 KB* |
 | `uniku/nanoid` | ~967 B |
+| `uniku/ksuid` | ~1.1 KB |
 
 ## Quick Start
 
@@ -178,6 +181,22 @@ const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
 // => "4f90d13a42bc"
 ```
 
+### KSUID (time-ordered, high entropy)
+
+```ts
+import { ksuid } from 'uniku/ksuid'
+
+const id = ksuid()
+// => "2QnJjKLvpSfpZqGiPPxVwWLMy2p"
+
+// Convert to/from bytes
+const bytes = ksuid.toBytes(id)
+const str = ksuid.fromBytes(bytes)
+
+// Extract timestamp (milliseconds)
+const ts = ksuid.timestamp(id)
+```
+
 ## Migrating to uniku
 
 ### From `uuid`
@@ -206,6 +225,20 @@ const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
 ```diff
 - import { createId } from '@paralleldrive/cuid2'
 + import { cuid2 } from 'uniku/cuid2'
+```
+
+### From `@owpz/ksuid`
+
+```diff
+- import { KSUID } from '@owpz/ksuid'
++ import { ksuid } from 'uniku/ksuid'
+
+- const id = KSUID.random().toString()
++ const id = ksuid()
+
+- const parsed = KSUID.parse(str)
+- const timestamp = parsed.timestamp
++ const timestamp = ksuid.timestamp(str)
 ```
 
 ## API Reference
@@ -257,9 +290,41 @@ nanoid(options: NanoidOptions): string
 nanoid.isValid(id: unknown): id is string
 ```
 
+### `ksuid` (from `uniku/ksuid`)
+
+```ts
+ksuid(options?: KsuidOptions): string
+ksuid(options: KsuidOptions | undefined, buf: Uint8Array, offset?: number): Uint8Array
+ksuid.toBytes(id: string): Uint8Array
+ksuid.fromBytes(bytes: Uint8Array): string
+ksuid.timestamp(id: string): number
+ksuid.isValid(id: string): boolean
+```
+
 ## Documentation
 
 For advanced usage, examples, and contributing guidelines, see the [full documentation on GitHub](https://github.com/jkomyno/uniku).
+
+## Related Projects
+
+Third-party libraries that inspired this project:
+
+- [uuid](https://github.com/uuidjs/uuid): the most popular UUID library for JavaScript
+- [ulid](https://github.com/ulid/javascript): the reference ULID implementation for JavaScript
+- [@paralleldrive/cuid2](https://github.com/paralleldrive/cuid2): secure, collision-resistant IDs
+- [@owpz/ksuid](https://github.com/owpz/ksuid): K-Sortable Unique Identifier
+- [nanoid](https://github.com/ai/nanoid): tiny, URL-friendly unique string ID generator
+
+Other:
+
+- [pnpm-monorepo-template](https://github.com/jkomyno/pnpm-monorepo-template): the template I used to create this library
+
+## Author
+
+Hi, I'm Alberto Schiabel, aka @jkomyno. You can follow me on:
+
+- Github: [@jkomyno](https://github.com/jkomyno)
+- X: [@jkomyno](https://x.com/jkomyno)
 
 ## License
 

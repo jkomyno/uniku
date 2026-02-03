@@ -1,5 +1,6 @@
 import { bench, describe } from 'vitest'
 import { cuid2 } from '@/src/cuid2/cuid2'
+import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
@@ -69,6 +70,14 @@ describe('ID Generation', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'ksuid',
+    () => {
+      ksuid()
+    },
+    benchOptions,
+  )
 })
 
 // === toBytes Benchmarks ===
@@ -77,6 +86,7 @@ describe('ID toBytes', () => {
   const v4String = uuidv4()
   const v7String = uuidv7()
   const ulidString = ulid()
+  const ksuidString = ksuid()
 
   bench(
     'uuidv4.toBytes',
@@ -101,6 +111,14 @@ describe('ID toBytes', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'ksuid.toBytes',
+    () => {
+      ksuid.toBytes(ksuidString)
+    },
+    benchOptions,
+  )
 })
 
 // === fromBytes Benchmarks ===
@@ -109,6 +127,7 @@ describe('ID fromBytes', () => {
   const v4Bytes = uuidv4.toBytes(uuidv4())
   const v7Bytes = uuidv7.toBytes(uuidv7())
   const ulidBytes = ulid.toBytes(ulid())
+  const ksuidBytes = ksuid.toBytes(ksuid())
 
   bench(
     'uuidv4.fromBytes',
@@ -133,6 +152,14 @@ describe('ID fromBytes', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'ksuid.fromBytes',
+    () => {
+      ksuid.fromBytes(ksuidBytes)
+    },
+    benchOptions,
+  )
 })
 
 // === isValid Benchmarks ===
@@ -142,6 +169,7 @@ describe('ID isValid', () => {
   const v7String = uuidv7()
   const ulidString = ulid()
   const cuid2String = cuid2()
+  const ksuidString = ksuid()
 
   bench(
     'uuidv4.isValid',
@@ -180,6 +208,14 @@ describe('ID isValid', () => {
     'nanoid.isValid',
     () => {
       nanoid.isValid(nanoidString)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'ksuid.isValid',
+    () => {
+      ksuid.isValid(ksuidString)
     },
     benchOptions,
   )

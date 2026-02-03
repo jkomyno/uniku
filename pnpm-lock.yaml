@@ -78,6 +78,9 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1
     devDependencies:
+      '@owpz/ksuid':
+        specifier: ^25.7.20
+        version: 25.7.20
       '@paralleldrive/cuid2':
         specifier: ^3.3.0
         version: 3.3.0
@@ -869,6 +872,11 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
+  '@owpz/ksuid@25.7.20':
+    resolution: {integrity: sha512-cTe0yLCXtKvVl7wE3E3r+oisL2vhrMy+OZaVN53gsPGc4oY7eyyobBb/MO7UUkYAbPjt+9n20eS/zudelQlVHA==}
+    engines: {node: '>=16.0.0'}
+    hasBin: true
+
   '@oxc-project/types@0.103.0':
     resolution: {integrity: sha512-bkiYX5kaXWwUessFRSoXFkGIQTmc6dLGdxuRTrC+h8PSnIdZyuXHHlLAeTmOue5Br/a0/a7dHH0Gca6eXn9MKg==}
 
@@ -1345,6 +1353,9 @@ packages:
   ast-kit@2.2.0:
     resolution: {integrity: sha512-m1Q/RaVOnTp9JxPX+F+Zn7IcLYMzM8kZofDImfsKZd8MbR+ikdOzTeztStWqfrqIxZnYWryyI9ePm3NGjnZgGw==}
     engines: {node: '>=20.19.0'}
+
+  base-x@5.0.1:
+    resolution: {integrity: sha512-M7uio8Zt++eg3jPj+rHMfCC+IuygQHHCOU+IYsVtik6FWjuYpVt/+MRKcgsAMHh8mMFAwnB+Bs+mTrFiXjMzKg==}
 
   better-path-resolve@1.0.0:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
@@ -3051,6 +3062,10 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
+  '@owpz/ksuid@25.7.20':
+    dependencies:
+      base-x: 5.0.1
+
   '@oxc-project/types@0.103.0': {}
 
   '@oxc-project/types@0.110.0': {}
@@ -3390,6 +3405,8 @@ snapshots:
     dependencies:
       '@babel/parser': 7.28.6
       pathe: 2.0.3
+
+  base-x@5.0.1: {}
 
   better-path-resolve@1.0.0:
     dependencies:
