@@ -109,11 +109,11 @@ Only import what you use — each entry point is independently tree-shakeable:
 
 | Import | Minified + gzipped |
 |--------|-------------------:|
-| `uniku/uuid/v4` | ~450 B |
-| `uniku/uuid/v7` | ~800 B |
-| `uniku/ulid` | ~1.2 KB |
-| `uniku/nanoid` | ~600 B |
-| `uniku/cuid2` | ~2.1 KB |
+| `uniku/uuid/v4` | ~930 B |
+| `uniku/uuid/v7` | ~1.1 KB |
+| `uniku/ulid` | ~1.5 KB |
+| `uniku/cuid2` | ~1.1 KB* |
+| `uniku/nanoid` | ~967 B |
 
 ### Preview Releases
 
