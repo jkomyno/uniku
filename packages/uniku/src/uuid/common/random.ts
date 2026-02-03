@@ -1,6 +1,16 @@
+import { createPool, fillRandomBytes, getRandomBytes, type RandomPool } from '../../common/random-pool'
+
+// UUID's own pool - lazily initialized on first use
+// Shared by uuid/v4, uuid/v7, and ulid (all need 16 bytes)
+let pool: RandomPool | undefined
+
+function ensurePool(): RandomPool {
+  if (!pool) pool = createPool(16)
+  return pool
+}
+
 export function randomBytes(out: Uint8Array): void {
-  const crypto = globalThis.crypto
-  crypto.getRandomValues(out)
+  fillRandomBytes(ensurePool(), out)
 }
 
 /**
@@ -8,7 +18,5 @@ export function randomBytes(out: Uint8Array): void {
  * Used internally by UUID generators.
  */
 export function rng(): Uint8Array {
-  const bytes = new Uint8Array(16)
-  randomBytes(bytes)
-  return bytes
+  return getRandomBytes(ensurePool(), 16)
 }

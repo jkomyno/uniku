@@ -109,6 +109,7 @@
     "@noble/hashes": "^2.0.1"
   },
   "devDependencies": {
+    "@paralleldrive/cuid2": "^3.3.0",
     "nanoid": "5.0.9",
     "ulid": "2.3.0",
     "uuid": "11.0.5"

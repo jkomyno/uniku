@@ -1,4 +1,5 @@
 import { sha3_512 } from '@noble/hashes/sha3.js'
+import { createPool, getPooledBytes, getRandomBytes, type RandomPool } from '../common/random-pool'
 
 export type Cuid2Options = {
   /**
@@ -38,10 +39,14 @@ const LETTER_ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 // Reusable TextEncoder instance (stateless, safe to share)
 const textEncoder = new TextEncoder()
 
-// Pre-allocated buffer for batched random byte generation (64 random numbers per batch)
-const RANDOM_BUFFER_SIZE = 256
-const randomBuffer = new Uint8Array(RANDOM_BUFFER_SIZE)
-let randomBufferOffset = RANDOM_BUFFER_SIZE // Force initial fill
+// CUID2's own pool - lazily initialized on first use
+// Uses 4 bytes per random() call
+let pool: RandomPool | undefined
+
+function ensurePool(): RandomPool {
+  if (!pool) pool = createPool(4)
+  return pool
+}
 
 /**
  * Module-level state for counter and fingerprint.
@@ -57,8 +62,7 @@ const state: { counter: number | undefined; fingerprint: string | undefined } = 
  * Initialize counter using crypto for consistency with other entropy sources.
  */
 function initializeCounter(): number {
-  const buffer = new Uint8Array(4)
-  globalThis.crypto.getRandomValues(buffer)
+  const buffer = getRandomBytes(ensurePool(), 4)
   return (((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]) >>> 0) % (INITIAL_COUNT_MAX + 1)
 }
 
@@ -116,21 +120,16 @@ function createFingerprint(): string {
 // --- Random function factory ---
 
 /**
- * Get a random number in [0, 1) using batched CSPRNG.
- * Uses a pre-allocated buffer to reduce crypto.getRandomValues calls.
+ * Get a random number in [0, 1) using CUID2's own random pool.
+ * Thread-safe when SharedArrayBuffer is available.
  */
 function getCryptoRandom(): number {
-  if (randomBufferOffset >= RANDOM_BUFFER_SIZE) {
-    globalThis.crypto.getRandomValues(randomBuffer)
-    randomBufferOffset = 0
-  }
+  const p = ensurePool()
+  const offset = getPooledBytes(p, 4)
+  const bytes = p.bytes
   const value =
-    (randomBuffer[randomBufferOffset] * 0x1000000 +
-      randomBuffer[randomBufferOffset + 1] * 0x10000 +
-      randomBuffer[randomBufferOffset + 2] * 0x100 +
-      randomBuffer[randomBufferOffset + 3]) /
+    (bytes[offset] * 0x1000000 + bytes[offset + 1] * 0x10000 + bytes[offset + 2] * 0x100 + bytes[offset + 3]) /
     0x100000000
-  randomBufferOffset += 4
   return value
 }
 
