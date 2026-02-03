@@ -1,5 +1,12 @@
 # @uniku/e2e-cloudflare
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [9b41ea7]
+  - uniku@0.0.7
+
 ## 0.0.2
 
 ### Patch Changes
