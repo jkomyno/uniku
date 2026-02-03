@@ -1,4 +1,8 @@
-// Crockford's Base32 alphabet (excludes I, L, O, U to avoid confusion)
+/**
+ * Crockford's Base32 encoding/decoding for ULID.
+ * Alphabet excludes I, L, O, U to avoid confusion with similar-looking characters.
+ */
+
 const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 
 // Pre-computed decoding table indexed by ASCII code (0-127)

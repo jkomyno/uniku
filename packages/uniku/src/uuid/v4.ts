@@ -1,4 +1,4 @@
-import { rng } from './common/random'
+import { rng } from '../common/random'
 import { formatUuid, parseUuid } from './common/uuid'
 
 export type Version4Options = {
@@ -78,7 +78,25 @@ function isValid(id: string): boolean {
 
 /**
  * Generate a UUID v4 string or write the bytes into a buffer.
- * It also includes helpers to convert to and from byte arrays.
+ *
+ * UUID v4 is a purely random UUID with 122 bits of entropy. It's the most
+ * widely compatible UUID format, supported by virtually all databases and systems.
+ * Use when you need maximum compatibility and don't require time-ordering.
+ *
+ * @example
+ * ```ts
+ * import { uuidv4 } from 'uniku/uuid/v4'
+ *
+ * const id = uuidv4()
+ * // => "550e8400-e29b-41d4-a716-446655440000"
+ *
+ * // Validate
+ * uuidv4.isValid(id) // true
+ *
+ * // Convert to/from bytes (16 bytes)
+ * const bytes = uuidv4.toBytes(id)
+ * const restored = uuidv4.fromBytes(bytes)
+ * ```
  */
 export const uuidv4: UuidV4 = Object.assign(v4, {
   toBytes: parseUuid,

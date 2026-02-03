@@ -1,5 +1,5 @@
-import { rng } from '../uuid/common/random'
-import { decodeBase62, encodeBase62 } from './common/base62'
+import { rng } from '../common/random'
+import { decodeBase62, encodeBase62 } from './base62'
 
 /**
  * KSUID (K-Sortable Unique Identifier)

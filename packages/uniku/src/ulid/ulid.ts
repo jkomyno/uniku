@@ -1,5 +1,5 @@
-import { rng } from '../uuid/common/random'
-import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from './common/crockford'
+import { rng } from '../common/random'
+import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from './crockford'
 
 export type UlidOptions = {
   /**
@@ -141,7 +141,30 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
 
 /**
  * Generate a ULID string or write the bytes into a buffer.
- * It also includes helpers to convert to and from byte arrays.
+ *
+ * ULID (Universally Unique Lexicographically Sortable Identifier) is a 128-bit
+ * identifier with millisecond timestamp precision and 80 bits of randomness.
+ * ULIDs are URL-safe, use Crockford's Base32 encoding, and sort lexicographically
+ * by creation time.
+ *
+ * @example
+ * ```ts
+ * import { ulid } from 'uniku/ulid'
+ *
+ * const id = ulid()
+ * // => "01HW9T2W9W9YJ3JZ1H4P4M2T8Q"
+ *
+ * // Extract timestamp
+ * const ts = ulid.timestamp(id)
+ * console.log(new Date(ts))
+ *
+ * // Validate
+ * ulid.isValid(id) // true
+ *
+ * // Convert to/from bytes (16 bytes)
+ * const bytes = ulid.toBytes(id)
+ * const restored = ulid.fromBytes(bytes)
+ * ```
  */
 export const ulid: Ulid = Object.assign(ulidFn, {
   toBytes: (id: string) => decodeToBytes(id),

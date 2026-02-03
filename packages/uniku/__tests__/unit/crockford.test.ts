@@ -1,4 +1,4 @@
-import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from '@/src/ulid/common/crockford'
+import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from '@/src/ulid/crockford'
 
 describe('crockford encoding', () => {
   describe('encodeTime', () => {

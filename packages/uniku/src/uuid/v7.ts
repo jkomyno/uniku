@@ -157,7 +157,29 @@ function isValid(id: string): boolean {
 
 /**
  * Generate a UUID v7 string or write the bytes into a buffer.
- * It also includes helpers to convert to and from byte arrays.j
+ *
+ * UUID v7 is a time-ordered UUID that embeds a Unix timestamp in milliseconds,
+ * making IDs naturally sortable by creation time. Ideal for database primary keys
+ * where chronological ordering improves index performance.
+ *
+ * @example
+ * ```ts
+ * import { uuidv7 } from 'uniku/uuid/v7'
+ *
+ * const id = uuidv7()
+ * // => "018e5e5c-7c8a-7000-8000-000000000000"
+ *
+ * // Extract timestamp
+ * const ts = uuidv7.timestamp(id)
+ * console.log(new Date(ts))
+ *
+ * // Validate
+ * uuidv7.isValid(id) // true
+ *
+ * // Convert to/from bytes
+ * const bytes = uuidv7.toBytes(id)
+ * const restored = uuidv7.fromBytes(bytes)
+ * ```
  */
 export const uuidv7: UuidV7 = Object.assign(v7, {
   toBytes: parseUuid,
