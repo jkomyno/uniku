@@ -5,6 +5,7 @@
  */
 import { Hono } from 'hono'
 import { cuid2 } from 'uniku/cuid2'
+import { ksuid } from 'uniku/ksuid'
 import { nanoid, URL_ALPHABET } from 'uniku/nanoid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -18,7 +19,7 @@ const app = new Hono()
 app.get('/', (c) => {
   return c.json({
     message: 'uniku E2E Test Worker',
-    generators: ['uuid-v4', 'uuid-v7', 'ulid', 'cuid2', 'nanoid'],
+    generators: ['uuid-v4', 'uuid-v7', 'ulid', 'ksuid', 'cuid2', 'nanoid'],
   })
 })
 
@@ -244,6 +245,100 @@ app.get('/ulid/validate', (c) => {
 app.get('/ulid/monotonic', (c) => {
   try {
     const ids = Array.from({ length: 100 }, () => ulid())
+    const sorted = [...ids].sort()
+    const isMonotonic = ids.every((id, i) => id === sorted[i])
+    return c.json({
+      success: true,
+      count: ids.length,
+      isMonotonic,
+      first: ids[0],
+      last: ids[ids.length - 1],
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================================================
+// KSUID Endpoints
+// ============================================================================
+
+app.get('/ksuid/generate', (c) => {
+  try {
+    const id = ksuid()
+    return c.json({ success: true, id })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/ksuid/generate-batch', (c) => {
+  try {
+    const count = Number(c.req.query('count') || '1000')
+    const ids = Array.from({ length: count }, () => ksuid())
+    return c.json({ success: true, ids, count: ids.length })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/ksuid/to-bytes', (c) => {
+  try {
+    const id = ksuid()
+    const bytes = ksuid.toBytes(id)
+    const restored = ksuid.fromBytes(bytes)
+    return c.json({
+      success: true,
+      original: id,
+      bytes: Array.from(bytes),
+      restored,
+      roundTripMatch: id === restored,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/ksuid/timestamp', (c) => {
+  try {
+    const before = Date.now()
+    const id = ksuid()
+    const after = Date.now()
+    const timestamp = ksuid.timestamp(id)
+    // KSUID has second precision, so timestamp should be within 1 second of generation time
+    const beforeSec = Math.floor(before / 1000) * 1000
+    const afterSec = Math.ceil(after / 1000) * 1000
+    return c.json({
+      success: true,
+      id,
+      timestamp,
+      before,
+      after,
+      withinRange: timestamp >= beforeSec && timestamp <= afterSec,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/ksuid/validate', (c) => {
+  try {
+    const validId = ksuid()
+    return c.json({
+      success: true,
+      validId,
+      isValidGenerated: ksuid.isValid(validId),
+      isValidKnownGood: ksuid.isValid('0ujsswThIGTUYm2K8FjOOfXtY1K'),
+      isValidInvalid: ksuid.isValid('not-a-ksuid'),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/ksuid/monotonic', (c) => {
+  try {
+    const ids = Array.from({ length: 100 }, () => ksuid())
     const sorted = [...ids].sort()
     const isMonotonic = ids.every((id, i) => id === sorted[i])
     return c.json({

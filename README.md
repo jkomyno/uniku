@@ -24,17 +24,18 @@ console.log(first < second && second < third) // true
 
 ## At a Glance
 
-|                    | uniku | uuid | nanoid | ulid | cuid2 |
-|--------------------|:-----:|:----:|:------:|:----:|:-----:|
-| UUID v4            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |
-| UUID v7            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |
-| ULID               |   ✅  |  ❌  |   ❌   |  ✅  |   ❌  |
-| CUID2              |   ✅  |  ❌  |   ❌   |  ❌  |   ✅  |
-| Nanoid             |   ✅  |  ❌  |   ✅   |  ❌  |   ❌  |
-| Tree-shakeable     |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |
-| ESM-only           |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |
-| Edge/Workers       |   ✅  |  ⚠️  |   ✅   |  ⚠️  |   ✅  |
-| Byte ↔ String      |   ✅  |  ✅  |   -   |  ✅  |   -  |
+|                    | uniku | uuid | nanoid | ulid | cuid2 | ksuid |
+|--------------------|:-----:|:----:|:------:|:----:|:-----:|:-----:|
+| UUID v4            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
+| UUID v7            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
+| ULID               |   ✅  |  ❌  |   ❌   |  ✅  |   ❌  |   ❌  |
+| CUID2              |   ✅  |  ❌  |   ❌   |  ❌  |   ✅  |   ❌  |
+| Nanoid             |   ✅  |  ❌  |   ✅   |  ❌  |   ❌  |   ❌  |
+| KSUID              |   ✅  |  ❌  |   ❌   |  ❌  |   ❌  |   ✅  |
+| Tree-shakeable     |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |   ✅  |
+| ESM-only           |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |   ✅  |
+| Edge/Workers       |   ✅  |  ⚠️  |   ✅   |  ⚠️  |   ✅  |   ✅  |
+| Byte ↔ String      |   ✅  |  ✅  |   -   |  ✅   |   -  |   ✅  |
 
 > **Note**: Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
 
@@ -71,6 +72,7 @@ Benchmarks comparing `uniku` vs the equivalent packages available on npm:
 | UUID v4   | **1.5× faster** |
 | Nanoid    | **1.1× faster** |
 | UUID v7   |   npm 1.6× faster* |
+| KSUID   |   npm 1.8× faster* |
 
 <sub>*UUID v7 tradeoff: uniku prioritizes strict monotonic sequencing for database use cases, which adds overhead. Run `pnpm bench` to reproduce.</sub>
 
@@ -114,6 +116,7 @@ Only import what you use — each entry point is independently tree-shakeable:
 | `uniku/ulid` | ~1.5 KB |
 | `uniku/cuid2` | ~1.1 KB* |
 | `uniku/nanoid` | ~967 B |
+| `uniku/ksuid` | ~1.1 KB |
 
 ### Preview Releases
 
@@ -257,6 +260,32 @@ nanoid.isValid(id)
 // => true
 ```
 
+### KSUID (time-ordered, high entropy)
+
+KSUID is a 27-character, K-Sortable Unique Identifier with second-precision timestamps:
+
+```ts
+import { ksuid } from 'uniku/ksuid'
+
+// Generate a KSUID string
+const id = ksuid()
+// => "2QnJjKLvpSfpZqGiPPxVwWLMy2p"
+
+// Convert to bytes
+const bytes = ksuid.toBytes(id)
+
+// Convert back to string
+const str = ksuid.fromBytes(bytes)
+
+// Extract timestamp (returns milliseconds for API consistency)
+const ts = ksuid.timestamp(id)
+// => 1702387456000
+
+// Validate
+ksuid.isValid(id)
+// => true
+```
+
 ## Migrating to uniku
 
 ### From `uuid`
@@ -296,6 +325,32 @@ API is identical — drop-in replacement.
 - const id = createId()
 + const id = cuid2()
 ```
+
+### From `@owpz/ksuid`
+
+```diff
+- import { KSUID } from '@owpz/ksuid'
++ import { ksuid } from 'uniku/ksuid'
+
+- const id = KSUID.random().toString()
++ const id = ksuid()
+
+- const bytes = KSUID.random().toBuffer()
++ const bytes = ksuid(undefined, new Uint8Array(20))
+
+- const parsed = KSUID.parse(str)
+- const timestamp = parsed.timestamp
++ const timestamp = ksuid.timestamp(str)
+
+- const fromBuf = KSUID.fromBytes(buffer).toString()
++ const fromStr = ksuid.fromBytes(bytes)
+```
+
+**Key differences:**
+- uniku uses a functional API (`ksuid()`) vs class-based API (`KSUID.random()`)
+- uniku returns `Uint8Array` instead of Node.js `Buffer`
+- uniku's `timestamp()` returns milliseconds (for API consistency with ulid/uuidv7)
+- uniku doesn't include `Sequence`, `CompressedSet`, or sorting utilities
 
 ## API
 
@@ -374,13 +429,30 @@ nanoid.isValid(id: unknown): id is string
 
 Note: `isValid()` only validates IDs against the default URL-safe alphabet (`A-Za-z0-9_-`). IDs generated with custom alphabets cannot be validated with this method.
 
+### `ksuid` (from `uniku/ksuid`)
+
+```ts
+ksuid(options?: KsuidOptions): string
+ksuid(options: KsuidOptions | undefined, buf: Uint8Array, offset?: number): Uint8Array
+
+ksuid.toBytes(id: string): Uint8Array
+ksuid.fromBytes(bytes: Uint8Array): string
+ksuid.timestamp(id: string): number
+ksuid.isValid(id: string): boolean
+```
+
+**Options:**
+- `secs?: number` — Timestamp in seconds since Unix epoch (defaults to `Math.floor(Date.now() / 1000)`)
+- `random?: Uint8Array` — 16 bytes of random data for the payload
+
 ## Related Projects
 
 Third-party libraries that inspired this project:
 
 - [uuid](https://github.com/uuidjs/uuid): the most popular UUID library for JavaScript
 - [ulid](https://github.com/ulid/javascript): the reference ULID implementation for JavaScript
-- [cuid2](https://github.com/paralleldrive/cuid2): secure, collision-resistant IDs
+- [@paralleldrive/cuid2](https://github.com/paralleldrive/cuid2): secure, collision-resistant IDs
+- [@owpz/ksuid](https://github.com/owpz/ksuid): K-Sortable Unique Identifier
 - [nanoid](https://github.com/ai/nanoid): tiny, URL-friendly unique string ID generator
 
 Other:

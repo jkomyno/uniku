@@ -35,6 +35,7 @@ const ENTRYPOINTS = [
   { name: 'uniku/ulid', path: 'ulid/ulid.mjs' },
   { name: 'uniku/cuid2', path: 'cuid2/cuid2.mjs' },
   { name: 'uniku/nanoid', path: 'nanoid/nanoid.mjs' },
+  { name: 'uniku/ksuid', path: 'ksuid/ksuid.mjs' },
 ] as const
 
 type BundleSize = {

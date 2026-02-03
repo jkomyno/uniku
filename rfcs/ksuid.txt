@@ -1,0 +1,305 @@
+1. Abstract
+-----------
+
+This RFC is a summary description of KSUID (K-Sortable Unique Identifier),
+following Segment's reference specification. KSUID is a 160-bit globally unique
+identifier that naturally sorts by generation timestamp.
+
+2. Motivation
+-------------
+
+KSUID fills a gap in the uniku identifier ecosystem:
+
+- 128-bit entropy payload (vs ULID's 80-bit, UUIDv4's 122-bit)
+- Time-sortable with second precision
+- URL-safe 27-character Base62 encoding (no hyphens)
+- Over 100 years of useful life from custom epoch
+- Battle-tested at Segment with trillions of IDs in production
+
+Use cases where KSUID excels:
+- Distributed systems requiring extremely low collision probability
+- Database primary keys where time-ordering is valuable
+- API identifiers that need to be URL-safe without encoding
+- Systems where second-level precision is sufficient
+
+3. Specification
+----------------
+
+3.1 Binary Format
+
++------------------+----------------------------------+
+|   Timestamp (4B) |          Payload (16B)           |
++------------------+----------------------------------+
+|    Big-endian    |   Cryptographic random bytes     |
+|     uint32       |           128-bit                |
++------------------+----------------------------------+
+
+Total: 20 bytes (160 bits)
+
+3.2 Timestamp Component
+
+- Size: 4 bytes (32-bit unsigned integer)
+- Encoding: Big-endian
+- Epoch: May 13, 2014 00:00:00 UTC (Unix timestamp 1400000000)
+- Resolution: 1 second
+- Lifespan: ~136 years from epoch (until ~2150)
+
+To compute timestamp value:
+  timestamp_value = floor(unix_timestamp_ms / 1000) - 1400000000
+
+3.3 Payload Component
+
+- Size: 16 bytes (128 bits)
+- Source: Cryptographically secure random number generator
+- Purpose: Ensures uniqueness within same second
+
+3.4 String Encoding
+
+Alphabet (Base62, 62 characters):
+  0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+
+Character positions:
+  - '0'-'9' = values 0-9
+  - 'A'-'Z' = values 10-35
+  - 'a'-'z' = values 36-61
+
+Output: Always exactly 27 characters, left-padded with '0' if necessary
+
+3.5 KSUID Bounds
+
+Minimum KSUID (all zeros):
+  Binary: 0x00000000 0000000000000000 00000000
+  String: 000000000000000000000000000
+
+Maximum KSUID (all ones):
+  Binary: 0xFFFFFFFF FFFFFFFFFFFFFFFF FFFFFFFF
+  String: aWgEPTl1tmebfsQzFP4bxwgy80V
+
+4. API Design
+-------------
+
+Following established uniku patterns (function with attached methods):
+
+4.1 Type Definition
+
+  type KsuidOptions = {
+    random?: Uint8Array  // 16 bytes for payload
+    secs?: number        // Unix timestamp in seconds
+  }
+
+  type Ksuid = {
+    (): string
+    <TBuf extends Uint8Array>(
+      options: KsuidOptions | undefined,
+      buf: TBuf,
+      offset?: number
+    ): TBuf
+    (options?: KsuidOptions, buf?: undefined, offset?: number): string
+    toBytes(id: string): Uint8Array
+    fromBytes(bytes: Uint8Array): string
+    timestamp(id: string): number
+    isValid(id: string): boolean
+  }
+
+4.2 Function Signatures
+
+  ksuid() -> string
+    Generate a new KSUID with current timestamp and random payload.
+    Maintains monotonic ordering within the same second.
+
+  ksuid(options) -> string
+    Generate KSUID with optional custom timestamp (secs) and/or payload (random).
+    Bypasses monotonic state when options provided.
+
+  ksuid(options, buf, offset) -> buf
+    Write 20-byte KSUID to provided buffer at offset.
+    Throws RangeError if buffer too small.
+
+  ksuid.toBytes(id) -> Uint8Array
+    Convert 27-character Base62 string to 20-byte Uint8Array.
+    Case-insensitive (accepts uppercase, lowercase, or mixed).
+    Throws Error on invalid input.
+
+  ksuid.fromBytes(bytes) -> Uint8Array
+    Convert 20-byte Uint8Array to 27-character Base62 string.
+    Always produces consistent casing.
+
+  ksuid.timestamp(id) -> number
+    Extract Unix timestamp in MILLISECONDS from KSUID string.
+    Note: Returns milliseconds for API consistency with ulid/uuidv7,
+    though KSUID only has second precision.
+
+  ksuid.isValid(id) -> boolean
+    Validate KSUID format. Case-insensitive.
+    Returns true if: string, length 27, matches /^[0-9A-Za-z]{27}$/
+
+5. Implementation Notes
+-----------------------
+
+5.1 Timestamp Handling
+
+KSUID uses native second precision:
+- Options accept `secs` (seconds since Unix epoch)
+- timestamp() returns milliseconds for API consistency with ulid/uuidv7
+
+This means:
+  const id = ksuid({ secs: 1702387456 })
+  ksuid.timestamp(id) === 1702387456000  // Returns milliseconds
+
+5.2 Monotonic Ordering
+
+Module-level state maintains monotonic ordering within same second:
+
+  type KsuidState = {
+    secs: number        // Last timestamp in seconds
+    payload: Uint8Array // Last 16-byte payload
+  }
+
+Algorithm:
+1. Get current time in seconds since KSUID epoch
+2. If same second as last call:
+   - Increment payload (as 128-bit big integer)
+   - Use incremented payload
+3. If new second:
+   - Generate fresh random 16-byte payload
+   - Update state with new second and payload
+4. If options provided, bypass state entirely (deterministic)
+
+5.3 Base62 Encoding
+
+The encoding algorithm converts 20 bytes to 27 characters:
+
+1. Treat 20-byte buffer as big integer
+2. Repeatedly divide by 62, collecting remainders
+3. Map remainders to alphabet characters
+4. Pad to 27 characters with leading '0's
+
+Decoding reverses this process.
+
+Optimization: Process 4-byte words at a time to reduce iterations.
+
+5.4 Case Handling
+
+- Generation: Always produces consistent case (matching @owpz/ksuid output)
+- Validation (isValid): Case-insensitive
+- Parsing (toBytes): Case-insensitive
+
+5.5 Error Handling
+
+Following existing uniku patterns:
+- Invalid buffer bounds: RangeError
+- Invalid string format: Error with descriptive message
+- Invalid byte array size: Error
+
+6. Comparison with Other Formats
+--------------------------------
+
+| Feature          | KSUID     | UUIDv4    | UUIDv7    | ULID     |
+|------------------|-----------|-----------|-----------|----------|
+| Size (bits)      | 160       | 128       | 128       | 128      |
+| String length    | 27        | 36        | 36        | 26       |
+| Time-sortable    | Yes       | No        | Yes       | Yes      |
+| Time resolution  | 1 second  | N/A       | 1 ms      | 1 ms     |
+| Random entropy   | 128 bits  | 122 bits  | 62 bits   | 80 bits  |
+| URL-safe         | Yes       | No        | No        | Yes      |
+| RFC Standard     | No        | Yes       | Yes       | No       |
+| Coordination     | No        | No        | No        | No       |
+
+When to choose KSUID:
+- Need highest collision resistance (128-bit entropy)
+- Second-level time precision is sufficient
+- URL-safe format without encoding required
+- No RFC compliance requirement
+
+7. Test Requirements
+--------------------
+
+7.1 Unit Tests (__tests__/unit/ksuid.test.ts)
+
+- Generation produces valid 27-char Base62 string
+- Uniqueness across 10K+ samples
+- Monotonic ordering within same second
+- Timestamp extraction accuracy (within 1 second)
+- Byte conversion round-trip
+- Buffer output mode
+- Custom options (msecs, random)
+- isValid positive and negative cases
+- Case insensitivity for isValid and toBytes
+
+7.2 Integration Tests (__tests__/integration/compat.test.ts)
+
+- Cross-validation with @owpz/ksuid
+- uniku KSUID parseable by @owpz/ksuid
+- @owpz/ksuid KSUID parseable by uniku
+- Timestamp extraction matches between implementations
+
+7.3 Benchmarks (__tests__/bench/compat.bench.ts)
+
+- Generation: uniku ksuid() vs KSUID.random()
+- Validation: uniku ksuid.isValid() vs KSUID.parseOrNil().isNil()
+
+8. Package Configuration
+------------------------
+
+8.1 Exports (package.json)
+
+  "./ksuid": {
+    "@jkomyno/source": "./src/ksuid/ksuid.ts",
+    "types": "./build/ksuid/ksuid.d.mts",
+    "import": "./build/ksuid/ksuid.mjs"
+  }
+
+8.2 Dependencies
+
+Runtime: None (pure TypeScript)
+Development: @owpz/ksuid (for testing/benchmarking)
+
+8.3 Keywords
+
+Add "ksuid" to package.json keywords array.
+
+9. File Structure
+-----------------
+
+packages/uniku/
+├── src/
+│   └── ksuid/
+│       ├── ksuid.ts           # Main implementation
+│       └── common/
+│           └── base62.ts      # Base62 encoding utilities
+├── __tests__/
+│   ├── unit/
+│   │   └── ksuid.test.ts      # Unit tests
+│   ├── integration/
+│   │   └── compat.test.ts     # Add KSUID cross-validation
+│   └── bench/
+│       ├── id.bench.ts        # Add KSUID internal benchmark
+│       └── compat.bench.ts    # Add @owpz/ksuid comparison
+
+10. Security Considerations
+---------------------------
+
+- Uses crypto.getRandomValues() for payload generation
+- 128-bit entropy provides ~10^38 possible values per second
+- Timestamp is not cryptographically protected (visible in output)
+- Not suitable as a cryptographic token or secret
+
+11. References
+--------------
+
+[1] Segment KSUID Specification
+    https://github.com/segmentio/ksuid
+
+[2] @owpz/ksuid npm Package
+    https://www.npmjs.com/package/@owpz/ksuid
+
+[3] A Brief History of the UUID (Segment Blog)
+    https://segment.com/blog/a-brief-history-of-the-uuid/
+
+[4] Base62 Encoding
+    https://en.wikipedia.org/wiki/Base62
+
+12. Changelog
+-------------
+
+2026-02-04: Initial draft
