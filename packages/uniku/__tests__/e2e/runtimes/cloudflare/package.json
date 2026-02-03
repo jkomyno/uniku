@@ -1,0 +1,21 @@
+{
+  "name": "@uniku/e2e-cloudflare",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2e": "vitest run",
+    "test:e2e:cloudflare": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "3.2.0",
+    "wrangler": "catalog:"
+  },
+  "dependencies": {
+    "hono": "catalog:",
+    "uniku": "workspace:*"
+  }
+}

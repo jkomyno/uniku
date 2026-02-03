@@ -21,6 +21,8 @@
     "test": "pnpm -r --if-present test",
     "test:unit": "pnpm -r --if-present test:unit",
     "test:integration": "pnpm -r --if-present test:integration",
+    "test:e2e": "turbo run test:e2e",
+    "test:e2e:cloudflare": "turbo run test:e2e:cloudflare",
     "typecheck": "turbo run typecheck",
     "changeset": "changeset",
     "version-packages": "changeset version && pnpm install",
@@ -41,8 +43,8 @@
     "tsdown": "^0.18.4",
     "tsx": "^4.21.0",
     "turbo": "^2.8.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "pre-commit": "lint-staged",
   "lint-staged": {
@@ -51,5 +53,18 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
-  "packageManager": "pnpm@10.28.2"
+  "packageManager": "pnpm@10.28.2",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ],
+    "// peerDependencyRules": "@cloudflare/vitest-pool-workers@0.12.9 only supports vitest 2.0.x-3.2.x, but we use vitest 4.x in the workspace root",
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@vitest/runner": "4",
+        "@vitest/snapshot": "4"
+      }
+    }
+  }
 }

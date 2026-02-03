@@ -18,6 +18,12 @@
     "bench:summary": {
       "dependsOn": ["bench:compat"]
     },
+    "test:e2e": {
+      "dependsOn": ["^build"]
+    },
+    "test:e2e:cloudflare": {
+      "dependsOn": ["^build"]
+    },
     "build:watch": {},
     "clean": {
       "cache": false,

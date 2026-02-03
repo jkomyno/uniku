@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.test.json",
   "include": ["src", "__tests__", "scripts"],
+  "exclude": ["__tests__/e2e"],
   "compilerOptions": {
     "outDir": "build",
     "emitDeclarationOnly": true,

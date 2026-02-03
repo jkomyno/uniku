@@ -1,2 +1,11 @@
 packages:
   - 'packages/*'
+  - 'packages/uniku/__tests__/e2e/runtimes/cloudflare'
+
+catalog:
+  typescript: ^5.9.3
+  vitest: ^4.0.18
+  wrangler: ^4.62.0
+  "@cloudflare/vitest-pool-workers": ^0.12.9
+  "@cloudflare/workers-types": ^4.20260203.0
+  hono: ^4.11.7
