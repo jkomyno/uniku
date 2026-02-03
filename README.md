@@ -357,11 +357,14 @@ API is identical — drop-in replacement.
 ### `uuidv4` (from `uniku/uuid/v4`)
 
 ```ts
-uuidv4(options?: Version4Options): string
-uuidv4(options: Version4Options | undefined, buf: Uint8Array, offset?: number): Uint8Array
+uuidv4(options?: UuidV4Options): string
+uuidv4(options: UuidV4Options | undefined, buf: Uint8Array, offset?: number): Uint8Array
 
 uuidv4.toBytes(id: string): Uint8Array
 uuidv4.fromBytes(bytes: Uint8Array): string
+uuidv4.isValid(id: unknown): id is string
+uuidv4.NIL  // "00000000-0000-0000-0000-000000000000"
+uuidv4.MAX  // "ffffffff-ffff-ffff-ffff-ffffffffffff"
 ```
 
 **Options:**
@@ -370,13 +373,15 @@ uuidv4.fromBytes(bytes: Uint8Array): string
 ### `uuidv7` (from `uniku/uuid/v7`)
 
 ```ts
-uuidv7(options?: Version7Options): string
-uuidv7(options: Version7Options | undefined, buf: Uint8Array, offset?: number): Uint8Array
+uuidv7(options?: UuidV7Options): string
+uuidv7(options: UuidV7Options | undefined, buf: Uint8Array, offset?: number): Uint8Array
 
 uuidv7.toBytes(id: string): Uint8Array
 uuidv7.fromBytes(bytes: Uint8Array): string
 uuidv7.timestamp(id: string): number
-uuidv7.isValid(id: string): boolean
+uuidv7.isValid(id: unknown): id is string
+uuidv7.NIL  // "00000000-0000-0000-0000-000000000000"
+uuidv7.MAX  // "ffffffff-ffff-ffff-ffff-ffffffffffff"
 ```
 
 **Options:**
@@ -393,7 +398,9 @@ ulid(options: UlidOptions | undefined, buf: Uint8Array, offset?: number): Uint8A
 ulid.toBytes(id: string): Uint8Array
 ulid.fromBytes(bytes: Uint8Array): string
 ulid.timestamp(id: string): number
-ulid.isValid(id: string): boolean
+ulid.isValid(id: unknown): id is string
+ulid.NIL  // "00000000000000000000000000"
+ulid.MAX  // "7ZZZZZZZZZZZZZZZZZZZZZZZZZ"
 ```
 
 **Options:**
@@ -420,6 +427,9 @@ nanoid(): string
 nanoid(size: number): string
 nanoid(options: NanoidOptions): string
 nanoid.isValid(id: unknown): id is string
+
+// Constant
+URL_ALPHABET  // "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
 ```
 
 **Options:**
@@ -438,12 +448,16 @@ ksuid(options: KsuidOptions | undefined, buf: Uint8Array, offset?: number): Uint
 ksuid.toBytes(id: string): Uint8Array
 ksuid.fromBytes(bytes: Uint8Array): string
 ksuid.timestamp(id: string): number
-ksuid.isValid(id: string): boolean
+ksuid.isValid(id: unknown): id is string
+ksuid.NIL  // "000000000000000000000000000"
+ksuid.MAX  // "aWgEPTl1tmebfsQzFP4bxwgy80V"
 ```
 
 **Options:**
 - `secs?: number` — Timestamp in seconds since Unix epoch (defaults to `Math.floor(Date.now() / 1000)`)
 - `random?: Uint8Array` — 16 bytes of random data for the payload
+
+> **Note:** KSUID uses `secs` (seconds) while UUID v7 and ULID use `msecs` (milliseconds). This reflects KSUID's native second-precision timestamps.
 
 ## Related Projects
 
