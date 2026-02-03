@@ -17,7 +17,7 @@ export const baseConfig = {
   dts: true,
   clean: true,
   sourcemap: true,
-  minify: false,
+  minify: true,
   target: 'ES2023',
 
   onSuccess() {

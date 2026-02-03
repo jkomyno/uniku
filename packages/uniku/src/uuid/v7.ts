@@ -1,4 +1,3 @@
-import { rng } from './common/random'
 import { formatUuid, parseUuid } from './common/uuid'
 
 export type Version7Options = {
@@ -23,13 +22,28 @@ export type UuidV7 = {
 
 const UUID_V7_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
+// Simple random pool (matches uuid npm approach)
+const POOL_SIZE = 256
+const rnds8Pool = new Uint8Array(POOL_SIZE)
+let poolPtr = POOL_SIZE // Start exhausted to trigger first fill
+
+function rng(): Uint8Array {
+  if (poolPtr > POOL_SIZE - 16) {
+    crypto.getRandomValues(rnds8Pool)
+    poolPtr = 0
+  }
+  const start = poolPtr
+  poolPtr += 16
+  return rnds8Pool.subarray(start, poolPtr)
+}
+
 // Reusable buffer for string output path - avoids allocation per call.
 // Safe because bytes are consumed synchronously by formatUuid().
 const reusableBuf = new Uint8Array(16)
 
 type V7State = {
-  msecs?: number
-  seq?: number
+  msecs: number
+  seq: number
 }
 
 /**
@@ -40,27 +54,7 @@ type V7State = {
  * - For isolated state, pass explicit `msecs` and `seq` via options.
  * - Tests should mock Date.now() or provide explicit options for deterministic behavior.
  */
-const state: V7State = {}
-
-function updateV7State(current: V7State, now: number, rnds: Uint8Array): V7State {
-  // Initialize state on first call (-Infinity ensures any real timestamp is greater)
-  current.msecs ??= -Infinity
-  current.seq ??= 0
-
-  if (now > current.msecs) {
-    // New millisecond tick: reseed sequence from random bytes.
-    current.seq = (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
-    current.msecs = now
-  } else {
-    // Same millisecond: increment sequence, roll over into the next tick if needed.
-    current.seq = (current.seq + 1) | 0
-    if (current.seq === 0) {
-      current.msecs += 1
-    }
-  }
-
-  return current
-}
+const state: V7State = { msecs: -Infinity, seq: 0 }
 
 function v7Bytes(
   rnds: Uint8Array,
@@ -127,9 +121,21 @@ function v7<TBuf extends Uint8Array = Uint8Array>(
   if (options) {
     bytes = v7Bytes(options.random ?? rng(), options.msecs, options.seq, buf ?? reusableBuf, buf ? offset : 0)
   } else {
+    // HOT PATH: Inline state management and byte generation for best performance
     const now = Date.now()
     const rnds = rng()
-    updateV7State(state, now, rnds)
+
+    // Update state (inlined for performance)
+    if (now > state.msecs) {
+      state.seq = (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
+      state.msecs = now
+    } else {
+      state.seq = (state.seq + 1) | 0
+      if (state.seq === 0) {
+        state.msecs++
+      }
+    }
+
     bytes = v7Bytes(rnds, state.msecs, state.seq, buf ?? reusableBuf, buf ? offset : 0)
   }
 

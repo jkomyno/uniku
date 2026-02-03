@@ -1,5 +1,3 @@
-import { createPool, getPooledBytes, type RandomPool } from '../common/random-pool'
-
 /** Default URL-safe alphabet (64 characters): A-Z, a-z, 0-9, underscore, hyphen */
 export const URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
 
@@ -7,8 +5,23 @@ const DEFAULT_SIZE = 21
 const MAX_SIZE = 2048
 const NANOID_REGEX = /^[A-Za-z0-9_-]+$/
 
-// Nanoid's own pool - lazily initialized on first use
-let pool: RandomPool | undefined
+// Simple random pool for ultra-fast path (npm nanoid style - no thread-safety overhead)
+const POOL_SIZE_MULTIPLIER = 128
+let pool: Uint8Array | undefined
+let poolOffset = 0
+
+function fillPool(bytes: number): void {
+  const size = bytes * POOL_SIZE_MULTIPLIER
+  if (!pool || pool.length < size) {
+    pool = new Uint8Array(size)
+    crypto.getRandomValues(pool)
+    poolOffset = 0
+  } else if (poolOffset + bytes > pool.length) {
+    crypto.getRandomValues(pool)
+    poolOffset = 0
+  }
+  poolOffset += bytes
+}
 
 export type NanoidOptions = {
   /**
@@ -83,13 +96,12 @@ function nanoidFn(size: number): string
 function nanoidFn(options: NanoidOptions): string
 function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
   // ULTRA-FAST PATH: No arguments = default nanoid
-  // Uses thread-safe pooled random bytes for high performance
+  // Uses simple pooled random bytes (npm nanoid style) for best performance
   if (sizeOrOptions === undefined) {
-    if (!pool) pool = createPool(DEFAULT_SIZE)
-    const startOffset = getPooledBytes(pool, DEFAULT_SIZE)
+    fillPool(DEFAULT_SIZE)
     let id = ''
-    for (let i = startOffset; i < startOffset + DEFAULT_SIZE; i++) {
-      id += URL_ALPHABET[pool.bytes[i] & 63]
+    for (let i = poolOffset - DEFAULT_SIZE; i < poolOffset; i++) {
+      id += URL_ALPHABET[pool![i] & 63]
     }
     return id
   }
