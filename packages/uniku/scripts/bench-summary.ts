@@ -11,7 +11,7 @@
  *
  * Output:
  *   - In CI (CI=true): Markdown table for GitHub PR comments
- *   - In terminal: ASCII table with ANSI colors
+ *   - In terminal: Bun.inspect.table() with ANSI colors
  *
  * @module
  */
@@ -121,6 +121,9 @@ const sortByPerformance = (a: [string, ComparisonResult], b: [string, Comparison
   return a[0].localeCompare(b[0])
 }
 
+const generationSorted = [...generation.entries()].sort(sortByPerformance)
+const validationSorted = [...validation.entries()].sort(sortByPerformance)
+
 // Build markdown table string
 function buildMarkdownTable(title: string, header: [string, string], rows: [string, string][]): string {
   const lines: string[] = []
@@ -133,54 +136,7 @@ function buildMarkdownTable(title: string, header: [string, string], rows: [stri
   return lines.join('\n')
 }
 
-// Build ASCII table for terminal display
-function buildAsciiTable(title: string, header: [string, string], rows: [string, string][]): string {
-  const col1Width = Math.max(header[0].length, ...rows.map((r) => r[0].length)) + 2
-  const col2Width = Math.max(header[1].length, ...rows.map((r) => stripAnsi(r[1]).length)) + 2
-
-  const lines: string[] = []
-
-  // Title
-  lines.push(`\x1b[1;33m### ${title}\x1b[0m\n`)
-
-  // Top border
-  lines.push(`┌${'─'.repeat(col1Width)}┬${'─'.repeat(col2Width)}┐`)
-
-  // Header
-  lines.push(`│\x1b[1m${padCenter(header[0], col1Width)}\x1b[0m│\x1b[1m${padCenter(header[1], col2Width)}\x1b[0m│`)
-
-  // Header separator
-  lines.push(`├${'─'.repeat(col1Width)}┼${'─'.repeat(col2Width)}┤`)
-
-  // Rows
-  for (const [col1, col2] of rows) {
-    lines.push(`│ ${col1.padEnd(col1Width - 2)} │ ${padWithAnsi(col2, col2Width - 2)} │`)
-  }
-
-  // Bottom border
-  lines.push(`└${'─'.repeat(col1Width)}┴${'─'.repeat(col2Width)}┘`)
-
-  return lines.join('\n')
-}
-
-function stripAnsi(str: string): string {
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape codes require control characters
-  return str.replace(/\x1b\[[0-9;]*m/g, '')
-}
-
-function padCenter(str: string, width: number): string {
-  const padding = width - str.length
-  const left = Math.floor(padding / 2)
-  const right = padding - left
-  return ' '.repeat(left) + str + ' '.repeat(right)
-}
-
-function padWithAnsi(str: string, width: number): string {
-  const visibleLength = stripAnsi(str).length
-  const padding = Math.max(0, width - visibleLength)
-  return str + ' '.repeat(padding)
-}
-
+// Format comparison for terminal display with ANSI colors
 function formatComparisonAnsi(comparison: string): string {
   // Convert markdown bold to ANSI green bold
   if (comparison.includes('**')) {
@@ -198,9 +154,6 @@ function formatComparisonAnsi(comparison: string): string {
   return comparison
 }
 
-const generationSorted = [...generation.entries()].sort(sortByPerformance)
-const validationSorted = [...validation.entries()].sort(sortByPerformance)
-
 // Extract formatted strings for table rendering
 const generationRows: [string, string][] = generationSorted.map(([name, result]) => [name, result.formatted])
 const validationRows: [string, string][] = validationSorted.map(([name, result]) => [name, result.formatted])
@@ -212,21 +165,28 @@ if (isCI) {
   console.log()
   console.log(buildMarkdownTable('Validation', ['Validator', 'uniku vs npm'], validationRows))
 } else {
-  // In terminal, render ASCII tables with ANSI colors
+  // In terminal, use Bun.inspect.table() for clean formatting
   console.log('\x1b[1;36m## Benchmark Results\x1b[0m\n')
+
+  console.log('\x1b[1;33m### Generation\x1b[0m\n')
   console.log(
-    buildAsciiTable(
-      'Generation',
-      ['Generator', 'uniku vs npm'],
-      generationRows.map(([name, comp]) => [name, formatComparisonAnsi(comp)]),
+    Bun.inspect.table(
+      generationSorted.map(([name, result]) => ({
+        Generator: name,
+        'uniku vs npm': formatComparisonAnsi(result.formatted),
+      })),
+      { colors: true },
     ),
   )
-  console.log()
+
+  console.log('\n\x1b[1;33m### Validation\x1b[0m\n')
   console.log(
-    buildAsciiTable(
-      'Validation',
-      ['Validator', 'uniku vs npm'],
-      validationRows.map(([name, comp]) => [name, formatComparisonAnsi(comp)]),
+    Bun.inspect.table(
+      validationSorted.map(([name, result]) => ({
+        Validator: name,
+        'uniku vs npm': formatComparisonAnsi(result.formatted),
+      })),
+      { colors: true },
     ),
   )
 }
