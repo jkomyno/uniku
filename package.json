@@ -10,6 +10,8 @@
   "license": "MIT",
   "scripts": {
     "bench": "turbo run bench",
+    "bench:compat": "turbo run bench:compat",
+    "bench:summary": "turbo run bench:summary",
     "build": "turbo run build",
     "build:watch": "turbo run build:watch",
     "clean": "turbo run clean",

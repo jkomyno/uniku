@@ -1,8 +1,9 @@
 {
   "extends": "../../tsconfig.test.json",
-  "include": ["src", "__tests__"],
+  "include": ["src", "__tests__", "scripts"],
   "compilerOptions": {
     "outDir": "build",
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    "types": ["vitest/globals", "bun"]
   }
 }
