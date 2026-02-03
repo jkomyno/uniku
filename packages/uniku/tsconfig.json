@@ -4,6 +4,9 @@
   "compilerOptions": {
     "outDir": "build",
     "emitDeclarationOnly": true,
-    "types": ["vitest/globals", "bun"]
+    "types": ["vitest/globals", "bun"],
+    "paths": {
+      "@/src/*": ["./src/*"]
+    }
   }
 }

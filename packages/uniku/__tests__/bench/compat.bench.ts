@@ -3,11 +3,11 @@ import { nanoid as npmNanoid } from 'nanoid'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
 import { bench, describe } from 'vitest'
-import { cuid2 } from '../../src/cuid2/cuid2'
-import { nanoid } from '../../src/nanoid/nanoid'
-import { ulid } from '../../src/ulid/ulid'
-import { uuidv4 } from '../../src/uuid/v4'
-import { uuidv7 } from '../../src/uuid/v7'
+import { cuid2 } from '@/src/cuid2/cuid2'
+import { nanoid } from '@/src/nanoid/nanoid'
+import { ulid } from '@/src/ulid/ulid'
+import { uuidv4 } from '@/src/uuid/v4'
+import { uuidv7 } from '@/src/uuid/v7'
 
 // ulid npm (v2.3.0) has no isValid(), use regex
 const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i

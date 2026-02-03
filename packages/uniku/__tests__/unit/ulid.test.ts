@@ -1,4 +1,4 @@
-import { ulid } from '../../src/ulid/ulid'
+import { ulid } from '@/src/ulid/ulid'
 
 function compareBytes(left: Uint8Array, right: Uint8Array): number {
   for (let i = 0; i < left.length; i += 1) {
