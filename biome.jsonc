@@ -49,6 +49,7 @@
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "javascript": {
     "globals": [
+      "Bun",
       "React",
 
       // We need to manually list every test global variable.

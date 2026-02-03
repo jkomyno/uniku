@@ -12,6 +12,12 @@
     "bench": {
       "dependsOn": ["^build"]
     },
+    "bench:compat": {
+      "dependsOn": ["^build"]
+    },
+    "bench:summary": {
+      "dependsOn": ["bench:compat"]
+    },
     "build:watch": {},
     "clean": {
       "cache": false,
