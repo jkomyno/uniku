@@ -266,7 +266,15 @@ Note: `isValid()` only validates IDs against the default URL-safe alphabet (`A-Z
 
 ## Related projects
 
-- [uuid](https://github.com/uuidjs/uuid): one of the main ispirations for this library
+Third-party libraries that inspired this project:
+
+- [uuid](https://github.com/uuidjs/uuid): the most popular UUID library for JavaScript
+- [ulid](https://github.com/ulid/javascript): the reference ULID implementation for JavaScript
+- [cuid2](https://github.com/paralleldrive/cuid2): secure, collision-resistant IDs
+- [nanoid](https://github.com/ai/nanoid): tiny, URL-friendly unique string ID generator
+
+Other:
+
 - [pnpm-monorepo-template](https://github.com/jkomyno/pnpm-monorepo-template): the template I used to create this library
 
 ## Author
