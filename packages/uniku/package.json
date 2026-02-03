@@ -23,6 +23,7 @@
     "uuidv4",
     "uuidv7",
     "ulid",
+    "cuid2",
     "unique",
     "id",
     "identifier",
@@ -75,6 +76,14 @@
       },
       "default": "./build/ulid/ulid.mjs"
     },
+    "./cuid2": {
+      "types": "./build/cuid2/cuid2.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/cuid2/cuid2.ts",
+        "default": "./build/cuid2/cuid2.mjs"
+      },
+      "default": "./build/cuid2/cuid2.mjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -85,5 +94,8 @@
     "test:unit": "vitest --project unit run",
     "bench": "vitest bench",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.0.1"
   }
 }
