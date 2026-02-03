@@ -58,6 +58,13 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "workerd"
-    ]
+    ],
+    "// peerDependencyRules": "@cloudflare/vitest-pool-workers@0.12.9 only supports vitest 2.0.x-3.2.x, but we use vitest 4.x in the workspace root",
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@vitest/runner": "4",
+        "@vitest/snapshot": "4"
+      }
+    }
   }
 }
