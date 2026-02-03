@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "uniku",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Minimal, tree-shakeable UUID utilities for every JavaScript runtime",
   "author": {
     "name": "Alberto Schiabel",
