@@ -101,10 +101,16 @@
     "build:watch": "tsdown --config-loader unrun --watch",
     "test": "vitest run",
     "test:unit": "vitest --project unit run",
+    "test:integration": "vitest --project integration run",
     "bench": "vitest bench",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@noble/hashes": "^2.0.1"
+  },
+  "devDependencies": {
+    "nanoid": "5.0.9",
+    "ulid": "2.3.0",
+    "uuid": "11.0.5"
   }
 }
