@@ -1,5 +1,11 @@
 # uniku
 
+## 0.0.7
+
+### Patch Changes
+
+- 9b41ea7: Add support for ksuid
+
 ## 0.0.6
 
 ### Patch Changes
