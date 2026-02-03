@@ -1,15 +1,34 @@
-import { bytesToHex, hexToBytes } from './hex'
+import { HEX_TABLE, hexToBytes } from './hex'
 
 const UUID_BYTE_LENGTH = 16
 const UUID_STRING_LENGTH = 36
 
 export function formatUuid(bytes: Uint8Array): string {
-  // precondition: bytes.length === UUID_BYTE_LENGTH
-  const hex = bytesToHex(bytes)
-
-  // Build UUID string with dashes at positions 8, 13, 18, 23
-  // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+  // Direct string concatenation - optimized for V8's string builder.
+  // This approach avoids loop overhead and intermediate allocations.
+  // See: https://github.com/uuidjs/uuid/pull/434
+  return (
+    HEX_TABLE[bytes[0]] +
+    HEX_TABLE[bytes[1]] +
+    HEX_TABLE[bytes[2]] +
+    HEX_TABLE[bytes[3]] +
+    '-' +
+    HEX_TABLE[bytes[4]] +
+    HEX_TABLE[bytes[5]] +
+    '-' +
+    HEX_TABLE[bytes[6]] +
+    HEX_TABLE[bytes[7]] +
+    '-' +
+    HEX_TABLE[bytes[8]] +
+    HEX_TABLE[bytes[9]] +
+    '-' +
+    HEX_TABLE[bytes[10]] +
+    HEX_TABLE[bytes[11]] +
+    HEX_TABLE[bytes[12]] +
+    HEX_TABLE[bytes[13]] +
+    HEX_TABLE[bytes[14]] +
+    HEX_TABLE[bytes[15]]
+  )
 }
 
 export function parseUuid(value: string): Uint8Array {
