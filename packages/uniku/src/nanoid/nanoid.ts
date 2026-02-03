@@ -187,6 +187,49 @@ function isValid(id: unknown): id is string {
 
 /**
  * Generate a URL-friendly unique string ID.
+ *
+ * Nanoid is a tiny, secure, URL-friendly unique string ID generator.
+ * It uses a URL-safe alphabet (A-Za-z0-9_-) and generates 21-character
+ * IDs by default with 126 bits of entropy.
+ *
+ * Unlike UUID v7 or ULID, nanoid is NOT time-ordered. Use it for:
+ * - URL shorteners
+ * - Session tokens
+ * - Invite codes
+ * - Any case where you need short, random IDs
+ *
+ * @example Basic usage
+ * ```ts
+ * import { nanoid } from 'uniku/nanoid'
+ *
+ * const id = nanoid()
+ * // => "V1StGXR8_Z5jdHi6B-myT"
+ * ```
+ *
+ * @example Custom size
+ * ```ts
+ * const shortId = nanoid(10)
+ * // => "IRFa-VaY2b"
+ * ```
+ *
+ * @example Custom alphabet (hex)
+ * ```ts
+ * const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
+ * // => "4f90d13a42bc"
+ * ```
+ *
+ * @example Validation
+ * ```ts
+ * const maybeId: unknown = getUserInput()
+ * if (nanoid.isValid(maybeId)) {
+ *   // TypeScript knows maybeId is string
+ *   console.log(maybeId.length)
+ * }
+ * ```
+ *
+ * @throws {RangeError} Size must be between 0 and 2048
+ * @throws {Error} Alphabet must contain 2-256 unique printable ASCII characters
+ * @throws {Error} Insufficient random bytes for requested size
  */
 export const nanoid: Nanoid = Object.assign(nanoidFn, {
   isValid,

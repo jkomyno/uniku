@@ -1,7 +1,89 @@
-import { HEX_TABLE, hexToBytes } from './hex'
+import { HEX_TABLE, hexValue } from './hex'
 
 const UUID_BYTE_LENGTH = 16
 const UUID_STRING_LENGTH = 36
+
+// Mapping from UUID string position to byte index.
+// -1 indicates a dash position that should be skipped.
+// This avoids intermediate string allocations during parsing.
+const UUID_CHAR_TO_BYTE: number[] = [
+  0,
+  0,
+  1,
+  1,
+  2,
+  2,
+  3,
+  3, // chars 0-7 → bytes 0-3
+  -1, // char 8 is '-'
+  4,
+  4,
+  5,
+  5, // chars 9-12 → bytes 4-5
+  -1, // char 13 is '-'
+  6,
+  6,
+  7,
+  7, // chars 14-17 → bytes 6-7
+  -1, // char 18 is '-'
+  8,
+  8,
+  9,
+  9, // chars 19-22 → bytes 8-9
+  -1, // char 23 is '-'
+  10,
+  10,
+  11,
+  11,
+  12,
+  12,
+  13,
+  13,
+  14,
+  14,
+  15,
+  15, // chars 24-35 → bytes 10-15
+]
+
+// Whether each position is the high nibble (true) or low nibble (false)
+const UUID_CHAR_IS_HIGH: boolean[] = [
+  true,
+  false,
+  true,
+  false,
+  true,
+  false,
+  true,
+  false, // chars 0-7
+  false, // dash (ignored)
+  true,
+  false,
+  true,
+  false, // chars 9-12
+  false, // dash
+  true,
+  false,
+  true,
+  false, // chars 14-17
+  false, // dash
+  true,
+  false,
+  true,
+  false, // chars 19-22
+  false, // dash
+  true,
+  false,
+  true,
+  false,
+  true,
+  false,
+  true,
+  false,
+  true,
+  false,
+  true,
+  false, // chars 24-35
+]
 
 export function formatUuid(bytes: Uint8Array): string {
   // Direct string concatenation - optimized for V8's string builder.
@@ -33,17 +115,33 @@ export function formatUuid(bytes: Uint8Array): string {
 
 export function parseUuid(value: string): Uint8Array {
   if (value.length !== UUID_STRING_LENGTH) {
-    throw new Error('uuid string must be 36 characters')
+    throw new Error(`UUID string must be 36 characters, got ${value.length}`)
   }
 
   // Validate separator positions directly (more efficient than full loop)
   if (value[8] !== '-' || value[13] !== '-' || value[18] !== '-' || value[23] !== '-') {
-    throw new Error('uuid string has invalid separators')
+    throw new Error(`UUID string has invalid separators at positions 8, 13, 18, 23. Received: "${value}"`)
   }
 
-  const hex = value.slice(0, 8) + value.slice(9, 13) + value.slice(14, 18) + value.slice(19, 23) + value.slice(24)
-
+  // Parse bytes directly from UUID string without intermediate string allocations.
+  // This avoids the 9 allocations (5 slices + 4 concatenations) of the naive approach.
   const bytes = new Uint8Array(UUID_BYTE_LENGTH)
-  hexToBytes(hex, bytes)
+
+  for (let i = 0; i < UUID_STRING_LENGTH; i += 1) {
+    const byteIdx = UUID_CHAR_TO_BYTE[i]
+    if (byteIdx === -1) continue // Skip dash positions
+
+    const nibble = hexValue(value.charCodeAt(i))
+    if (nibble === -1) {
+      throw new Error(`UUID string contains invalid hex character at position ${i}`)
+    }
+
+    if (UUID_CHAR_IS_HIGH[i]) {
+      bytes[byteIdx] = nibble << 4
+    } else {
+      bytes[byteIdx] |= nibble
+    }
+  }
+
   return bytes
 }

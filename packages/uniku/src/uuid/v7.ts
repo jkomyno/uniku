@@ -1,7 +1,7 @@
 import { writeTimestamp48 } from '../common/bytes'
 import { formatUuid, parseUuid } from './common/uuid'
 
-export type Version7Options = {
+export type UuidV7Options = {
   /**
    * 16 bytes of random data to use for UUID generation.
    * Note: Several bytes will be overwritten with timestamp, version, and variant data.
@@ -11,14 +11,21 @@ export type Version7Options = {
   seq?: number
 }
 
+/** @deprecated Use UuidV7Options instead */
+export type Version7Options = UuidV7Options
+
 export type UuidV7 = {
   (): string
-  <TBuf extends Uint8Array = Uint8Array>(options: Version7Options | undefined, buf: TBuf, offset?: number): TBuf
-  (options?: Version7Options, buf?: undefined, offset?: number): string
+  <TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf
+  (options?: UuidV7Options, buf?: undefined, offset?: number): string
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
   timestamp(id: string): number
-  isValid(id: string): boolean
+  isValid(id: unknown): id is string
+  /** The nil UUID (all zeros) */
+  NIL: string
+  /** The max UUID (all ones) */
+  MAX: string
 }
 
 const UUID_V7_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -100,20 +107,12 @@ function v7Bytes(
 /*
  * Overload: no buffer => return a UUID string.
  */
-function v7(options?: Version7Options, buf?: undefined, offset?: number): string
+function v7(options?: UuidV7Options, buf?: undefined, offset?: number): string
 /*
  * Overload: caller provides a buffer slice to fill with UUID bytes.
  */
-function v7<TBuf extends Uint8Array = Uint8Array>(
-  options: Version7Options | undefined,
-  buf: TBuf,
-  offset?: number,
-): TBuf
-function v7<TBuf extends Uint8Array = Uint8Array>(
-  options?: Version7Options,
-  buf?: TBuf,
-  offset?: number,
-): string | TBuf {
+function v7<TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf
+function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?: TBuf, offset?: number): string | TBuf {
   let bytes: Uint8Array
 
   if (options) {
@@ -149,8 +148,8 @@ function timestamp(id: string): number {
   return msecs
 }
 
-function isValid(id: string): boolean {
-  return UUID_V7_REGEX.test(id)
+function isValid(id: unknown): id is string {
+  return typeof id === 'string' && UUID_V7_REGEX.test(id)
 }
 
 /**
@@ -184,4 +183,6 @@ export const uuidv7: UuidV7 = Object.assign(v7, {
   fromBytes: formatUuid,
   timestamp,
   isValid,
+  NIL: '00000000-0000-0000-0000-000000000000',
+  MAX: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
 })

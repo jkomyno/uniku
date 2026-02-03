@@ -3,22 +3,23 @@
  */
 
 /**
- * Increment a byte array by 1, propagating carry from LSB to MSB.
- * Returns a new array (does not modify input).
+ * Increment a byte array by 1 in-place, propagating carry from LSB to MSB.
+ * Mutates the input array directly - no allocation.
  *
  * Used by ULID and KSUID for monotonic ordering within the same time unit.
+ *
+ * @returns true if increment succeeded, false if all bytes overflowed to 0
  */
-export function incrementBytes(bytes: Uint8Array): Uint8Array {
-  const result = new Uint8Array(bytes)
-  for (let i = result.length - 1; i >= 0; i -= 1) {
-    if (result[i] < 255) {
-      result[i] += 1
-      return result
+export function incrementBytesInPlace(bytes: Uint8Array): boolean {
+  for (let i = bytes.length - 1; i >= 0; i -= 1) {
+    if (bytes[i] < 255) {
+      bytes[i] += 1
+      return true
     }
-    result[i] = 0
+    bytes[i] = 0
   }
-  // All bytes overflowed to 0 - this is astronomically unlikely (1 in 2^80 for ULID, 1 in 2^128 for KSUID)
-  return result
+  // All bytes overflowed to 0 - astronomically unlikely (1 in 2^80 for ULID, 1 in 2^128 for KSUID)
+  return false
 }
 
 /**

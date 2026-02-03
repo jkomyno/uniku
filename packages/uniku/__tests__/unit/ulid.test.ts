@@ -16,6 +16,36 @@ describe('ulid', () => {
     expect(id.length).toBe(26)
   })
 
+  describe('NIL and MAX constants', () => {
+    it('has correct NIL constant', () => {
+      expect(ulid.NIL).toBe('00000000000000000000000000')
+      expect(ulid.NIL.length).toBe(26)
+    })
+
+    it('has correct MAX constant', () => {
+      expect(ulid.MAX).toBe('7ZZZZZZZZZZZZZZZZZZZZZZZZZ')
+      expect(ulid.MAX.length).toBe(26)
+    })
+
+    it('NIL is valid', () => {
+      expect(ulid.isValid(ulid.NIL)).toBe(true)
+    })
+
+    it('MAX is valid', () => {
+      expect(ulid.isValid(ulid.MAX)).toBe(true)
+    })
+
+    it('NIL round-trips through bytes', () => {
+      const bytes = ulid.toBytes(ulid.NIL)
+      expect(bytes.every((b) => b === 0)).toBe(true)
+      expect(ulid.fromBytes(bytes)).toBe(ulid.NIL)
+    })
+
+    it('NIL has timestamp 0', () => {
+      expect(ulid.timestamp(ulid.NIL)).toBe(0)
+    })
+  })
+
   it('generates uppercase output', () => {
     const id = ulid()
     expect(id).toBe(id.toUpperCase())
@@ -104,6 +134,22 @@ describe('ulid', () => {
     expect(id1).toBe(id2)
   })
 
+  it('throws on insufficient random bytes', () => {
+    expect(() => ulid({ random: new Uint8Array(9) })).toThrow('Random bytes length must be >= 10 for ULID')
+    expect(() => ulid({ random: new Uint8Array(5) })).toThrow('Random bytes length must be >= 10 for ULID')
+    expect(() => ulid({ random: new Uint8Array(0) })).toThrow('Random bytes length must be >= 10 for ULID')
+  })
+
+  it('accepts random bytes with exactly 10 bytes', () => {
+    const random = new Uint8Array(10).fill(42)
+    expect(() => ulid({ random })).not.toThrow()
+  })
+
+  it('accepts random bytes with more than 10 bytes', () => {
+    const random = new Uint8Array(16).fill(42)
+    expect(() => ulid({ random })).not.toThrow()
+  })
+
   it('supports buffer output', () => {
     const buffer = new Uint8Array(32)
     const offset = 8
@@ -151,6 +197,22 @@ describe('ulid', () => {
       expect(ulid.isValid('81ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(false)
       expect(ulid.isValid('91ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(false)
       expect(ulid.isValid('A1ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(false)
+    })
+
+    it('returns false for non-strings', () => {
+      expect(ulid.isValid(null)).toBe(false)
+      expect(ulid.isValid(undefined)).toBe(false)
+      expect(ulid.isValid(123)).toBe(false)
+      expect(ulid.isValid({})).toBe(false)
+      expect(ulid.isValid([])).toBe(false)
+    })
+
+    it('acts as type guard', () => {
+      const maybeId: unknown = ulid()
+      if (ulid.isValid(maybeId)) {
+        // TypeScript should know maybeId is string here
+        expect(maybeId.length).toBe(26)
+      }
     })
   })
 

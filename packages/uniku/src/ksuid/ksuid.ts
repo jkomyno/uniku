@@ -1,4 +1,4 @@
-import { incrementBytes, writeTimestamp32 } from '../common/bytes'
+import { incrementBytesInPlace, writeTimestamp32 } from '../common/bytes'
 import { rng } from '../common/random'
 import { decodeBase62, encodeBase62 } from './base62'
 
@@ -45,7 +45,11 @@ export type Ksuid = {
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
   timestamp(id: string): number
-  isValid(id: string): boolean
+  isValid(id: unknown): id is string
+  /** The nil KSUID (all zeros) */
+  NIL: string
+  /** The max KSUID (maximum valid value) */
+  MAX: string
 }
 
 type KsuidState = {
@@ -58,7 +62,7 @@ type KsuidState = {
  *
  * IMPORTANT: This state persists across all ksuid() calls in the module's lifetime.
  * - In serverless/edge functions with warm starts, state persists between invocations.
- * - For isolated state, pass explicit `msecs` and `random` via options.
+ * - For isolated state, pass explicit `secs` and `random` via options.
  * - Tests should mock Date.now() or provide explicit options for deterministic behavior.
  */
 const state: KsuidState = {
@@ -120,6 +124,9 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
     secs = options.secs !== undefined ? options.secs - KSUID_EPOCH : defaultSecs
 
     if (options.random) {
+      if (options.random.length < PAYLOAD_BYTES) {
+        throw new Error(`Random bytes length must be >= ${PAYLOAD_BYTES} for KSUID`)
+      }
       payload = options.random
     } else {
       payload = rng()
@@ -134,8 +141,8 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
       state.lastPayload.set(payload.subarray(0, PAYLOAD_BYTES))
     } else {
       // Same second: increment payload for monotonic ordering
-      payload = incrementBytes(state.lastPayload)
-      state.lastPayload = payload
+      incrementBytesInPlace(state.lastPayload)
+      payload = state.lastPayload
     }
   }
 
@@ -185,7 +192,7 @@ function timestamp(id: string): number {
  * Note: Both uppercase and lowercase letters are valid Base62 characters,
  * but they represent different values (e.g., 'A' = 10, 'a' = 36).
  */
-function isValid(id: string): boolean {
+function isValid(id: unknown): id is string {
   return typeof id === 'string' && id.length === KSUID_STRING_LEN && KSUID_REGEX.test(id)
 }
 
@@ -198,4 +205,6 @@ export const ksuid: Ksuid = Object.assign(ksuidFn, {
   fromBytes,
   timestamp,
   isValid,
+  NIL: '000000000000000000000000000',
+  MAX: 'aWgEPTl1tmebfsQzFP4bxwgy80V',
 })

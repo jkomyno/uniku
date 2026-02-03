@@ -7,6 +7,30 @@ describe('uuidv4', () => {
     expect(id.length).toBe(36)
   })
 
+  describe('NIL and MAX constants', () => {
+    it('has correct NIL constant', () => {
+      expect(uuidv4.NIL).toBe('00000000-0000-0000-0000-000000000000')
+      expect(uuidv4.NIL.length).toBe(36)
+    })
+
+    it('has correct MAX constant', () => {
+      expect(uuidv4.MAX).toBe('ffffffff-ffff-ffff-ffff-ffffffffffff')
+      expect(uuidv4.MAX.length).toBe(36)
+    })
+
+    it('NIL round-trips through bytes', () => {
+      const bytes = uuidv4.toBytes(uuidv4.NIL)
+      expect(bytes.every((b) => b === 0)).toBe(true)
+      expect(uuidv4.fromBytes(bytes)).toBe(uuidv4.NIL)
+    })
+
+    it('MAX round-trips through bytes', () => {
+      const bytes = uuidv4.toBytes(uuidv4.MAX)
+      expect(bytes.every((b) => b === 0xff)).toBe(true)
+      expect(uuidv4.fromBytes(bytes)).toBe(uuidv4.MAX)
+    })
+  })
+
   it('sets version and variant bits', () => {
     const bytes = uuidv4.toBytes(uuidv4())
     expect(bytes[6] >> 4).toBe(4)
@@ -53,6 +77,22 @@ describe('uuidv4', () => {
       expect(uuidv4.isValid('f47ac10b-58cc-5372-a567-0e02b2c3d479')).toBe(false)
       expect(uuidv4.isValid('f47ac10b-58cc-4372-7567-0e02b2c3d479')).toBe(false)
       expect(uuidv4.isValid('f47ac10b-58cc-4372-c567-0e02b2c3d479')).toBe(false)
+    })
+
+    it('returns false for non-strings', () => {
+      expect(uuidv4.isValid(null)).toBe(false)
+      expect(uuidv4.isValid(undefined)).toBe(false)
+      expect(uuidv4.isValid(123)).toBe(false)
+      expect(uuidv4.isValid({})).toBe(false)
+      expect(uuidv4.isValid([])).toBe(false)
+    })
+
+    it('acts as type guard', () => {
+      const maybeId: unknown = uuidv4()
+      if (uuidv4.isValid(maybeId)) {
+        // TypeScript should know maybeId is string here
+        expect(maybeId.length).toBe(36)
+      }
     })
   })
 })
