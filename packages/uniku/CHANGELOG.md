@@ -1,5 +1,11 @@
 # uniku
 
+## 0.0.3
+
+### Patch Changes
+
+- ad494ba: Add cuid v2 support
+
 ## 0.0.2
 
 ### Patch Changes
