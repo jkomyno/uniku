@@ -1,6 +1,7 @@
+import { writeTimestamp48 } from '../common/bytes'
 import { formatUuid, parseUuid } from './common/uuid'
 
-export type Version7Options = {
+export type UuidV7Options = {
   /**
    * 16 bytes of random data to use for UUID generation.
    * Note: Several bytes will be overwritten with timestamp, version, and variant data.
@@ -10,14 +11,21 @@ export type Version7Options = {
   seq?: number
 }
 
+/** @deprecated Use UuidV7Options instead */
+export type Version7Options = UuidV7Options
+
 export type UuidV7 = {
   (): string
-  <TBuf extends Uint8Array = Uint8Array>(options: Version7Options | undefined, buf: TBuf, offset?: number): TBuf
-  (options?: Version7Options, buf?: undefined, offset?: number): string
+  <TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf
+  (options?: UuidV7Options, buf?: undefined, offset?: number): string
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
   timestamp(id: string): number
-  isValid(id: string): boolean
+  isValid(id: unknown): id is string
+  /** The nil UUID (all zeros) */
+  NIL: string
+  /** The max UUID (all ones) */
+  MAX: string
 }
 
 const UUID_V7_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -72,16 +80,13 @@ function v7Bytes(
   }
 
   msecs ??= Date.now()
-  // Derive a 30-bit sequence if not provided by the caller.
-  seq ??= ((rnds[6] * 0x7f) << 24) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
+  // Derive a 31-bit sequence if not provided by the caller.
+  // Uses same formula as hot path (line 130) for consistency.
+  seq ??= (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
 
   // Timestamp (48-bit big-endian milliseconds since Unix epoch).
-  buf[offset++] = (msecs / 0x10000000000) & 0xff
-  buf[offset++] = (msecs / 0x100000000) & 0xff
-  buf[offset++] = (msecs / 0x1000000) & 0xff
-  buf[offset++] = (msecs / 0x10000) & 0xff
-  buf[offset++] = (msecs / 0x100) & 0xff
-  buf[offset++] = msecs & 0xff
+  writeTimestamp48(buf, offset, msecs)
+  offset += 6
 
   // Set version (7) and variant (10xx), then pack sequence and random tail bytes.
   buf[offset++] = 0x70 | ((seq >>> 28) & 0x0f)
@@ -102,20 +107,12 @@ function v7Bytes(
 /*
  * Overload: no buffer => return a UUID string.
  */
-function v7(options?: Version7Options, buf?: undefined, offset?: number): string
+function v7(options?: UuidV7Options, buf?: undefined, offset?: number): string
 /*
  * Overload: caller provides a buffer slice to fill with UUID bytes.
  */
-function v7<TBuf extends Uint8Array = Uint8Array>(
-  options: Version7Options | undefined,
-  buf: TBuf,
-  offset?: number,
-): TBuf
-function v7<TBuf extends Uint8Array = Uint8Array>(
-  options?: Version7Options,
-  buf?: TBuf,
-  offset?: number,
-): string | TBuf {
+function v7<TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf
+function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?: TBuf, offset?: number): string | TBuf {
   let bytes: Uint8Array
 
   if (options) {
@@ -151,17 +148,41 @@ function timestamp(id: string): number {
   return msecs
 }
 
-function isValid(id: string): boolean {
-  return UUID_V7_REGEX.test(id)
+function isValid(id: unknown): id is string {
+  return typeof id === 'string' && UUID_V7_REGEX.test(id)
 }
 
 /**
  * Generate a UUID v7 string or write the bytes into a buffer.
- * It also includes helpers to convert to and from byte arrays.j
+ *
+ * UUID v7 is a time-ordered UUID that embeds a Unix timestamp in milliseconds,
+ * making IDs naturally sortable by creation time. Ideal for database primary keys
+ * where chronological ordering improves index performance.
+ *
+ * @example
+ * ```ts
+ * import { uuidv7 } from 'uniku/uuid/v7'
+ *
+ * const id = uuidv7()
+ * // => "018e5e5c-7c8a-7000-8000-000000000000"
+ *
+ * // Extract timestamp
+ * const ts = uuidv7.timestamp(id)
+ * console.log(new Date(ts))
+ *
+ * // Validate
+ * uuidv7.isValid(id) // true
+ *
+ * // Convert to/from bytes
+ * const bytes = uuidv7.toBytes(id)
+ * const restored = uuidv7.fromBytes(bytes)
+ * ```
  */
 export const uuidv7: UuidV7 = Object.assign(v7, {
   toBytes: parseUuid,
   fromBytes: formatUuid,
   timestamp,
   isValid,
+  NIL: '00000000-0000-0000-0000-000000000000',
+  MAX: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
 })

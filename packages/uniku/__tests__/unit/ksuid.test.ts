@@ -16,6 +16,38 @@ describe('ksuid', () => {
     expect(id.length).toBe(27)
   })
 
+  describe('NIL and MAX constants', () => {
+    it('has correct NIL constant', () => {
+      expect(ksuid.NIL).toBe('000000000000000000000000000')
+      expect(ksuid.NIL.length).toBe(27)
+    })
+
+    it('has correct MAX constant', () => {
+      expect(ksuid.MAX).toBe('aWgEPTl1tmebfsQzFP4bxwgy80V')
+      expect(ksuid.MAX.length).toBe(27)
+    })
+
+    it('NIL is valid', () => {
+      expect(ksuid.isValid(ksuid.NIL)).toBe(true)
+    })
+
+    it('MAX is valid', () => {
+      expect(ksuid.isValid(ksuid.MAX)).toBe(true)
+    })
+
+    it('NIL round-trips through bytes', () => {
+      const bytes = ksuid.toBytes(ksuid.NIL)
+      expect(bytes.every((b) => b === 0)).toBe(true)
+      expect(ksuid.fromBytes(bytes)).toBe(ksuid.NIL)
+    })
+
+    it('MAX round-trips through bytes', () => {
+      const bytes = ksuid.toBytes(ksuid.MAX)
+      expect(bytes.every((b) => b === 0xff)).toBe(true)
+      expect(ksuid.fromBytes(bytes)).toBe(ksuid.MAX)
+    })
+  })
+
   it('generates unique ids in small sample', () => {
     const ids = new Set<string>()
     for (let i = 0; i < 10_000; i += 1) {
@@ -100,6 +132,22 @@ describe('ksuid', () => {
     expect(id1).toBe(id2)
   })
 
+  it('throws on insufficient random bytes', () => {
+    expect(() => ksuid({ random: new Uint8Array(15) })).toThrow('Random bytes length must be >= 16 for KSUID')
+    expect(() => ksuid({ random: new Uint8Array(10) })).toThrow('Random bytes length must be >= 16 for KSUID')
+    expect(() => ksuid({ random: new Uint8Array(0) })).toThrow('Random bytes length must be >= 16 for KSUID')
+  })
+
+  it('accepts random bytes with exactly 16 bytes', () => {
+    const random = new Uint8Array(16).fill(42)
+    expect(() => ksuid({ random })).not.toThrow()
+  })
+
+  it('accepts random bytes with more than 16 bytes', () => {
+    const random = new Uint8Array(32).fill(42)
+    expect(() => ksuid({ random })).not.toThrow()
+  })
+
   it('supports buffer output', () => {
     const buffer = new Uint8Array(32)
     const offset = 8
@@ -146,9 +194,19 @@ describe('ksuid', () => {
     })
 
     it('returns false for non-strings', () => {
-      expect(ksuid.isValid(123 as unknown as string)).toBe(false)
-      expect(ksuid.isValid(null as unknown as string)).toBe(false)
-      expect(ksuid.isValid(undefined as unknown as string)).toBe(false)
+      expect(ksuid.isValid(123)).toBe(false)
+      expect(ksuid.isValid(null)).toBe(false)
+      expect(ksuid.isValid(undefined)).toBe(false)
+      expect(ksuid.isValid({})).toBe(false)
+      expect(ksuid.isValid([])).toBe(false)
+    })
+
+    it('acts as type guard', () => {
+      const maybeId: unknown = ksuid()
+      if (ksuid.isValid(maybeId)) {
+        // TypeScript should know maybeId is string here
+        expect(maybeId.length).toBe(27)
+      }
     })
   })
 

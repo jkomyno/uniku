@@ -1,5 +1,6 @@
-import { rng } from '../uuid/common/random'
-import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from './common/crockford'
+import { incrementBytesInPlace, writeTimestamp48 } from '../common/bytes'
+import { rng } from '../common/random'
+import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from './crockford'
 
 export type UlidOptions = {
   /**
@@ -21,7 +22,11 @@ export type Ulid = {
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
   timestamp(id: string): number
-  isValid(id: string): boolean
+  isValid(id: unknown): id is string
+  /** The nil ULID (all zeros) */
+  NIL: string
+  /** The max ULID (maximum valid value) */
+  MAX: string
 }
 
 // Validation regex: first char [0-7] to prevent overflow, rest from Crockford alphabet
@@ -45,22 +50,6 @@ const state: UlidState = {
   lastRandom: new Uint8Array(10),
 }
 
-/**
- * Increment a byte array by 1, propagating carry from LSB to MSB.
- * Returns a new array (does not modify input).
- */
-function incrementBytes(bytes: Uint8Array): Uint8Array {
-  const result = new Uint8Array(bytes)
-  for (let i = result.length - 1; i >= 0; i -= 1) {
-    if (result[i] < 255) {
-      result[i] += 1
-      return result
-    }
-    result[i] = 0
-  }
-  return result
-}
-
 function ulidBytes(time: number, random: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
   if (!buf) {
     buf = new Uint8Array(16)
@@ -70,12 +59,7 @@ function ulidBytes(time: number, random: Uint8Array, buf?: Uint8Array, offset = 
   }
 
   // Timestamp (48-bit big-endian milliseconds since Unix epoch) -> bytes 0-5
-  buf[offset] = (time / 0x10000000000) & 0xff
-  buf[offset + 1] = (time / 0x100000000) & 0xff
-  buf[offset + 2] = (time / 0x1000000) & 0xff
-  buf[offset + 3] = (time / 0x10000) & 0xff
-  buf[offset + 4] = (time / 0x100) & 0xff
-  buf[offset + 5] = time & 0xff
+  writeTimestamp48(buf, offset, time)
 
   // Random (80 bits) -> bytes 6-15
   for (let i = 0; i < 10; i += 1) {
@@ -114,7 +98,14 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
   if (options) {
     // Explicit options provided - use them directly without monotonic state
     time = options.msecs ?? defaultTime
-    random = options.random ?? rng()
+    if (options.random) {
+      if (options.random.length < 10) {
+        throw new Error('Random bytes length must be >= 10 for ULID')
+      }
+      random = options.random
+    } else {
+      random = rng()
+    }
   } else {
     time = defaultTime
 
@@ -125,8 +116,8 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
       state.lastRandom.set(random.subarray(0, 10))
     } else {
       // Same millisecond: increment random portion for monotonic ordering
-      random = incrementBytes(state.lastRandom)
-      state.lastRandom = random
+      incrementBytesInPlace(state.lastRandom)
+      random = state.lastRandom
     }
   }
 
@@ -141,11 +132,40 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
 
 /**
  * Generate a ULID string or write the bytes into a buffer.
- * It also includes helpers to convert to and from byte arrays.
+ *
+ * ULID (Universally Unique Lexicographically Sortable Identifier) is a 128-bit
+ * identifier with millisecond timestamp precision and 80 bits of randomness.
+ * ULIDs are URL-safe, use Crockford's Base32 encoding, and sort lexicographically
+ * by creation time.
+ *
+ * @example
+ * ```ts
+ * import { ulid } from 'uniku/ulid'
+ *
+ * const id = ulid()
+ * // => "01HW9T2W9W9YJ3JZ1H4P4M2T8Q"
+ *
+ * // Extract timestamp
+ * const ts = ulid.timestamp(id)
+ * console.log(new Date(ts))
+ *
+ * // Validate
+ * ulid.isValid(id) // true
+ *
+ * // Convert to/from bytes (16 bytes)
+ * const bytes = ulid.toBytes(id)
+ * const restored = ulid.fromBytes(bytes)
+ * ```
  */
+function isValid(id: unknown): id is string {
+  return typeof id === 'string' && ULID_REGEX.test(id)
+}
+
 export const ulid: Ulid = Object.assign(ulidFn, {
   toBytes: (id: string) => decodeToBytes(id),
   fromBytes: (bytes: Uint8Array) => bytesToUlid(bytes),
   timestamp: (id: string) => decodeTime(id.slice(0, 10)),
-  isValid: (id: string) => ULID_REGEX.test(id),
+  isValid,
+  NIL: '00000000000000000000000000',
+  MAX: '7ZZZZZZZZZZZZZZZZZZZZZZZZZ',
 })

@@ -1,7 +1,7 @@
-import { rng } from './common/random'
+import { rng } from '../common/random'
 import { formatUuid, parseUuid } from './common/uuid'
 
-export type Version4Options = {
+export type UuidV4Options = {
   /**
    * 16 bytes of random data to use for UUID generation.
    * Note: Bytes at index 6 and 8 will be modified in-place to set version/variant bits.
@@ -9,13 +9,20 @@ export type Version4Options = {
   random?: Uint8Array
 }
 
+/** @deprecated Use UuidV4Options instead */
+export type Version4Options = UuidV4Options
+
 export type UuidV4 = {
   (): string
-  <TBuf extends Uint8Array = Uint8Array>(options: Version4Options | undefined, buf: TBuf, offset?: number): TBuf
-  (options?: Version4Options, buf?: undefined, offset?: number): string
+  <TBuf extends Uint8Array = Uint8Array>(options: UuidV4Options | undefined, buf: TBuf, offset?: number): TBuf
+  (options?: UuidV4Options, buf?: undefined, offset?: number): string
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
-  isValid(id: string): boolean
+  isValid(id: unknown): id is string
+  /** The nil UUID (all zeros) */
+  NIL: string
+  /** The max UUID (all ones) */
+  MAX: string
 }
 
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -50,20 +57,12 @@ function v4Bytes(rnds: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
 /*
  * Overload: no buffer => return a UUID string.
  */
-function v4(options?: Version4Options, buf?: undefined, offset?: number): string
+function v4(options?: UuidV4Options, buf?: undefined, offset?: number): string
 /*
  * Overload: caller provides a buffer slice to fill with UUID bytes.
  */
-function v4<TBuf extends Uint8Array = Uint8Array>(
-  options: Version4Options | undefined,
-  buf: TBuf,
-  offset?: number,
-): TBuf
-function v4<TBuf extends Uint8Array = Uint8Array>(
-  options?: Version4Options,
-  buf?: TBuf,
-  offset?: number,
-): string | TBuf {
+function v4<TBuf extends Uint8Array = Uint8Array>(options: UuidV4Options | undefined, buf: TBuf, offset?: number): TBuf
+function v4<TBuf extends Uint8Array = Uint8Array>(options?: UuidV4Options, buf?: TBuf, offset?: number): string | TBuf {
   if (globalThis.crypto?.randomUUID && !buf && !options) {
     return globalThis.crypto.randomUUID()
   }
@@ -72,16 +71,36 @@ function v4<TBuf extends Uint8Array = Uint8Array>(
   return buf ?? formatUuid(bytes)
 }
 
-function isValid(id: string): boolean {
-  return UUID_V4_REGEX.test(id)
+function isValid(id: unknown): id is string {
+  return typeof id === 'string' && UUID_V4_REGEX.test(id)
 }
 
 /**
  * Generate a UUID v4 string or write the bytes into a buffer.
- * It also includes helpers to convert to and from byte arrays.
+ *
+ * UUID v4 is a purely random UUID with 122 bits of entropy. It's the most
+ * widely compatible UUID format, supported by virtually all databases and systems.
+ * Use when you need maximum compatibility and don't require time-ordering.
+ *
+ * @example
+ * ```ts
+ * import { uuidv4 } from 'uniku/uuid/v4'
+ *
+ * const id = uuidv4()
+ * // => "550e8400-e29b-41d4-a716-446655440000"
+ *
+ * // Validate
+ * uuidv4.isValid(id) // true
+ *
+ * // Convert to/from bytes (16 bytes)
+ * const bytes = uuidv4.toBytes(id)
+ * const restored = uuidv4.fromBytes(bytes)
+ * ```
  */
 export const uuidv4: UuidV4 = Object.assign(v4, {
   toBytes: parseUuid,
   fromBytes: formatUuid,
   isValid,
+  NIL: '00000000-0000-0000-0000-000000000000',
+  MAX: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
 })

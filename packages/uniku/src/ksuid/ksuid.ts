@@ -1,5 +1,6 @@
-import { rng } from '../uuid/common/random'
-import { decodeBase62, encodeBase62 } from './common/base62'
+import { incrementBytesInPlace, writeTimestamp32 } from '../common/bytes'
+import { rng } from '../common/random'
+import { decodeBase62, encodeBase62 } from './base62'
 
 /**
  * KSUID (K-Sortable Unique Identifier)
@@ -19,7 +20,9 @@ const KSUID_STRING_LEN = 27
 const TIMESTAMP_BYTES = 4
 const PAYLOAD_BYTES = 16
 
-// Validation regex: 27 alphanumeric characters (case-insensitive)
+// Validation regex: 27 alphanumeric characters
+// Note: Both cases are valid Base62 characters, but they decode to different values
+// (e.g., 'A' = 10, 'a' = 36). The regex validates format, not semantic equivalence.
 const KSUID_REGEX = /^[0-9A-Za-z]{27}$/
 
 export type KsuidOptions = {
@@ -42,7 +45,11 @@ export type Ksuid = {
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
   timestamp(id: string): number
-  isValid(id: string): boolean
+  isValid(id: unknown): id is string
+  /** The nil KSUID (all zeros) */
+  NIL: string
+  /** The max KSUID (maximum valid value) */
+  MAX: string
 }
 
 type KsuidState = {
@@ -55,28 +62,12 @@ type KsuidState = {
  *
  * IMPORTANT: This state persists across all ksuid() calls in the module's lifetime.
  * - In serverless/edge functions with warm starts, state persists between invocations.
- * - For isolated state, pass explicit `msecs` and `random` via options.
+ * - For isolated state, pass explicit `secs` and `random` via options.
  * - Tests should mock Date.now() or provide explicit options for deterministic behavior.
  */
 const state: KsuidState = {
   secs: -Infinity,
   lastPayload: new Uint8Array(PAYLOAD_BYTES),
-}
-
-/**
- * Increment a 16-byte array by 1, propagating carry from LSB to MSB.
- * Returns a new array (does not modify input).
- */
-function incrementPayload(bytes: Uint8Array): Uint8Array {
-  const result = new Uint8Array(bytes)
-  for (let i = result.length - 1; i >= 0; i -= 1) {
-    if (result[i] < 255) {
-      result[i] += 1
-      return result
-    }
-    result[i] = 0
-  }
-  return result
 }
 
 /**
@@ -91,10 +82,7 @@ function ksuidBytes(secs: number, payload: Uint8Array, buf?: Uint8Array, offset 
   }
 
   // Timestamp (32-bit big-endian seconds since KSUID epoch) -> bytes 0-3
-  buf[offset] = (secs >>> 24) & 0xff
-  buf[offset + 1] = (secs >>> 16) & 0xff
-  buf[offset + 2] = (secs >>> 8) & 0xff
-  buf[offset + 3] = secs & 0xff
+  writeTimestamp32(buf, offset, secs)
 
   // Payload (128 bits) -> bytes 4-19
   for (let i = 0; i < PAYLOAD_BYTES; i += 1) {
@@ -136,6 +124,9 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
     secs = options.secs !== undefined ? options.secs - KSUID_EPOCH : defaultSecs
 
     if (options.random) {
+      if (options.random.length < PAYLOAD_BYTES) {
+        throw new Error(`Random bytes length must be >= ${PAYLOAD_BYTES} for KSUID`)
+      }
       payload = options.random
     } else {
       payload = rng()
@@ -150,8 +141,8 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
       state.lastPayload.set(payload.subarray(0, PAYLOAD_BYTES))
     } else {
       // Same second: increment payload for monotonic ordering
-      payload = incrementPayload(state.lastPayload)
-      state.lastPayload = payload
+      incrementBytesInPlace(state.lastPayload)
+      payload = state.lastPayload
     }
   }
 
@@ -167,7 +158,9 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
 
 /**
  * Convert a KSUID string to 20 bytes.
- * Case-insensitive: accepts uppercase, lowercase, or mixed case.
+ *
+ * Note: Base62 is case-sensitive. 'A' (value 10) and 'a' (value 36) decode
+ * to different byte values. This function accepts both cases as valid input.
  */
 function toBytes(id: string): Uint8Array {
   return decodeBase62(id)
@@ -194,10 +187,12 @@ function timestamp(id: string): number {
 }
 
 /**
- * Validate a KSUID string.
- * Case-insensitive: accepts uppercase, lowercase, or mixed case.
+ * Validate a KSUID string format.
+ *
+ * Note: Both uppercase and lowercase letters are valid Base62 characters,
+ * but they represent different values (e.g., 'A' = 10, 'a' = 36).
  */
-function isValid(id: string): boolean {
+function isValid(id: unknown): id is string {
   return typeof id === 'string' && id.length === KSUID_STRING_LEN && KSUID_REGEX.test(id)
 }
 
@@ -210,4 +205,6 @@ export const ksuid: Ksuid = Object.assign(ksuidFn, {
   fromBytes,
   timestamp,
   isValid,
+  NIL: '000000000000000000000000000',
+  MAX: 'aWgEPTl1tmebfsQzFP4bxwgy80V',
 })

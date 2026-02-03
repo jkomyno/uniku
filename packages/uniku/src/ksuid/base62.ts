@@ -43,14 +43,14 @@ export function encodeBase62(bytes: Uint8Array): string {
   }
 
   // Convert to Base62 string (build from right to left)
-  const result = new Array<string>(KSUID_STRING_LEN)
-
-  for (let i = KSUID_STRING_LEN - 1; i >= 0; i -= 1) {
-    result[i] = ALPHABET[Number(num % BASE)]
+  // Direct string concatenation is faster than array + join in V8
+  let result = ''
+  for (let i = 0; i < KSUID_STRING_LEN; i += 1) {
+    result = ALPHABET[Number(num % BASE)] + result
     num = num / BASE
   }
 
-  return result.join('')
+  return result
 }
 
 /**

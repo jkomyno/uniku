@@ -67,13 +67,90 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 
 ## Which ID Should I Use?
 
+### Quick Recommendations
+
 | Use Case | Recommended | Why |
 |----------|-------------|-----|
 | Database primary keys | **UUID v7** or **ULID** | Time-ordered for index efficiency |
 | URL shorteners | **Nanoid** | Compact, URL-safe characters |
 | Prevent enumeration | **CUID2** | Non-sequential, secure |
 | Maximum compatibility | **UUID v4** | Universal standard |
-| Distributed systems | **ULID** | Sortable + high entropy |
+| Distributed systems (high entropy) | **KSUID** | 128-bit payload, second precision |
+
+### Detailed Guide
+
+**UUID v4** — Use when you need maximum compatibility with existing systems.
+- 36 characters, 122-bit entropy
+- Universally supported by databases (native `UUID` type)
+- Not time-ordered (random distribution)
+- Best for: Legacy systems, cross-platform compatibility
+
+**UUID v7** — Use for database primary keys when you need RFC compliance.
+- 36 characters, time-ordered with millisecond precision
+- Native database support as `UUID` type
+- Strictly monotonic within same millisecond
+- Best for: PostgreSQL/MySQL primary keys, API identifiers
+
+**ULID** — Use for database primary keys when you want URL-safe IDs.
+- 26 characters, time-ordered with millisecond precision
+- URL-safe (no hyphens), case-insensitive
+- 80-bit random entropy per millisecond
+- Best for: APIs, URLs, distributed systems needing sortability
+
+**KSUID** — Use when you need highest collision resistance.
+- 27 characters, time-ordered with second precision
+- URL-safe, 128-bit random entropy (highest of all formats)
+- Best for: Very high-volume distributed systems, event sourcing
+
+**Nanoid** — Use for short, URL-friendly identifiers.
+- 21 characters (configurable), 126-bit entropy
+- Customizable alphabet and length
+- Not time-ordered
+- Best for: URL shorteners, session tokens, invite codes
+
+**CUID2** — Use when ID unpredictability matters.
+- 24 characters (configurable), hash-based
+- Non-sequential, prevents enumeration attacks
+- Not time-ordered
+- Best for: User-facing IDs where security matters
+
+### Binary Serialization: When to Use `toBytes()`
+
+Formats with binary representations (UUID, ULID, KSUID) support `toBytes()` and `fromBytes()` for efficient storage:
+
+```ts
+// Store as BINARY(16) instead of VARCHAR(36)
+const bytes = uuidv7.toBytes(id)  // 16 bytes
+db.insert({ id: bytes })
+
+// Retrieve and convert back
+const id = uuidv7.fromBytes(row.id)
+```
+
+**Benefits of binary storage:**
+- **Up to 50% smaller**: E.g., 16 bytes vs 36 characters for UUID
+- **Faster indexing**: Binary comparison is faster than string comparison
+- **Reduced I/O**: Less data transferred between app and database
+
+**When to use binary:**
+- High-volume tables (millions of rows)
+- Performance-critical queries on ID columns
+- Storage cost is a concern
+
+**When to keep strings:**
+- Debugging/logging convenience
+- API responses (humans read them)
+- Small tables where savings are negligible
+
+| Format | String Length | Binary Size | Savings |
+|--------|--------------|-------------|---------|
+| UUID v4/v7 | 36 chars | 16 bytes | 56% |
+| ULID | 26 chars | 16 bytes | 38% |
+| KSUID | 27 chars | 20 bytes | 26% |
+| Nanoid | 21 chars | N/A | - |
+| CUID2 | 24 chars | N/A | - |
+
+> **Note**: Nanoid and CUID2 don't have binary representations because they're string-native formats with no canonical byte encoding.
 
 ## Installation
 
@@ -246,21 +323,26 @@ const ts = ksuid.timestamp(id)
 ### `uuidv4` (from `uniku/uuid/v4`)
 
 ```ts
-uuidv4(options?: Version4Options): string
-uuidv4(options: Version4Options | undefined, buf: Uint8Array, offset?: number): Uint8Array
+uuidv4(options?: UuidV4Options): string
+uuidv4(options: UuidV4Options | undefined, buf: Uint8Array, offset?: number): Uint8Array
 uuidv4.toBytes(id: string): Uint8Array
 uuidv4.fromBytes(bytes: Uint8Array): string
+uuidv4.isValid(id: unknown): id is string
+uuidv4.NIL  // "00000000-0000-0000-0000-000000000000"
+uuidv4.MAX  // "ffffffff-ffff-ffff-ffff-ffffffffffff"
 ```
 
 ### `uuidv7` (from `uniku/uuid/v7`)
 
 ```ts
-uuidv7(options?: Version7Options): string
-uuidv7(options: Version7Options | undefined, buf: Uint8Array, offset?: number): Uint8Array
+uuidv7(options?: UuidV7Options): string
+uuidv7(options: UuidV7Options | undefined, buf: Uint8Array, offset?: number): Uint8Array
 uuidv7.toBytes(id: string): Uint8Array
 uuidv7.fromBytes(bytes: Uint8Array): string
 uuidv7.timestamp(id: string): number
-uuidv7.isValid(id: string): boolean
+uuidv7.isValid(id: unknown): id is string
+uuidv7.NIL  // "00000000-0000-0000-0000-000000000000"
+uuidv7.MAX  // "ffffffff-ffff-ffff-ffff-ffffffffffff"
 ```
 
 ### `ulid` (from `uniku/ulid`)
@@ -271,7 +353,9 @@ ulid(options: UlidOptions | undefined, buf: Uint8Array, offset?: number): Uint8A
 ulid.toBytes(id: string): Uint8Array
 ulid.fromBytes(bytes: Uint8Array): string
 ulid.timestamp(id: string): number
-ulid.isValid(id: string): boolean
+ulid.isValid(id: unknown): id is string
+ulid.NIL  // "00000000000000000000000000"
+ulid.MAX  // "7ZZZZZZZZZZZZZZZZZZZZZZZZZ"
 ```
 
 ### `cuid2` (from `uniku/cuid2`)
@@ -288,6 +372,9 @@ nanoid(): string
 nanoid(size: number): string
 nanoid(options: NanoidOptions): string
 nanoid.isValid(id: unknown): id is string
+
+// Constant
+URL_ALPHABET  // "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
 ```
 
 ### `ksuid` (from `uniku/ksuid`)
@@ -298,7 +385,9 @@ ksuid(options: KsuidOptions | undefined, buf: Uint8Array, offset?: number): Uint
 ksuid.toBytes(id: string): Uint8Array
 ksuid.fromBytes(bytes: Uint8Array): string
 ksuid.timestamp(id: string): number
-ksuid.isValid(id: string): boolean
+ksuid.isValid(id: unknown): id is string
+ksuid.NIL  // "000000000000000000000000000"
+ksuid.MAX  // "aWgEPTl1tmebfsQzFP4bxwgy80V"
 ```
 
 ## Documentation

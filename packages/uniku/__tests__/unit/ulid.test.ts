@@ -16,6 +16,36 @@ describe('ulid', () => {
     expect(id.length).toBe(26)
   })
 
+  describe('NIL and MAX constants', () => {
+    it('has correct NIL constant', () => {
+      expect(ulid.NIL).toBe('00000000000000000000000000')
+      expect(ulid.NIL.length).toBe(26)
+    })
+
+    it('has correct MAX constant', () => {
+      expect(ulid.MAX).toBe('7ZZZZZZZZZZZZZZZZZZZZZZZZZ')
+      expect(ulid.MAX.length).toBe(26)
+    })
+
+    it('NIL is valid', () => {
+      expect(ulid.isValid(ulid.NIL)).toBe(true)
+    })
+
+    it('MAX is valid', () => {
+      expect(ulid.isValid(ulid.MAX)).toBe(true)
+    })
+
+    it('NIL round-trips through bytes', () => {
+      const bytes = ulid.toBytes(ulid.NIL)
+      expect(bytes.every((b) => b === 0)).toBe(true)
+      expect(ulid.fromBytes(bytes)).toBe(ulid.NIL)
+    })
+
+    it('NIL has timestamp 0', () => {
+      expect(ulid.timestamp(ulid.NIL)).toBe(0)
+    })
+  })
+
   it('generates uppercase output', () => {
     const id = ulid()
     expect(id).toBe(id.toUpperCase())
@@ -104,6 +134,22 @@ describe('ulid', () => {
     expect(id1).toBe(id2)
   })
 
+  it('throws on insufficient random bytes', () => {
+    expect(() => ulid({ random: new Uint8Array(9) })).toThrow('Random bytes length must be >= 10 for ULID')
+    expect(() => ulid({ random: new Uint8Array(5) })).toThrow('Random bytes length must be >= 10 for ULID')
+    expect(() => ulid({ random: new Uint8Array(0) })).toThrow('Random bytes length must be >= 10 for ULID')
+  })
+
+  it('accepts random bytes with exactly 10 bytes', () => {
+    const random = new Uint8Array(10).fill(42)
+    expect(() => ulid({ random })).not.toThrow()
+  })
+
+  it('accepts random bytes with more than 10 bytes', () => {
+    const random = new Uint8Array(16).fill(42)
+    expect(() => ulid({ random })).not.toThrow()
+  })
+
   it('supports buffer output', () => {
     const buffer = new Uint8Array(32)
     const offset = 8
@@ -152,6 +198,22 @@ describe('ulid', () => {
       expect(ulid.isValid('91ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(false)
       expect(ulid.isValid('A1ARZ3NDEKTSV4RRFFQ69G5FAV')).toBe(false)
     })
+
+    it('returns false for non-strings', () => {
+      expect(ulid.isValid(null)).toBe(false)
+      expect(ulid.isValid(undefined)).toBe(false)
+      expect(ulid.isValid(123)).toBe(false)
+      expect(ulid.isValid({})).toBe(false)
+      expect(ulid.isValid([])).toBe(false)
+    })
+
+    it('acts as type guard', () => {
+      const maybeId: unknown = ulid()
+      if (ulid.isValid(maybeId)) {
+        // TypeScript should know maybeId is string here
+        expect(maybeId.length).toBe(26)
+      }
+    })
   })
 
   describe('timestamp edge cases', () => {
@@ -166,6 +228,39 @@ describe('ulid', () => {
       const maxTs = 281474976710655
       const id = ulid({ msecs: maxTs, random: new Uint8Array(10).fill(0xff) })
       expect(ulid.timestamp(id)).toBe(maxTs)
+    })
+  })
+
+  describe('monotonic increment behavior', () => {
+    it('increments random portion within same millisecond', () => {
+      // Test that the internal incrementBytes function correctly handles
+      // monotonic ordering by verifying consecutive IDs are strictly increasing
+      const ms = 1_702_387_456_789
+      const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+
+      // Generate many IDs in the same millisecond
+      // The random portion should be incrementing each time
+      const ids: string[] = []
+      for (let i = 0; i < 100; i += 1) {
+        ids[i] = ulid()
+      }
+
+      nowSpy.mockRestore()
+
+      // Verify all IDs are strictly increasing (monotonic)
+      for (let i = 0; i < ids.length - 1; i += 1) {
+        expect(ids[i] < ids[i + 1]).toBe(true)
+      }
+
+      // Verify the timestamp portion is the same for all
+      const firstTimestamp = ids[0].slice(0, 10)
+      for (const id of ids) {
+        expect(id.slice(0, 10)).toBe(firstTimestamp)
+      }
+
+      // Verify the random portions are different (incremented)
+      const randomParts = new Set(ids.map((id) => id.slice(10)))
+      expect(randomParts.size).toBe(ids.length)
     })
   })
 })

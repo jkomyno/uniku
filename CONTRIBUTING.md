@@ -113,14 +113,25 @@ packages/
   uniku/
     src/
       common/
-        random-pool.ts   # Shared random byte pooling
+        bytes.ts         # Byte manipulation (increment, timestamp writing)
+        random-pool.ts   # Thread-safe random byte pooling (for CUID2)
+        random.ts        # Simple random pool for UUID/ULID/KSUID
       uuid/
-        v4.ts            # UUID v4 with custom RNG support
+        v4.ts            # UUID v4 implementation
         v7.ts            # UUID v7 (RFC 9562, time-ordered)
-        common/          # Shared utilities (hex encoding, parsing)
-      ulid/              # ULID implementation
-      cuid2/             # CUID2 implementation
-      nanoid/            # Nanoid implementation
+        common/
+          hex.ts         # Hex encoding utilities
+          uuid.ts        # UUID formatting and parsing
+      ulid/
+        ulid.ts          # ULID implementation
+        crockford.ts     # Crockford Base32 encoding
+      cuid2/
+        cuid2.ts         # CUID2 implementation (SHA3-512 based)
+      nanoid/
+        nanoid.ts        # Nanoid implementation
+      ksuid/
+        ksuid.ts         # KSUID implementation
+        base62.ts        # Base62 encoding for KSUID
     __tests__/
       unit/              # Unit tests
       integration/       # Integration tests (npm package compatibility)

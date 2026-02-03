@@ -1,8 +1,36 @@
-## Specification
+# ULID Specification
 
-Below is the current specification of ULID as implemented in [ulid/javascript](https://github.com/ulid/javascript).
+Universally Unique Lexicographically Sortable Identifier.
 
-*Note: the binary format has not been implemented in JavaScript as of yet.*
+Reference: https://github.com/ulid/spec
+
+## Abstract
+
+ULID (Universally Unique Lexicographically Sortable Identifier) is a 128-bit
+identifier that combines a 48-bit millisecond timestamp with 80 bits of
+cryptographic randomness. ULIDs are encoded as 26-character Crockford Base32
+strings that sort lexicographically by creation time, making them ideal for
+database primary keys and distributed systems requiring time-ordering.
+
+## Key Properties
+
+- 128-bit total size (same as UUID)
+- Time-sortable with millisecond precision
+- Crockford Base32 encoding (26 characters)
+- Excludes ambiguous characters (I, L, O, U)
+- URL-safe without percent encoding
+- Monotonic ordering within same millisecond (via increment)
+- Case-insensitive parsing
+
+## Use Cases
+
+- Database primary keys requiring time-based ordering
+- Distributed systems needing coordination-free ID generation
+- Log correlation across services
+- URLs and filenames (no special characters)
+- Event sourcing and audit trails
+
+## Binary Format
 
 ```
  01AN4Z07BY      79KA1307SR9X4MV3
@@ -15,79 +43,18 @@ Below is the current specification of ULID as implemented in [ulid/javascript](h
 ### Components
 
 **Timestamp**
-- 48 bit integer
+- 48-bit integer
 - UNIX-time in milliseconds
-- Won't run out of space 'til the year 10889 AD.
+- Won't run out of space until the year 10889 AD
 
 **Randomness**
 - 80 bits
-- Cryptographically secure source of randomness, if possible
-
-### Sorting
-
-The left-most character must be sorted first, and the right-most character sorted last (lexical order). The default ASCII character set must be used. Within the same millisecond, sort order is not guaranteed
-
-### Canonical String Representation
-
-```
-ttttttttttrrrrrrrrrrrrrrrr
-
-where
-t is Timestamp (10 characters)
-r is Randomness (16 characters)
-```
-
-#### Encoding
-
-Crockford's Base32 is used as shown. This alphabet excludes the letters I, L, O, and U to avoid confusion and abuse.
-
-```
-0123456789ABCDEFGHJKMNPQRSTVWXYZ
-```
-
-### Monotonicity
-
-When generating a ULID within the same millisecond, we can provide some
-guarantees regarding sort order. Namely, if the same millisecond is detected, the `random` component is incremented by 1 bit in the least significant bit position (with carrying). For example:
-
-```javascript
-import { monotonicFactory } from 'ulid'
-
-const ulid = monotonicFactory()
-
-// Assume that these calls occur within the same millisecond
-ulid() // 01BX5ZZKBKACTAV9WEVGEMMVRZ
-ulid() // 01BX5ZZKBKACTAV9WEVGEMMVS0
-```
-
-If, in the extremely unlikely event that, you manage to generate more than 2<sup>80</sup> ULIDs within the same millisecond, or cause the random component to overflow with less, the generation will fail.
-
-```javascript
-import { monotonicFactory } from 'ulid'
-
-const ulid = monotonicFactory()
-
-// Assume that these calls occur within the same millisecond
-ulid() // 01BX5ZZKBKACTAV9WEVGEMMVRY
-ulid() // 01BX5ZZKBKACTAV9WEVGEMMVRZ
-ulid() // 01BX5ZZKBKACTAV9WEVGEMMVS0
-ulid() // 01BX5ZZKBKACTAV9WEVGEMMVS1
-...
-ulid() // 01BX5ZZKBKZZZZZZZZZZZZZZZX
-ulid() // 01BX5ZZKBKZZZZZZZZZZZZZZZY
-ulid() // 01BX5ZZKBKZZZZZZZZZZZZZZZZ
-ulid() // throw new Error()!
-```
-
-#### Overflow Errors when Parsing Base32 Strings
-
-Technically, a 26-character Base32 encoded string can contain 130 bits of information, whereas a ULID must only contain 128 bits. Therefore, the largest valid ULID encoded in Base32 is `7ZZZZZZZZZZZZZZZZZZZZZZZZZ`, which corresponds to an epoch time of `281474976710655` or `2 ^ 48 - 1`.
-
-Any attempt to decode or encode a ULID larger than this should be rejected by all implementations, to prevent overflow bugs.
+- Cryptographically secure source of randomness
 
 ### Binary Layout and Byte Order
 
-The components are encoded as 16 octets. Each component is encoded with the Most Significant Byte first (network byte order).
+The components are encoded as 16 octets. Each component is encoded with the
+Most Significant Byte first (network byte order).
 
 ```
 0                   1                   2                   3
@@ -103,8 +70,274 @@ The components are encoded as 16 octets. Each component is encoded with the Most
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
+## String Encoding
+
+### Canonical Representation
+
+```
+ttttttttttrrrrrrrrrrrrrrrr
+
+where
+t is Timestamp (10 characters)
+r is Randomness (16 characters)
+```
+
+### Encoding Alphabet
+
+Crockford's Base32 (excludes I, L, O, U to avoid confusion and abuse):
+```
+0123456789ABCDEFGHJKMNPQRSTVWXYZ
+```
+
+Character positions:
+- '0'-'9' = values 0-9
+- 'A'-'H' = values 10-17
+- 'J'-'K' = values 18-19
+- 'M'-'N' = values 20-21
+- 'P'-'T' = values 22-26
+- 'V'-'Z' = values 27-31
+
+### Bounds
+
+- Minimum ULID: `00000000000000000000000000`
+- Maximum ULID: `7ZZZZZZZZZZZZZZZZZZZZZZZZZ` (timestamp 281474976710655)
+
+## API Design
+
+### Type Definitions
+
+```typescript
+type UlidOptions = {
+  random?: Uint8Array  // 16 bytes, only first 10 used for randomness
+  msecs?: number       // Unix timestamp in milliseconds
+}
+
+type Ulid = {
+  (): string
+  <TBuf extends Uint8Array>(
+    options: UlidOptions | undefined,
+    buf: TBuf,
+    offset?: number
+  ): TBuf
+  (options?: UlidOptions, buf?: undefined, offset?: number): string
+  toBytes(id: string): Uint8Array
+  fromBytes(bytes: Uint8Array): string
+  timestamp(id: string): number
+  isValid(id: unknown): id is string
+  NIL: string
+  MAX: string
+}
+```
+
+### Function Signatures
+
+```
+ulid() -> string
+```
+Generate a new ULID with current timestamp and random payload.
+Maintains monotonic ordering within the same millisecond.
+
+```
+ulid(options) -> string
+```
+Generate ULID with optional custom timestamp (msecs) and/or randomness.
+Bypasses monotonic state when options provided.
+
+```
+ulid(options, buf, offset) -> buf
+```
+Write 16-byte ULID to provided buffer at offset.
+Throws RangeError if buffer too small.
+
+```
+ulid.toBytes(id) -> Uint8Array
+```
+Convert 26-character Base32 string to 16-byte Uint8Array.
+Case-insensitive. Throws Error on invalid input.
+
+```
+ulid.fromBytes(bytes) -> string
+```
+Convert 16-byte Uint8Array to 26-character Base32 string.
+Always produces uppercase output.
+
+```
+ulid.timestamp(id) -> number
+```
+Extract Unix timestamp in milliseconds from ULID string.
+
+```
+ulid.isValid(id) -> boolean
+```
+Validate ULID format. Case-insensitive.
+Returns true if: string, length 26, matches alphabet, first char 0-7.
+
+### Constants
+
+```
+ulid.NIL = "00000000000000000000000000"
+ulid.MAX = "7ZZZZZZZZZZZZZZZZZZZZZZZZZ"
+```
+
+## Implementation Notes
+
+### Monotonic Ordering
+
+When generating a ULID within the same millisecond, we can provide some
+guarantees regarding sort order. Namely, if the same millisecond is detected,
+the random component is incremented by 1 bit in the least significant bit
+position (with carrying).
+
+```javascript
+// Assume that these calls occur within the same millisecond
+ulid() // 01BX5ZZKBKACTAV9WEVGEMMVRZ
+ulid() // 01BX5ZZKBKACTAV9WEVGEMMVS0
+```
+
+Module-level state maintains monotonic ordering:
+
+```typescript
+type UlidState = {
+  msecs: number        // Last timestamp in milliseconds
+  lastRandom: Uint8Array // Last 10-byte random
+}
+```
+
+Algorithm:
+1. Get current time in milliseconds
+2. If same millisecond as last call:
+   - Increment random portion (as 80-bit big integer)
+   - Use incremented random
+3. If new millisecond:
+   - Generate fresh random 10-byte payload
+   - Update state with new millisecond and random
+4. If options provided, bypass state entirely (deterministic)
+
+### Overflow Handling
+
+If, in the extremely unlikely event that, you manage to generate more than
+2^80 ULIDs within the same millisecond, or cause the random component to
+overflow with less, the generation will fail.
+
+Technically, a 26-character Base32 encoded string can contain 130 bits of
+information, whereas a ULID must only contain 128 bits. Therefore, the
+largest valid ULID encoded in Base32 is `7ZZZZZZZZZZZZZZZZZZZZZZZZZ`,
+which corresponds to an epoch time of `281474976710655` or `2^48 - 1`.
+
+Any attempt to decode or encode a ULID larger than this should be rejected
+by all implementations, to prevent overflow bugs.
+
+### Timestamp Precision
+
+ULIDs encode millisecond timestamps. In environments where `Date.now()` is
+frozen (e.g., Cloudflare Workers during a single request), multiple ULIDs
+generated in the same invocation will share the same timestamp and differ
+only by monotonic increment.
+
+### Sorting
+
+The left-most character must be sorted first, and the right-most character
+sorted last (lexical order). The default ASCII character set must be used.
+Within the same millisecond, sort order is guaranteed via monotonic increment.
+
+## Validation Rules
+
+```typescript
+const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
+
+function isValid(id: unknown): id is string {
+  return (
+    typeof id === 'string' &&
+    id.length === 26 &&
+    ULID_REGEX.test(id)
+  )
+}
+```
+
+**Why first character is 0-7:**
+The first character encodes the high bits of the timestamp. Values 8-Z would
+represent timestamps beyond the maximum valid ULID epoch (year 10889), which
+would cause overflow when parsing.
+
+**Case Handling:**
+- Generation: Always produces uppercase output
+- Validation (isValid): Case-insensitive
+- Parsing (toBytes): Case-insensitive
+
+## Security Considerations
+
+- Uses `crypto.getRandomValues()` for randomness (CSPRNG required)
+- 80 bits of entropy per ULID (within same millisecond, less due to increment)
+- Timestamp is visible in the output (first 10 characters)
+- Not suitable as cryptographic tokens or secrets
+- Monotonic increment exposes generation order within same millisecond
+- Do not use ULIDs as security capabilities (identifiers whose possession grants access)
+
+## Comparison with Other Formats
+
+| Feature          | ULID      | UUIDv4    | UUIDv7    | KSUID     | Nanoid   |
+|------------------|-----------|-----------|-----------|-----------|----------|
+| Size (bits)      | 128       | 128       | 128       | 160       | Variable |
+| String length    | 26        | 36        | 36        | 27        | 21 (default) |
+| Time-sortable    | Yes       | No        | Yes       | Yes       | No       |
+| Time resolution  | 1 ms      | N/A       | 1 ms      | 1 second  | N/A      |
+| Random entropy   | 80 bits   | 122 bits  | 62 bits   | 128 bits  | 126 bits |
+| URL-safe         | Yes       | No        | No        | Yes       | Yes      |
+| RFC Standard     | No        | Yes       | Yes       | No        | No       |
+| Coordination     | No        | No        | No        | No        | No       |
+
+When to choose ULID:
+- Need time-ordered IDs with millisecond precision
+- Want compact, URL-safe identifiers
+- Database index locality is important
+- No RFC compliance requirement
+
+## Test Vectors
+
+### Example 1: Zero Values (Epoch Start)
+- **Timestamp**: 0 (1970-01-01T00:00:00.000Z)
+- **Random**: 10 bytes of 0x00
+- **Binary**: `0x000000000000 0000000000000000000000` (16 bytes)
+- **String**: `00000000000000000000000000`
+
+### Example 2: Known Deterministic Output
+- **Timestamp**: 1469918176385 ms (2016-07-30T23:36:16.385Z)
+- **Random**: `0x00000000000000000000` (10 bytes of zeros)
+- **Binary**: `0x0001563126E141 0000000000000000000000`
+- **String**: `01ARYZ6S4100000000000000000` (timestamp portion + zeros)
+
+### Example 3: Maximum Valid ULID
+- **Timestamp**: 281474976710655 (max 48-bit value, year 10889)
+- **Random**: 10 bytes of 0xFF
+- **Binary**: `0xFFFFFFFFFFFF FFFFFFFFFFFFFFFFFFFF` (16 bytes)
+- **String**: `7ZZZZZZZZZZZZZZZZZZZZZZZZZ`
+
+### Example 4: Invalid Inputs
+| Input | Reason Invalid |
+|-------|----------------|
+| `""` | Empty string |
+| `"0"` | Wrong length (1 char) |
+| `"8ZZZZZZZZZZZZZZZZZZZZZZZZZ"` | First char > 7 (timestamp overflow) |
+| `"01ARYZ6S41OLIOLIOLIOLIOLIO"` | Contains invalid chars (O, L, I) |
+| `"01aryz6s41UUUUUUUUUUUUUUUU"` | Contains invalid char (U) |
+
+### Example 5: Round-Trip Verification
+```typescript
+const id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+const bytes = ulid.toBytes(id)
+// bytes = Uint8Array [1, 86, 49, 38, 225, 65, 211, 182, ...]
+const restored = ulid.fromBytes(bytes)
+// restored === "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+```
+
 ## Prior Art
 
 Partly inspired by:
 - http://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram
 - https://firebase.googleblog.com/2015/02/the-2120-ways-to-ensure-unique_68.html
+
+## References
+
+- [ULID Specification](https://github.com/ulid/spec)
+- [ulid/javascript Reference Implementation](https://github.com/ulid/javascript)
+- [Crockford Base32](https://www.crockford.com/base32.html)
