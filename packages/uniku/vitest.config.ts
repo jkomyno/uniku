@@ -11,6 +11,13 @@ export default defineConfig({
           include: ['__tests__/unit/**/*.test.ts'],
         },
       },
+      {
+        test: {
+          ...baseTestConfig,
+          name: 'integration',
+          include: ['__tests__/integration/**/*.test.ts'],
+        },
+      },
     ],
     benchmark: {
       include: ['__tests__/bench/**/*.bench.ts'],
