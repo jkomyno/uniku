@@ -1,2 +1,3 @@
 packages:
   - 'packages/*'
+  - 'packages/uniku/__tests__/e2e/runtimes/cloudflare'

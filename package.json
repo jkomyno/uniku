@@ -21,6 +21,8 @@
     "test": "pnpm -r --if-present test",
     "test:unit": "pnpm -r --if-present test:unit",
     "test:integration": "pnpm -r --if-present test:integration",
+    "test:e2e": "turbo run test:e2e",
+    "test:e2e:cloudflare": "turbo run test:e2e:cloudflare",
     "typecheck": "turbo run typecheck",
     "changeset": "changeset",
     "version-packages": "changeset version && pnpm install",
@@ -51,5 +53,11 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
-  "packageManager": "pnpm@10.28.2"
+  "packageManager": "pnpm@10.28.2",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
+  }
 }
