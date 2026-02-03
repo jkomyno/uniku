@@ -32,6 +32,7 @@ type Benchmark = {
   name: string
   rank: number
   hz: number
+  rme: number // Relative margin of error (%)
 }
 
 type BenchGroup = {
@@ -70,11 +71,27 @@ function parseGroupName(fullName: string): { category: string; name: string } | 
   return { category: match[1], name: match[2] }
 }
 
+// Threshold for considering performance roughly equivalent (5%)
 const PARITY_THRESHOLD = 0.05
+// Show warning indicator when RME exceeds this threshold
+const RME_WARNING_THRESHOLD = 2.0
 
 type ComparisonResult = {
   ratio: number
-  formatted: string
+  unikuOps: string
+  competitorOps: string
+  comparison: string
+  hasRmeWarning: boolean
+  maxRme: number
+}
+
+function formatOps(hz: number): string {
+  if (hz >= 1_000_000) {
+    return `${(hz / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
+  } else if (hz >= 1_000) {
+    return `${(hz / 1_000).toFixed(1).replace(/\.0$/, '')}K`
+  }
+  return hz.toFixed(0)
 }
 
 function formatComparison(benchmarks: Benchmark[]): ComparisonResult {
@@ -83,19 +100,40 @@ function formatComparison(benchmarks: Benchmark[]): ComparisonResult {
   const regex = benchmarks.find((b) => b.name === 'regex')
 
   const competitor = npm ?? regex
-  if (!uniku || !competitor) return { ratio: 0, formatted: 'N/A' }
+  if (!uniku || !competitor) {
+    return {
+      ratio: 0,
+      unikuOps: 'N/A',
+      competitorOps: 'N/A',
+      comparison: 'N/A',
+      hasRmeWarning: false,
+      maxRme: 0,
+    }
+  }
 
   const ratio = uniku.hz / competitor.hz
   const competitorName = npm ? 'npm' : 'regex'
+  const maxRme = Math.max(uniku.rme ?? 0, competitor.rme ?? 0)
+  const hasRmeWarning = maxRme > RME_WARNING_THRESHOLD
 
+  let comparison: string
   if (ratio >= 1 - PARITY_THRESHOLD && ratio <= 1 + PARITY_THRESHOLD) {
-    return { ratio, formatted: '~parity' }
+    comparison = '~parity'
   } else if (ratio > 1) {
     const factor = ratio.toFixed(1).replace(/\.0$/, '')
-    return { ratio, formatted: `**${factor}x faster**` }
+    comparison = `**${factor}x faster**`
   } else {
     const factor = (1 / ratio).toFixed(1).replace(/\.0$/, '')
-    return { ratio, formatted: `${competitorName} ${factor}x faster` }
+    comparison = `${competitorName} ${factor}x faster`
+  }
+
+  return {
+    ratio,
+    unikuOps: formatOps(uniku.hz),
+    competitorOps: formatOps(competitor.hz),
+    comparison,
+    hasRmeWarning,
+    maxRme,
   }
 }
 
@@ -124,46 +162,81 @@ const sortByPerformance = (a: [string, ComparisonResult], b: [string, Comparison
 const generationSorted = [...generation.entries()].sort(sortByPerformance)
 const validationSorted = [...validation.entries()].sort(sortByPerformance)
 
-// Build markdown table string
-function buildMarkdownTable(title: string, header: [string, string], rows: [string, string][]): string {
+type TableRow = {
+  name: string
+  unikuOps: string
+  competitorOps: string
+  comparison: string
+  hasRmeWarning: boolean
+  maxRme: number
+}
+
+// Build markdown table string with ops/s columns
+function buildMarkdownTable(title: string, rows: TableRow[]): string {
   const lines: string[] = []
   lines.push(`### ${title}\n`)
-  lines.push(`| ${header[0]} | ${header[1]} |`)
-  lines.push('|-----------|--------------|')
-  for (const [col1, col2] of rows) {
-    lines.push(`| ${col1} | ${col2} |`)
+  lines.push('| ID | uniku | npm/regex | Comparison |')
+  lines.push('|-----|-------|-----------|------------|')
+  for (const row of rows) {
+    const warning = row.hasRmeWarning ? ` ⚠️ ±${row.maxRme.toFixed(1)}%` : ''
+    lines.push(`| ${row.name} | ${row.unikuOps} ops/s | ${row.competitorOps} ops/s | ${row.comparison}${warning} |`)
   }
   return lines.join('\n')
 }
 
 // Format comparison for terminal display with ANSI colors
-function formatComparisonAnsi(comparison: string): string {
+function formatComparisonAnsi(comparison: string, hasWarning: boolean, maxRme: number): string {
+  let result: string
+
   // Convert markdown bold to ANSI green bold
   if (comparison.includes('**')) {
     const match = comparison.match(/\*\*(.+)\*\*/)
     if (match) {
-      return `\x1b[1;32m${match[1]}\x1b[0m`
+      result = `\x1b[1;32m${match[1]}\x1b[0m`
+    } else {
+      result = comparison
     }
+  } else if (comparison === '~parity') {
+    result = `\x1b[33m~parity\x1b[0m` // Yellow for parity
+  } else if (comparison.includes('faster')) {
+    result = `\x1b[31m${comparison}\x1b[0m` // Red for slower
+  } else {
+    result = comparison
   }
-  if (comparison === '~parity') {
-    return `\x1b[33m~parity\x1b[0m` // Yellow for parity
+
+  // Add RME warning if applicable
+  if (hasWarning) {
+    result += ` \x1b[33m⚠️ ±${maxRme.toFixed(1)}%\x1b[0m`
   }
-  if (comparison.includes('faster') && !comparison.includes('**')) {
-    return `\x1b[31m${comparison}\x1b[0m` // Red for slower
-  }
-  return comparison
+
+  return result
 }
 
-// Extract formatted strings for table rendering
-const generationRows: [string, string][] = generationSorted.map(([name, result]) => [name, result.formatted])
-const validationRows: [string, string][] = validationSorted.map(([name, result]) => [name, result.formatted])
+// Transform results to table rows
+const generationRows: TableRow[] = generationSorted.map(([name, result]) => ({
+  name,
+  unikuOps: result.unikuOps,
+  competitorOps: result.competitorOps,
+  comparison: result.comparison,
+  hasRmeWarning: result.hasRmeWarning,
+  maxRme: result.maxRme,
+}))
+
+const validationRows: TableRow[] = validationSorted.map(([name, result]) => ({
+  name,
+  unikuOps: result.unikuOps,
+  competitorOps: result.competitorOps,
+  comparison: result.comparison,
+  hasRmeWarning: result.hasRmeWarning,
+  maxRme: result.maxRme,
+}))
 
 if (isCI) {
   // In CI, output raw markdown for GitHub rendering
   console.log('## Benchmark Results\n')
-  console.log(buildMarkdownTable('Generation', ['Generator', 'uniku vs npm'], generationRows))
+  console.log(buildMarkdownTable('Generation', generationRows))
   console.log()
-  console.log(buildMarkdownTable('Validation', ['Validator', 'uniku vs npm'], validationRows))
+  console.log(buildMarkdownTable('Validation', validationRows))
 } else {
   // In terminal, use Bun.inspect.table() for clean formatting
   console.log('\x1b[1;36m## Benchmark Results\x1b[0m\n')
@@ -171,9 +244,11 @@ if (isCI) {
   console.log('\x1b[1;33m### Generation\x1b[0m\n')
   console.log(
     Bun.inspect.table(
-      generationSorted.map(([name, result]) => ({
-        Generator: name,
-        'uniku vs npm': formatComparisonAnsi(result.formatted),
+      generationRows.map((row) => ({
+        ID: row.name,
+        uniku: `${row.unikuOps} ops/s`,
+        'npm/regex': `${row.competitorOps} ops/s`,
+        Comparison: formatComparisonAnsi(row.comparison, row.hasRmeWarning, row.maxRme),
       })),
       { colors: true },
     ),
@@ -182,9 +257,11 @@ if (isCI) {
   console.log('\n\x1b[1;33m### Validation\x1b[0m\n')
   console.log(
     Bun.inspect.table(
-      validationSorted.map(([name, result]) => ({
-        Validator: name,
-        'uniku vs npm': formatComparisonAnsi(result.formatted),
+      validationRows.map((row) => ({
+        ID: row.name,
+        uniku: `${row.unikuOps} ops/s`,
+        'npm/regex': `${row.competitorOps} ops/s`,
+        Comparison: formatComparisonAnsi(row.comparison, row.hasRmeWarning, row.maxRme),
       })),
       { colors: true },
     ),
