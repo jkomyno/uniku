@@ -23,6 +23,10 @@ export type UuidV7 = {
 
 const UUID_V7_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
+// Reusable buffer for string output path - avoids allocation per call.
+// Safe because bytes are consumed synchronously by formatUuid().
+const reusableBuf = new Uint8Array(16)
+
 type V7State = {
   msecs?: number
   seq?: number
@@ -58,15 +62,18 @@ function updateV7State(current: V7State, now: number, rnds: Uint8Array): V7State
   return current
 }
 
-function v7Bytes(rnds: Uint8Array, msecs?: number, seq?: number, buf?: Uint8Array, offset = 0): Uint8Array {
+function v7Bytes(
+  rnds: Uint8Array,
+  msecs: number | undefined,
+  seq: number | undefined,
+  buf: Uint8Array,
+  offset = 0,
+): Uint8Array {
   if (rnds.length < 16) {
     throw new Error('Random bytes length must be >= 16')
   }
 
-  if (!buf) {
-    buf = new Uint8Array(16)
-    offset = 0
-  } else if (offset < 0 || offset + 16 > buf.length) {
+  if (offset < 0 || offset + 16 > buf.length) {
     throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`)
   }
 
@@ -118,25 +125,15 @@ function v7<TBuf extends Uint8Array = Uint8Array>(
   let bytes: Uint8Array
 
   if (options) {
-    bytes = v7Bytes(options.random ?? rng(), options.msecs, options.seq, buf, offset)
+    bytes = v7Bytes(options.random ?? rng(), options.msecs, options.seq, buf ?? reusableBuf, buf ? offset : 0)
   } else {
-    /**
-     * Note: by default, Cloudflare Workers "freezes" time during request handling to prevent
-     * side-channel attacks. This means that Date.now() will return the same value for the entire
-     * duration of a request.
-     * Implications:
-     * - all UUIDv7 generated within a single request will have the same timestamp.
-     * - the monotonic ordering will rely entirely on the `state.seq` counter
-     */
     const now = Date.now()
     const rnds = rng()
-
     updateV7State(state, now, rnds)
-
-    bytes = v7Bytes(rnds, state.msecs, state.seq, buf, offset)
+    bytes = v7Bytes(rnds, state.msecs, state.seq, buf ?? reusableBuf, buf ? offset : 0)
   }
 
-  return buf ?? formatUuid(bytes)
+  return buf ? (bytes as TBuf) : formatUuid(bytes)
 }
 
 function timestamp(id: string): number {

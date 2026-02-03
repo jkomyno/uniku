@@ -1,5 +1,5 @@
 // Pre-computed lookup table for byte-to-hex conversion (0x00 -> "00", 0xff -> "ff")
-const HEX_TABLE = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0'))
+export const HEX_TABLE: string[] = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0'))
 
 export function bytesToHex(bytes: Uint8Array): string {
   // Build string directly, without intermediate array allocation
