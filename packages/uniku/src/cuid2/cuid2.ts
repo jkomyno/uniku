@@ -1,5 +1,5 @@
 import { sha3_512 } from '@noble/hashes/sha3.js'
-import { getPooledBytes, getRandomBytes, poolBytes } from '../common/random-pool'
+import { createPool, getPooledBytes, getRandomBytes, type RandomPool } from '../common/random-pool'
 
 export type Cuid2Options = {
   /**
@@ -39,6 +39,15 @@ const LETTER_ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 // Reusable TextEncoder instance (stateless, safe to share)
 const textEncoder = new TextEncoder()
 
+// CUID2's own pool - lazily initialized on first use
+// Uses 4 bytes per random() call
+let pool: RandomPool | undefined
+
+function ensurePool(): RandomPool {
+  if (!pool) pool = createPool(4)
+  return pool
+}
+
 /**
  * Module-level state for counter and fingerprint.
  * Counter is initialized lazily on first call to prevent unnecessary crypto operations.
@@ -53,7 +62,7 @@ const state: { counter: number | undefined; fingerprint: string | undefined } = 
  * Initialize counter using crypto for consistency with other entropy sources.
  */
 function initializeCounter(): number {
-  const buffer = getRandomBytes(4)
+  const buffer = getRandomBytes(ensurePool(), 4)
   return (((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]) >>> 0) % (INITIAL_COUNT_MAX + 1)
 }
 
@@ -111,12 +120,13 @@ function createFingerprint(): string {
 // --- Random function factory ---
 
 /**
- * Get a random number in [0, 1) using the shared random pool.
+ * Get a random number in [0, 1) using CUID2's own random pool.
  * Thread-safe when SharedArrayBuffer is available.
  */
 function getCryptoRandom(): number {
-  const offset = getPooledBytes(4)
-  const bytes = poolBytes()
+  const p = ensurePool()
+  const offset = getPooledBytes(p, 4)
+  const bytes = p.bytes
   const value =
     (bytes[offset] * 0x1000000 + bytes[offset + 1] * 0x10000 + bytes[offset + 2] * 0x100 + bytes[offset + 3]) /
     0x100000000
