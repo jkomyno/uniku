@@ -6,6 +6,7 @@ Thanks for your interest in contributing to uniku.
 
 - Node.js 24.13.0
 - pnpm 10.28.2
+- Bun (optional, for `pnpm bench:summary`)
 
 ## Getting Started
 
@@ -35,7 +36,7 @@ pnpm build:watch
 
 ### Testing
 
-Tests live in `__tests__/` directories within each package:
+Tests are organized by type in `__tests__/` directories:
 
 ```bash
 # Run all tests
@@ -44,8 +45,27 @@ pnpm test
 # Run unit tests only
 pnpm test:unit
 
-# Run benchmarks
+# Run integration tests (compatibility with npm packages)
+pnpm test:integration
+
+# Run E2E tests
+pnpm test:e2e
+
+# Run Cloudflare Workers E2E tests specifically
+pnpm test:e2e:cloudflare
+```
+
+### Benchmarks
+
+```bash
+# Run all benchmarks
 pnpm bench
+
+# Run compatibility benchmarks vs npm alternatives
+pnpm bench:compat
+
+# Generate benchmark summary (requires Bun)
+pnpm bench:summary
 ```
 
 ### Linting
@@ -92,13 +112,22 @@ Preview releases are automatically created for each PR via [pkg.pr.new](https://
 packages/
   uniku/
     src/
+      common/
+        random-pool.ts   # Shared random byte pooling
       uuid/
-        v4.ts          # UUID v4 with custom RNG support
-        v7.ts          # UUID v7 (RFC 9562, time-ordered)
-        common/        # Shared utilities (hex encoding, parsing)
+        v4.ts            # UUID v4 with custom RNG support
+        v7.ts            # UUID v7 (RFC 9562, time-ordered)
+        common/          # Shared utilities (hex encoding, parsing)
+      ulid/              # ULID implementation
+      cuid2/             # CUID2 implementation
+      nanoid/            # Nanoid implementation
     __tests__/
-      unit/            # Unit tests
-      bench/           # Benchmarks
+      unit/              # Unit tests
+      integration/       # Integration tests (npm package compatibility)
+      bench/             # Benchmarks
+      e2e/
+        runtimes/
+          cloudflare/    # Cloudflare Workers E2E tests
 ```
 
 ## Code Style
