@@ -1,5 +1,11 @@
 # uniku
 
+## 0.0.4
+
+### Patch Changes
+
+- 47179ec: Add nanoid support
+
 ## 0.0.3
 
 ### Patch Changes
