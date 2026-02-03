@@ -18,6 +18,9 @@
     "bench:summary": {
       "dependsOn": ["bench:compat"]
     },
+    "bundle:summary": {
+      "dependsOn": ["^build"]
+    },
     "test:e2e": {
       "dependsOn": ["^build"]
     },

@@ -9,6 +9,14 @@ import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
 
+// Benchmark options for stable, reproducible results
+const benchOptions = {
+  time: 1000,
+  iterations: 1000,
+  warmupTime: 500,
+  warmupIterations: 50,
+}
+
 // ulid npm (v2.3.0) has no isValid(), use regex
 const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 
@@ -27,92 +35,172 @@ const testIds = {
 }
 
 describe('Generation: UUID v4', () => {
-  bench('uniku', () => {
-    uuidv4()
-  })
-  bench('npm', () => {
-    npmUuidV4()
-  })
+  bench(
+    'uniku',
+    () => {
+      uuidv4()
+    },
+    benchOptions,
+  )
+  bench(
+    'npm',
+    () => {
+      npmUuidV4()
+    },
+    benchOptions,
+  )
 })
 
 describe('Generation: UUID v7', () => {
-  bench('uniku', () => {
-    uuidv7()
-  })
-  bench('npm', () => {
-    npmUuidV7()
-  })
+  bench(
+    'uniku',
+    () => {
+      uuidv7()
+    },
+    benchOptions,
+  )
+  bench(
+    'npm',
+    () => {
+      npmUuidV7()
+    },
+    benchOptions,
+  )
 })
 
 describe('Generation: ULID', () => {
-  bench('uniku', () => {
-    ulid()
-  })
-  bench('npm', () => {
-    npmUlid()
-  })
+  bench(
+    'uniku',
+    () => {
+      ulid()
+    },
+    benchOptions,
+  )
+  bench(
+    'npm',
+    () => {
+      npmUlid()
+    },
+    benchOptions,
+  )
 })
 
 describe('Generation: NanoID', () => {
-  bench('uniku', () => {
-    nanoid()
-  })
-  bench('npm', () => {
-    npmNanoid()
-  })
+  bench(
+    'uniku',
+    () => {
+      nanoid()
+    },
+    benchOptions,
+  )
+  bench(
+    'npm',
+    () => {
+      npmNanoid()
+    },
+    benchOptions,
+  )
 })
 
 describe('Generation: CUID2', () => {
-  bench('uniku', () => {
-    cuid2()
-  })
-  bench('npm', () => {
-    npmCuid2()
-  })
+  bench(
+    'uniku',
+    () => {
+      cuid2()
+    },
+    benchOptions,
+  )
+  bench(
+    'npm',
+    () => {
+      npmCuid2()
+    },
+    benchOptions,
+  )
 })
 
 describe('Validation: UUID v4', () => {
-  bench('uniku', () => {
-    uuidv4.isValid(testIds.npmV4)
-  })
-  bench('npm', () => {
-    uuidValidate(testIds.unikuV4) && uuidVersion(testIds.unikuV4) === 4
-  })
+  bench(
+    'uniku',
+    () => {
+      uuidv4.isValid(testIds.npmV4)
+    },
+    benchOptions,
+  )
+  bench(
+    'npm',
+    () => {
+      uuidValidate(testIds.unikuV4) && uuidVersion(testIds.unikuV4) === 4
+    },
+    benchOptions,
+  )
 })
 
 describe('Validation: UUID v7', () => {
-  bench('uniku', () => {
-    uuidv7.isValid(testIds.npmV7)
-  })
-  bench('npm', () => {
-    uuidValidate(testIds.unikuV7) && uuidVersion(testIds.unikuV7) === 7
-  })
+  bench(
+    'uniku',
+    () => {
+      uuidv7.isValid(testIds.npmV7)
+    },
+    benchOptions,
+  )
+  bench(
+    'npm',
+    () => {
+      uuidValidate(testIds.unikuV7) && uuidVersion(testIds.unikuV7) === 7
+    },
+    benchOptions,
+  )
 })
 
 describe('Validation: ULID', () => {
-  bench('uniku', () => {
-    ulid.isValid(testIds.npmUlid)
-  })
-  bench('regex', () => {
-    ULID_REGEX.test(testIds.unikuUlid)
-  })
+  bench(
+    'uniku',
+    () => {
+      ulid.isValid(testIds.npmUlid)
+    },
+    benchOptions,
+  )
+  bench(
+    'regex',
+    () => {
+      ULID_REGEX.test(testIds.unikuUlid)
+    },
+    benchOptions,
+  )
 })
 
 describe('Validation: NanoID', () => {
   const NANOID_REGEX = /^[A-Za-z0-9_-]{21}$/
-  bench('uniku', () => {
-    nanoid.isValid(testIds.npmNanoid)
-  })
-  bench('regex', () => {
-    NANOID_REGEX.test(testIds.unikuNanoid)
-  })
+  bench(
+    'uniku',
+    () => {
+      nanoid.isValid(testIds.npmNanoid)
+    },
+    benchOptions,
+  )
+  bench(
+    'regex',
+    () => {
+      NANOID_REGEX.test(testIds.unikuNanoid)
+    },
+    benchOptions,
+  )
 })
 
 describe('Validation: CUID2', () => {
-  bench('uniku', () => {
-    cuid2.isValid(testIds.npmCuid2)
-  })
-  bench('npm', () => {
-    npmIsCuid(testIds.unikuCuid2)
-  })
+  bench(
+    'uniku',
+    () => {
+      cuid2.isValid(testIds.npmCuid2)
+    },
+    benchOptions,
+  )
+  bench(
+    'npm',
+    () => {
+      npmIsCuid(testIds.unikuCuid2)
+    },
+    benchOptions,
+  )
 })
