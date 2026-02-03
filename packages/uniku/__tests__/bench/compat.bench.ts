@@ -1,7 +1,9 @@
+import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
 import { nanoid as npmNanoid } from 'nanoid'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
 import { bench, describe } from 'vitest'
+import { cuid2 } from '../../src/cuid2/cuid2'
 import { nanoid } from '../../src/nanoid/nanoid'
 import { ulid } from '../../src/ulid/ulid'
 import { uuidv4 } from '../../src/uuid/v4'
@@ -16,10 +18,12 @@ const testIds = {
   unikuV7: uuidv7(),
   unikuUlid: ulid(),
   unikuNanoid: nanoid(),
+  unikuCuid2: cuid2(),
   npmV4: npmUuidV4(),
   npmV7: npmUuidV7(),
   npmUlid: npmUlid(),
   npmNanoid: npmNanoid(),
+  npmCuid2: npmCuid2(),
 }
 
 describe('Generation: UUID v4', () => {
@@ -58,6 +62,15 @@ describe('Generation: NanoID', () => {
   })
 })
 
+describe('Generation: CUID2', () => {
+  bench('uniku', () => {
+    cuid2()
+  })
+  bench('npm', () => {
+    npmCuid2()
+  })
+})
+
 describe('Validation: UUID v4', () => {
   bench('uniku', () => {
     uuidv4.isValid(testIds.npmV4)
@@ -92,5 +105,14 @@ describe('Validation: NanoID', () => {
   })
   bench('regex', () => {
     NANOID_REGEX.test(testIds.unikuNanoid)
+  })
+})
+
+describe('Validation: CUID2', () => {
+  bench('uniku', () => {
+    cuid2.isValid(testIds.npmCuid2)
+  })
+  bench('npm', () => {
+    npmIsCuid(testIds.unikuCuid2)
   })
 })
