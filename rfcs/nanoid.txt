@@ -1,10 +1,15 @@
 # Nanoid Specification
 
-## Summary
+Tiny, URL-friendly unique string ID generator.
+
+Reference: https://github.com/ai/nanoid
+
+## Abstract
 
 Nanoid is a tiny, secure, URL-friendly unique string ID generator.
 It provides shorter IDs than UUID while maintaining similar collision resistance
-(126 bits of entropy vs UUID's 122 bits).
+(126 bits of entropy vs UUID's 122 bits). Unlike time-ordered IDs (ULID, UUIDv7),
+Nanoid generates purely random identifiers with no embedded timestamp.
 
 ## Key Properties
 
@@ -13,28 +18,55 @@ It provides shorter IDs than UUID while maintaining similar collision resistance
 - **Secure**: Uses cryptographically strong random APIs
 - **Customizable**: Supports custom alphabets and sizes
 - **Edge-compatible**: Works with Web Crypto API (Cloudflare Workers)
+- **No modulo bias**: Bitmask rejection sampling ensures uniform distribution
 
-## API
+## Use Cases
 
-### Basic Usage
+- URL shorteners and slug generation
+- Session tokens and invite codes
+- Database IDs where time-ordering is not needed
+- Any case requiring short, random identifiers
+- File names and temporary identifiers
 
-```typescript
-// Default: 21-character URL-safe ID
-const id = nanoid()           // "V1StGXR8_Z5jdHi6B-myT"
+**Warning:** Do not use Nanoid for React component keys if the ID is generated
+on each render. Generate IDs once and store them.
 
-// Custom size
-const shortId = nanoid(10)    // "IRFa-VaY2b"
+## Binary Format
 
-// Custom alphabet via options
-const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
-// => "4f90d13a42bc"
+Nanoid does not have a canonical binary format. Unlike UUID (16 bytes) and
+ULID (16 bytes), Nanoid is a string-only format.
 
-// Deterministic output for testing
-const deterministicId = nanoid({ random: new Uint8Array(64).fill(42) })
+**Why no binary representation:**
+- The rejection sampling algorithm discards information
+- Round-tripping (string -> bytes -> string) is impossible
+- Variable alphabet makes byte representation meaningless
+- Omitting `toBytes`/`fromBytes` maintains semantic correctness
 
-// Validation (default alphabet only)
-nanoid.isValid(id)            // true
+If binary storage is needed, encode the string as UTF-8 bytes.
+
+## String Encoding
+
+### Default Alphabet
+
+URL-safe 64 characters (power of 2 for efficient generation):
 ```
+ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-
+```
+
+### Default Configuration
+
+- **Size**: 21 characters (max: 2048)
+- **Alphabet**: 64 characters (A-Za-z0-9_-)
+- **Entropy**: 126 bits (21 * log2(64) = 21 * 6)
+
+### Custom Alphabets
+
+- Minimum: 2 characters
+- Maximum: 256 characters (byte value constraint)
+- No duplicate characters allowed
+- Printable ASCII only (codes 32-126)
+
+## API Design
 
 ### Type Definitions
 
@@ -56,13 +88,43 @@ declare const nanoid: Nanoid
 declare const URL_ALPHABET: string
 ```
 
-## Default Configuration
+### Function Signatures
 
-- **Size**: 21 characters (max: 2048)
-- **Alphabet**: URL-safe 64 characters (A-Za-z0-9_-)
-- **Entropy**: 126 bits (21 * log2(64) = 21 * 6)
+```
+nanoid() -> string
+```
+Generate a 21-character URL-safe ID using the default alphabet.
 
-## Algorithm: Bitmask Rejection Sampling
+```
+nanoid(size) -> string
+```
+Generate an ID of specified length using the default alphabet.
+Throws RangeError if size < 0 or > 2048.
+
+```
+nanoid(options) -> string
+```
+Generate an ID with custom size and/or alphabet.
+- `options.size`: Length of ID (default: 21)
+- `options.alphabet`: Custom character set (default: URL_ALPHABET)
+- `options.random`: Deterministic random bytes for testing
+
+```
+nanoid.isValid(id) -> boolean
+```
+Validate that a string contains only characters from the default URL-safe
+alphabet. **Note:** Does not validate IDs generated with custom alphabets.
+Returns true if: string, non-empty, matches /^[A-Za-z0-9_-]+$/
+
+### Exported Constants
+
+```typescript
+export const URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
+```
+
+## Implementation Notes
+
+### Algorithm: Bitmask Rejection Sampling
 
 To avoid modulo bias, nanoid uses bitmask rejection sampling:
 
@@ -90,7 +152,32 @@ function generate(size: number): string {
 }
 ```
 
+### Fast Path Optimization
+
+For power-of-2 alphabet sizes (2, 4, 8, 16, 32, 64, 128, 256), no rejection
+is needed. Each random byte maps directly to a character via bitmask.
+
+The default 64-character alphabet uses this fast path.
+
+### Random Byte Pooling
+
+For performance, implementations may pre-allocate a pool of random bytes
+and refill it periodically, rather than calling `crypto.getRandomValues()`
+for each ID.
+
 ## Validation Rules
+
+```typescript
+const NANOID_REGEX = /^[A-Za-z0-9_-]+$/
+
+function isValid(id: unknown): id is string {
+  return (
+    typeof id === 'string' &&
+    id.length > 0 &&
+    NANOID_REGEX.test(id)
+  )
+}
+```
 
 **Size parameter:**
 - Must be a non-negative integer
@@ -116,8 +203,7 @@ maintains semantic correctness over pattern consistency.
 
 **2. No buffer output mode**
 
-Unlike UUID (16 bytes) and ULID (16 bytes), nanoid has no canonical binary
-representation. Writing ASCII bytes to a buffer would be semantically meaningless
+Writing ASCII bytes to a buffer would be semantically meaningless
 and add complexity without value.
 
 **3. No `create()` factory**
@@ -130,7 +216,7 @@ Users should call `nanoid({ alphabet, size })` directly.
 
 The `isValid(id)` method checks that all characters are from the default URL-safe
 alphabet. It does not validate IDs generated with custom alphabets. This limitation
-should be documented clearly in the API.
+is documented clearly.
 
 **5. Type guard on `isValid`**
 
@@ -144,12 +230,79 @@ validation checks.
 3. **Web Crypto API**: Compatible with Cloudflare Workers, no Node.js crypto
 4. **Size limit**: MAX_SIZE = 2048 prevents memory/DoS issues
 5. **Printable ASCII only**: Rejects control characters in custom alphabets
+6. **Not time-ordered**: Cannot be used to infer creation time (unlike ULID)
+7. **Not suitable as secrets**: While random, Nanoids are not designed as cryptographic tokens
+
+## Comparison with Other Formats
+
+| Feature          | Nanoid    | UUIDv4    | ULID      | CUID2     |
+|------------------|-----------|-----------|-----------|-----------|
+| Size (bits)      | Variable  | 128       | 128       | Variable  |
+| String length    | 21 (default) | 36     | 26        | 24 (default) |
+| Time-sortable    | No        | No        | Yes       | No        |
+| URL-safe         | Yes       | No        | Yes       | Yes       |
+| Custom alphabet  | Yes       | No        | No        | No        |
+| Custom size      | Yes       | No        | No        | Yes       |
+| Entropy (default)| 126 bits  | 122 bits  | 80 bits   | ~144 bits |
+| RFC Standard     | No        | Yes       | No        | No        |
+
+When to choose Nanoid:
+- Need short, URL-safe IDs
+- Time-ordering not required
+- Want customizable alphabet/size
+- Simple, fast generation
 
 ## Performance
 
 Expected performance for typical implementations:
-- ~3-4M ops/sec for default nanoid
-- ~2-3M ops/sec for custom alphabet
+- ~3-4M ops/sec for default nanoid (64-char alphabet)
+- ~2-3M ops/sec for custom non-power-of-2 alphabet
+
+## Test Vectors
+
+### Example 1: Default Generation
+```typescript
+const id = nanoid()
+// => "V1StGXR8_Z5jdHi6B-myT" (21 characters from URL_ALPHABET)
+```
+
+### Example 2: Custom Size
+```typescript
+const shortId = nanoid(10)
+// => "IRFa-VaY2b" (10 characters)
+```
+
+### Example 3: Deterministic Output (Testing)
+```typescript
+// With all-zero random bytes, first characters depend on alphabet
+const id = nanoid({ random: new Uint8Array(21).fill(0) })
+// Each byte & 63 = 0, so all 'A' characters
+// => "AAAAAAAAAAAAAAAAAAAAA"
+```
+
+### Example 4: Custom Alphabet
+```typescript
+const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
+// => "4f90d13a42bc" (12 hex characters)
+```
+
+### Example 5: Invalid Inputs
+| Input | Reason Invalid |
+|-------|----------------|
+| `nanoid(-1)` | Negative size throws RangeError |
+| `nanoid(3000)` | Exceeds MAX_SIZE (2048) throws RangeError |
+| `nanoid({ alphabet: 'a' })` | Alphabet < 2 chars throws Error |
+| `nanoid({ alphabet: 'aa' })` | Duplicate chars throws Error |
+| `nanoid({ alphabet: 'a\x00b' })` | Non-printable char throws Error |
+
+### Example 6: Validation
+```typescript
+nanoid.isValid("V1StGXR8_Z5jdHi6B-myT")  // true (default alphabet)
+nanoid.isValid("4f90d13a42bc")            // true (hex chars are in default)
+nanoid.isValid("hello world")              // false (space not in alphabet)
+nanoid.isValid("")                         // false (empty string)
+nanoid.isValid(123)                        // false (not a string)
+```
 
 ## References
 

@@ -1,5 +1,9 @@
 # KSUID Specification
 
+ K-Sortable Unique Identifier.
+
+Reference: https://github.com/owpz/ksuid
+
 ## Abstract
 
 KSUID (K-Sortable Unique Identifier) is a 160-bit globally unique identifier
@@ -102,7 +106,9 @@ type Ksuid = {
   toBytes(id: string): Uint8Array
   fromBytes(bytes: Uint8Array): string
   timestamp(id: string): number
-  isValid(id: string): boolean
+  isValid(id: unknown): id is string
+  NIL: string
+  MAX: string
 }
 ```
 
@@ -151,6 +157,13 @@ ksuid.isValid(id) -> boolean
 ```
 Validate KSUID format. Case-insensitive.
 Returns true if: string, length 27, matches /^[0-9A-Za-z]{27}$/
+
+### Constants
+
+```
+ksuid.NIL = "000000000000000000000000000"
+ksuid.MAX = "aWgEPTl1tmebfsQzFP4bxwgy80V"
+```
 
 ## Implementation Notes
 
@@ -204,6 +217,37 @@ Decoding reverses this process.
 - Validation (isValid): Case-insensitive
 - Parsing (toBytes): Case-insensitive
 
+## Validation Rules
+
+```typescript
+const KSUID_REGEX = /^[0-9A-Za-z]{27}$/
+
+function isValid(id: unknown): id is string {
+  return (
+    typeof id === 'string' &&
+    id.length === 27 &&
+    KSUID_REGEX.test(id)
+  )
+}
+```
+
+**Case Handling:**
+- Generation: Always produces consistent case (mixed case in Base62)
+- Validation (isValid): Case-insensitive via character class
+- Parsing (toBytes): Case-sensitive (A=10, a=36 are different values)
+
+Note: Unlike ULID which restricts the first character to prevent overflow,
+KSUID's Base62 encoding naturally fits within 27 characters for all valid
+160-bit values, so no additional overflow check is needed in validation.
+
+## Security Considerations
+
+- Uses crypto.getRandomValues() for payload generation
+- 128-bit entropy provides ~10^38 possible values per second
+- Timestamp is not cryptographically protected (visible in output)
+- Not suitable as a cryptographic token or secret
+- Do not use KSUIDs as security capabilities (identifiers whose possession grants access)
+
 ## Comparison with Other Formats
 
 | Feature          | KSUID     | UUIDv4    | UUIDv7    | ULID     |
@@ -223,12 +267,49 @@ When to choose KSUID:
 - URL-safe format without encoding required
 - No RFC compliance requirement
 
-## Security Considerations
+## Test Vectors
 
-- Uses crypto.getRandomValues() for payload generation
-- 128-bit entropy provides ~10^38 possible values per second
-- Timestamp is not cryptographically protected (visible in output)
-- Not suitable as a cryptographic token or secret
+### Example 1: Zero Values (KSUID Epoch Start)
+- **Timestamp**: 1400000000 (May 13, 2014 00:00:00 UTC, KSUID epoch)
+- **Payload**: 16 bytes of 0x00
+- **Binary**: `0x00000000 00000000000000000000000000000000` (20 bytes)
+- **String**: `000000000000000000000000000`
+
+### Example 2: Known Deterministic Output
+- **Timestamp**: 1702387456 (December 12, 2023)
+- **KSUID Epoch Offset**: 1702387456 - 1400000000 = 302387456
+- **Payload**: 16 bytes of 0x00
+- **String**: First 4 bytes encode 302387456, rest zeros
+
+### Example 3: Maximum KSUID
+- **Timestamp**: Max 32-bit value (4294967295) + KSUID epoch
+- **Payload**: 16 bytes of 0xFF
+- **Binary**: `0xFFFFFFFF FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF` (20 bytes)
+- **String**: `aWgEPTl1tmebfsQzFP4bxwgy80V`
+
+### Example 4: Invalid Inputs
+| Input | Reason Invalid |
+|-------|----------------|
+| `""` | Empty string |
+| `"abc"` | Wrong length (3 chars, need 27) |
+| `"000000000000000000000000000!"` | Contains invalid character (!) |
+| `"00000000000000000000000000"` | Wrong length (26 chars, need 27) |
+
+### Example 5: Round-Trip Verification
+```typescript
+const id = "1srOrx2ZWZBpBUvZwXKQmoEYga2"
+const bytes = ksuid.toBytes(id)
+// bytes = Uint8Array [11, 120, 24, 208, ...]
+const restored = ksuid.fromBytes(bytes)
+// restored === "1srOrx2ZWZBpBUvZwXKQmoEYga2"
+```
+
+### Example 6: Timestamp Extraction
+```typescript
+const id = ksuid({ secs: 1702387456 })
+const ts = ksuid.timestamp(id)
+// ts === 1702387456000 (milliseconds for API consistency)
+```
 
 ## References
 
