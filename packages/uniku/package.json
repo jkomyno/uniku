@@ -53,6 +53,17 @@
     "build",
     "README.md"
   ],
+  "imports": {
+    "#platform": {
+      "node": "./build/platform/node.mjs",
+      "bun": "./build/platform/neutral.mjs",
+      "deno": "./build/platform/neutral.mjs",
+      "workerd": "./build/platform/neutral.mjs",
+      "edge-light": "./build/platform/neutral.mjs",
+      "browser": "./build/platform/neutral.mjs",
+      "default": "./build/platform/neutral.mjs"
+    }
+  },
   "exports": {
     "./uuid/v4": {
       "types": "./build/uuid/v4.d.mts",

@@ -4,6 +4,7 @@ import { baseTestConfig } from '../../vitest.config.base'
 
 const alias = {
   '@/src': resolve(import.meta.dirname, 'src'),
+  '#platform': resolve(import.meta.dirname, 'src/platform/node.ts'),
 }
 
 export default defineConfig({

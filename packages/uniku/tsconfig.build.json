@@ -5,5 +5,8 @@
     "outDir": "build",
     "composite": false,
     "emitDeclarationOnly": false,
+    "paths": {
+      "#platform": ["./src/platform/neutral.ts"],
+    },
   },
 }
