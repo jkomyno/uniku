@@ -116,6 +116,7 @@
     "bench": "vitest bench --run",
     "bench:compat": "vitest bench ./__tests__/bench/compat.bench.ts --run",
     "bench:summary": "bun scripts/bench-summary.ts",
+    "bench:compare": "git show origin/gh-benchmarks:baseline.json > baseline.json 2>/dev/null && bun scripts/bench-compare.ts || echo 'No baseline found. Run benchmarks on main first.'",
     "bundle:summary": "bun scripts/bundle-summary.ts",
     "typecheck": "tsc --noEmit"
   },
