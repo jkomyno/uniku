@@ -66,7 +66,7 @@ if (results.files.length === 0) {
 const groups = results.files[0].groups
 
 function parseGroupName(fullName: string): { category: string; name: string } | null {
-  const match = fullName.match(/> (Generation|Validation): (.+)$/)
+  const match = fullName.match(/> (Generation|Validation) > (.+)$/)
   if (!match) return null
   return { category: match[1], name: match[2] }
 }
@@ -231,39 +231,53 @@ const validationRows: TableRow[] = validationSorted.map(([name, result]) => ({
   maxRme: result.maxRme,
 }))
 
+if (generationRows.length === 0 && validationRows.length === 0) {
+  console.log('No benchmark results to display.')
+  process.exit(0)
+}
+
 if (isCI) {
   // In CI, output raw markdown for GitHub rendering
   console.log('## Benchmark Results\n')
-  console.log(buildMarkdownTable('Generation', generationRows))
-  console.log()
-  console.log(buildMarkdownTable('Validation', validationRows))
+  if (generationRows.length > 0) {
+    console.log(buildMarkdownTable('Generation', generationRows))
+  }
+  if (validationRows.length > 0) {
+    if (generationRows.length > 0) console.log()
+    console.log(buildMarkdownTable('Validation', validationRows))
+  }
 } else {
   // In terminal, use Bun.inspect.table() for clean formatting
   console.log('\x1b[1;36m## Benchmark Results\x1b[0m\n')
 
-  console.log('\x1b[1;33m### Generation\x1b[0m\n')
-  console.log(
-    Bun.inspect.table(
-      generationRows.map((row) => ({
-        ID: row.name,
-        uniku: `${row.unikuOps} ops/s`,
-        'npm/regex': `${row.competitorOps} ops/s`,
-        Comparison: formatComparisonAnsi(row.comparison, row.hasRmeWarning, row.maxRme),
-      })),
-      { colors: true },
-    ),
-  )
+  if (generationRows.length > 0) {
+    console.log('\x1b[1;33m### Generation\x1b[0m\n')
+    console.log(
+      Bun.inspect.table(
+        generationRows.map((row) => ({
+          ID: row.name,
+          uniku: `${row.unikuOps} ops/s`,
+          'npm/regex': `${row.competitorOps} ops/s`,
+          Comparison: formatComparisonAnsi(row.comparison, row.hasRmeWarning, row.maxRme),
+        })),
+        { colors: true },
+      ),
+    )
+  }
 
-  console.log('\n\x1b[1;33m### Validation\x1b[0m\n')
-  console.log(
-    Bun.inspect.table(
-      validationRows.map((row) => ({
-        ID: row.name,
-        uniku: `${row.unikuOps} ops/s`,
-        'npm/regex': `${row.competitorOps} ops/s`,
-        Comparison: formatComparisonAnsi(row.comparison, row.hasRmeWarning, row.maxRme),
-      })),
-      { colors: true },
-    ),
-  )
+  if (validationRows.length > 0) {
+    if (generationRows.length > 0) console.log()
+    console.log('\x1b[1;33m### Validation\x1b[0m\n')
+    console.log(
+      Bun.inspect.table(
+        validationRows.map((row) => ({
+          ID: row.name,
+          uniku: `${row.unikuOps} ops/s`,
+          'npm/regex': `${row.competitorOps} ops/s`,
+          Comparison: formatComparisonAnsi(row.comparison, row.hasRmeWarning, row.maxRme),
+        })),
+        { colors: true },
+      ),
+    )
+  }
 }
