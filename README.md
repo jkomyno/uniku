@@ -24,7 +24,7 @@ console.log(first < second && second < third) // true
 
 ## At a Glance
 
-|                    | uniku | uuid | nanoid | ulid | cuid2 | ksuid |
+|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) |
 |--------------------|:-----:|:----:|:------:|:----:|:-----:|:-----:|
 | UUID v4            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
 | UUID v7            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
@@ -32,12 +32,15 @@ console.log(first < second && second < third) // true
 | CUID2              |   ✅  |  ❌  |   ❌   |  ❌  |   ✅  |   ❌  |
 | Nanoid             |   ✅  |  ❌  |   ✅   |  ❌  |   ❌  |   ❌  |
 | KSUID              |   ✅  |  ❌  |   ❌   |  ❌  |   ❌  |   ✅  |
-| Tree-shakeable     |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |   ✅  |
-| ESM-only           |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |   ✅  |
-| Edge/Workers       |   ✅  |  ⚠️  |   ✅   |  ⚠️  |   ✅  |   ✅  |
-| Byte ↔ String      |   ✅  |  ✅  |   -   |  ✅   |   -  |   ✅  |
+| Tree-shakeable     |   ✅  |  ✅  |   ✅   |  ✅  |   ✅  |   ❌  |
+| ESM-only           |   ✅  | ✅¹  |   ✅   |  ❌  |   ✅  |   ❌  |
+| Edge/Workers       |   ✅  |  ✅  |   ✅   |  ⚠️  |   ✅  |  ⚠️  |
+| Byte ↔ String      |   ✅  |  ✅  |   -   |  ⚠️²  |   -  |   ✅  |
 
-> **Note**: Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
+> **Notes:**
+> - Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
+> - ¹ `uuid@13` is ESM-only; earlier versions support CommonJS.
+> - ² `ulid` only provides timestamp encoding/decoding, not full binary serialization.
 
 ### Works Everywhere
 
@@ -69,8 +72,8 @@ Benchmarks comparing `uniku` vs the equivalent packages available on npm:
 |-----------|-------------:|
 | ULID      |  **77× faster** |
 | CUID2     |   **8× faster** |
-| UUID v4   | **1.5× faster** |
 | Nanoid    | **1.1× faster** |
+| UUID v4   | npm 1.2× faster |
 | UUID v7   |   npm 1.6× faster* |
 | KSUID   |   npm 1.8× faster* |
 

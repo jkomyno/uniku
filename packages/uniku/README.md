@@ -24,7 +24,7 @@ console.log(first < second && second < third) // true
 
 ## At a Glance
 
-|                    | uniku | uuid | nanoid | ulid | cuid2 | ksuid |
+|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) |
 |--------------------|:-----:|:----:|:------:|:----:|:-----:|:-----:|
 | UUID v4            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
 | UUID v7            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
@@ -58,8 +58,8 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 |-----------|-------------:|
 | ULID      |  **77× faster** |
 | CUID2     |   **8× faster** |
-| UUID v4   | **1.5× faster** |
 | Nanoid    | **1.1× faster** |
+| UUID v4   | npm 1.2× faster |
 | UUID v7   |   npm 1.6× faster* |
 | KSUID   |   npm 1.8× faster* |
 
