@@ -88,14 +88,14 @@ importers:
         specifier: ^1.3.8
         version: 1.3.8
       nanoid:
-        specifier: 5.0.9
-        version: 5.0.9
+        specifier: ^5.1.6
+        version: 5.1.6
       ulid:
-        specifier: 2.3.0
-        version: 2.3.0
+        specifier: 3.0.2
+        version: 3.0.2
       uuid:
-        specifier: 11.0.5
-        version: 11.0.5
+        specifier: 13.0.0
+        version: 13.0.0
 
   packages/uniku/__tests__/e2e/runtimes/cloudflare:
     dependencies:
@@ -1805,8 +1805,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@5.0.9:
-    resolution: {integrity: sha512-Aooyr6MXU6HpvvWXKoVoXwKMs/KyVakWwg7xQfv5/S/RIgJMy0Ifa45H9qqYy7pTCszrHzP21Uk4PZq2HpEM8Q==}
+  nanoid@5.1.6:
+    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -2228,8 +2228,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  ulid@2.3.0:
-    resolution: {integrity: sha512-keqHubrlpvT6G2wH0OEfSW4mquYRcbe/J8NMmveoQOjUqmo+hXtO+ORCpWhdbZ7k72UtY61BL7haGxW6enBnjw==}
+  ulid@3.0.2:
+    resolution: {integrity: sha512-yu26mwteFYzBAot7KVMqFGCVpsF6g8wXfJzQUHvu1no3+rRRSFcSV2nKeYvNPLD2J4b08jYBDhHUjeH0ygIl9w==}
     hasBin: true
 
   unconfig-core@7.4.2:
@@ -2263,8 +2263,8 @@ packages:
       synckit:
         optional: true
 
-  uuid@11.0.5:
-    resolution: {integrity: sha512-508e6IcKLrhxKdBbcA2b4KQZlLVp2+J5UwQ6F7Drckkc5N9ZJwFa4TgWtsww9UG8fGHbm6gbV19TdM5pQ4GaIA==}
+  uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
     hasBin: true
 
   validate-npm-package-name@5.0.1:
@@ -3847,7 +3847,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  nanoid@5.0.9: {}
+  nanoid@5.1.6: {}
 
   node-emoji@2.2.0:
     dependencies:
@@ -4280,7 +4280,7 @@ snapshots:
 
   typescript@5.9.3: {}
 
-  ulid@2.3.0: {}
+  ulid@3.0.2: {}
 
   unconfig-core@7.4.2:
     dependencies:
@@ -4303,7 +4303,7 @@ snapshots:
     dependencies:
       rolldown: 1.0.0-rc.1
 
-  uuid@11.0.5: {}
+  uuid@13.0.0: {}
 
   validate-npm-package-name@5.0.1: {}
 
