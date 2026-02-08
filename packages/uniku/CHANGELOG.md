@@ -1,5 +1,11 @@
 # uniku
 
+## 0.0.10
+
+### Patch Changes
+
+- 509d8ad: replace plain Error/RangeError with tagged error classes
+
 ## 0.0.9
 
 ### Patch Changes
