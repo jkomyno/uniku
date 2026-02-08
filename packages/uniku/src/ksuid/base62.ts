@@ -3,6 +3,8 @@
  */
 // import { toHex } from 'hextreme'
 
+import { BufferError, ParseError } from '../errors'
+
 /**
  * Base62 encoding/decoding for KSUID.
  * Alphabet: 0-9A-Za-z (standard Base62 ordering)
@@ -38,7 +40,10 @@ for (let i = 0; i < BASE62_ALPHABET.length; i += 1) {
  */
 export function encodeBase62(bytes: Uint8Array): string {
   if (bytes.length < KSUID_BYTES) {
-    throw new Error(`KSUID bytes must be at least ${KSUID_BYTES} bytes, got ${bytes.length}`)
+    throw new BufferError(
+      'KSUID_BYTES_TOO_SHORT',
+      `KSUID bytes must be at least ${KSUID_BYTES} bytes, got ${bytes.length}`,
+    )
   }
 
   // Convert bytes to BigInt (big-endian)
@@ -68,7 +73,10 @@ export function encodeBase62(bytes: Uint8Array): string {
  */
 export function decodeBase62(str: string): Uint8Array {
   if (str.length !== KSUID_STRING_LEN) {
-    throw new Error(`KSUID string must be ${KSUID_STRING_LEN} characters, got ${str.length}`)
+    throw new ParseError(
+      'KSUID_INVALID_LENGTH',
+      `KSUID string must be ${KSUID_STRING_LEN} characters, got ${str.length}`,
+    )
   }
 
   // Convert Base62 string to BigInt
@@ -76,11 +84,11 @@ export function decodeBase62(str: string): Uint8Array {
   for (let i = 0; i < KSUID_STRING_LEN; i += 1) {
     const code = str.charCodeAt(i)
     if (code >= 128) {
-      throw new Error(`Invalid KSUID character: ${str[i]}`)
+      throw new ParseError('KSUID_INVALID_CHAR', `Invalid KSUID character: ${str[i]}`)
     }
     const value = DECODING[code]
     if (value === 255) {
-      throw new Error(`Invalid KSUID character: ${str[i]}`)
+      throw new ParseError('KSUID_INVALID_CHAR', `Invalid KSUID character: ${str[i]}`)
     }
     num = num * BASE + BigInt(value)
   }

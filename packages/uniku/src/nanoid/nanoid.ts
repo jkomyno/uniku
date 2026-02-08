@@ -1,3 +1,5 @@
+import { InvalidInputError } from '../errors'
+
 /** Default URL-safe alphabet (64 characters): A-Z, a-z, 0-9, underscore, hyphen */
 export const URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
 
@@ -60,19 +62,22 @@ export type Nanoid = {
  */
 function validateAlphabet(alphabet: string): void {
   if (alphabet.length < 2) {
-    throw new Error('Alphabet must contain at least 2 characters')
+    throw new InvalidInputError('NANOID_ALPHABET_TOO_SHORT', 'Alphabet must contain at least 2 characters')
   }
   if (alphabet.length > 256) {
-    throw new Error('Alphabet must not exceed 256 characters')
+    throw new InvalidInputError('NANOID_ALPHABET_TOO_LONG', 'Alphabet must not exceed 256 characters')
   }
   const seen = new Set<string>()
   for (const char of alphabet) {
     const code = char.charCodeAt(0)
     if (code < 32 || code > 126) {
-      throw new Error('Alphabet must contain only printable ASCII characters (32-126)')
+      throw new InvalidInputError(
+        'NANOID_ALPHABET_INVALID_CHAR',
+        'Alphabet must contain only printable ASCII characters (32-126)',
+      )
     }
     if (seen.has(char)) {
-      throw new Error(`Duplicate character in alphabet: "${char}"`)
+      throw new InvalidInputError('NANOID_ALPHABET_DUPLICATE', `Duplicate character in alphabet: "${char}"`)
     }
     seen.add(char)
   }
@@ -83,10 +88,10 @@ function validateAlphabet(alphabet: string): void {
  */
 function validateSize(size: number): void {
   if (!Number.isInteger(size) || size < 0) {
-    throw new RangeError('Size must be a non-negative integer')
+    throw new InvalidInputError('NANOID_SIZE_INVALID', 'Size must be a non-negative integer')
   }
   if (size > MAX_SIZE) {
-    throw new RangeError(`Size must not exceed ${MAX_SIZE}`)
+    throw new InvalidInputError('NANOID_SIZE_TOO_LARGE', `Size must not exceed ${MAX_SIZE}`)
   }
 }
 
@@ -132,7 +137,10 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
   if ((alphabetLen & (alphabetLen - 1)) === 0) {
     const mask = alphabetLen - 1
     if (randomBytes && randomBytes.length < size) {
-      throw new Error(`Insufficient random bytes: need ${size}, have ${randomBytes.length}`)
+      throw new InvalidInputError(
+        'NANOID_RANDOM_BYTES_INSUFFICIENT',
+        `Insufficient random bytes: need ${size}, have ${randomBytes.length}`,
+      )
     }
     const bytes = randomBytes?.subarray(0, size) ?? globalThis.crypto.getRandomValues(new Uint8Array(size))
     let id = ''
@@ -155,7 +163,8 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
     let bytes: Uint8Array
     if (randomBytes) {
       if (randomBytes.length - randomOffset < step) {
-        throw new Error(
+        throw new InvalidInputError(
+          'NANOID_RANDOM_BYTES_INSUFFICIENT',
           `Insufficient random bytes: need at least ${step} more, have ${randomBytes.length - randomOffset}`,
         )
       }
@@ -227,10 +236,12 @@ function isValid(id: unknown): id is string {
  * }
  * ```
  *
- * @throws {RangeError} Size must be between 0 and 2048
- * @throws {Error} Alphabet must contain 2-256 unique printable ASCII characters
- * @throws {Error} Insufficient random bytes for requested size
+ * @throws {InvalidInputError} Size must be between 0 and 2048
+ * @throws {InvalidInputError} Alphabet must contain 2-256 unique printable ASCII characters
+ * @throws {InvalidInputError} Insufficient random bytes for requested size
  */
 export const nanoid: Nanoid = Object.assign(nanoidFn, {
   isValid,
 })
+
+export { InvalidInputError, UniqueIdError } from '../errors'

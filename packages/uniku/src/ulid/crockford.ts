@@ -3,6 +3,8 @@
  * Alphabet excludes I, L, O, U to avoid confusion with similar-looking characters.
  */
 
+import { BufferError, ParseError } from '../errors'
+
 const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 
 // Pre-computed decoding table indexed by ASCII code (0-127)
@@ -73,7 +75,7 @@ export function decodeTime(str: string): number {
   for (let i = 0; i < TIME_LEN; i += 1) {
     const value = DECODING[str.charCodeAt(i)]
     if (value === 255) {
-      throw new Error(`Invalid ULID character: ${str[i]}`)
+      throw new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[i]}`)
     }
     time = time * 32 + value
   }
@@ -86,7 +88,7 @@ export function decodeTime(str: string): number {
  */
 export function decodeToBytes(str: string): Uint8Array {
   if (str.length !== 26) {
-    throw new Error('ULID string must be 26 characters')
+    throw new ParseError('ULID_INVALID_LENGTH', 'ULID string must be 26 characters')
   }
 
   const bytes = new Uint8Array(16)
@@ -152,7 +154,7 @@ export function decodeToBytes(str: string): Uint8Array {
     // Find the invalid character for error message
     for (let i = 0; i < 26; i += 1) {
       if (DECODING[str.charCodeAt(i)] === 255) {
-        throw new Error(`Invalid ULID character: ${str[i]}`)
+        throw new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[i]}`)
       }
     }
   }
@@ -185,7 +187,7 @@ export function decodeToBytes(str: string): Uint8Array {
  */
 export function bytesToUlid(bytes: Uint8Array): string {
   if (bytes.length < 16) {
-    throw new Error('Byte array must be at least 16 bytes')
+    throw new BufferError('ULID_BYTES_TOO_SHORT', 'Byte array must be at least 16 bytes')
   }
 
   // Timestamp: bytes 0-5 -> 10 characters

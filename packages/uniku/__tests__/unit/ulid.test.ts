@@ -1,4 +1,4 @@
-import { ulid } from '@/src/ulid/ulid'
+import { BufferError, ulid } from '@/src/ulid/ulid'
 
 function compareBytes(left: Uint8Array, right: Uint8Array): number {
   for (let i = 0; i < left.length; i += 1) {
@@ -165,7 +165,7 @@ describe('ulid', () => {
 
   it('throws on buffer bounds error', () => {
     const buffer = new Uint8Array(10)
-    expect(() => ulid({}, buffer, 0)).toThrow(RangeError)
+    expect(() => ulid({}, buffer, 0)).toThrow(BufferError)
   })
 
   describe('isValid', () => {

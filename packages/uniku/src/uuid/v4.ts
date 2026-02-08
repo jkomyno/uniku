@@ -1,4 +1,5 @@
 import { rng } from '../common/random'
+import { BufferError, InvalidInputError } from '../errors'
 import { formatUuid, parseUuid } from './common/uuid'
 
 const randomUUID = /*@__PURE__*/ globalThis.crypto.randomUUID.bind(globalThis.crypto)
@@ -28,7 +29,7 @@ const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[
 
 function v4Bytes(rnds: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
   if (rnds.length < 16) {
-    throw new Error('Random bytes length must be >= 16')
+    throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16')
   }
 
   // Set RFC 4122 version (4) and variant (10xx) bits.
@@ -42,7 +43,10 @@ function v4Bytes(rnds: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
   }
 
   if (offset < 0 || offset + 16 > buf.length) {
-    throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`)
+    throw new BufferError(
+      'UUID_BUFFER_OUT_OF_BOUNDS',
+      `UUID byte range ${offset}:${offset + 15} is out of buffer bounds`,
+    )
   }
 
   // Copy 16 UUID bytes into the provided buffer slice.
@@ -111,3 +115,5 @@ export const uuidv4: UuidV4 = Object.assign(v4, {
   NIL: '00000000-0000-0000-0000-000000000000',
   MAX: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
 })
+
+export { BufferError, InvalidInputError, ParseError, UniqueIdError } from '../errors'

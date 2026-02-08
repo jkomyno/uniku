@@ -1,4 +1,4 @@
-import { ksuid } from '@/src/ksuid/ksuid'
+import { BufferError, ksuid } from '@/src/ksuid/ksuid'
 
 function compareBytes(left: Uint8Array, right: Uint8Array): number {
   for (let i = 0; i < left.length; i += 1) {
@@ -130,7 +130,7 @@ describe('ksuid', () => {
 
   it('throws on buffer bounds error', () => {
     const buffer = new Uint8Array(10)
-    expect(() => ksuid({}, buffer, 0)).toThrow(RangeError)
+    expect(() => ksuid({}, buffer, 0)).toThrow(BufferError)
   })
 
   describe('isValid', () => {

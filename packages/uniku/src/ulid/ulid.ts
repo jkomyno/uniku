@@ -1,5 +1,6 @@
 import { incrementBytesInPlace, writeTimestamp48 } from '../common/bytes'
 import { rng } from '../common/random'
+import { BufferError, InvalidInputError } from '../errors'
 import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from './crockford'
 
 export type UlidOptions = {
@@ -55,7 +56,10 @@ function ulidBytes(time: number, random: Uint8Array, buf?: Uint8Array, offset = 
     buf = new Uint8Array(16)
     offset = 0
   } else if (offset < 0 || offset + 16 > buf.length) {
-    throw new RangeError(`ULID byte range ${offset}:${offset + 15} is out of buffer bounds`)
+    throw new BufferError(
+      'ULID_BUFFER_OUT_OF_BOUNDS',
+      `ULID byte range ${offset}:${offset + 15} is out of buffer bounds`,
+    )
   }
 
   // Timestamp (48-bit big-endian milliseconds since Unix epoch) -> bytes 0-5
@@ -100,7 +104,7 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
     time = options.msecs ?? defaultTime
     if (options.random) {
       if (options.random.length < 10) {
-        throw new Error('Random bytes length must be >= 10 for ULID')
+        throw new InvalidInputError('ULID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 10 for ULID')
       }
       random = options.random
     } else {
@@ -169,3 +173,5 @@ export const ulid: Ulid = Object.assign(ulidFn, {
   NIL: '00000000000000000000000000',
   MAX: '7ZZZZZZZZZZZZZZZZZZZZZZZZZ',
 })
+
+export { BufferError, InvalidInputError, ParseError, UniqueIdError } from '../errors'

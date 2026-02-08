@@ -1,4 +1,4 @@
-import { nanoid, URL_ALPHABET } from '@/src/nanoid/nanoid'
+import { InvalidInputError, nanoid, URL_ALPHABET } from '@/src/nanoid/nanoid'
 
 describe('nanoid', () => {
   it('generates a 21-character string by default', () => {
@@ -103,15 +103,15 @@ describe('nanoid', () => {
     })
 
     it('throws for negative size', () => {
-      expect(() => nanoid(-1)).toThrow(RangeError)
+      expect(() => nanoid(-1)).toThrow(InvalidInputError)
     })
 
     it('throws for non-integer size', () => {
-      expect(() => nanoid(3.5)).toThrow(RangeError)
+      expect(() => nanoid(3.5)).toThrow(InvalidInputError)
     })
 
     it('throws for size exceeding MAX_SIZE', () => {
-      expect(() => nanoid(3000)).toThrow(RangeError)
+      expect(() => nanoid(3000)).toThrow(InvalidInputError)
     })
 
     it('throws for invalid alphabet', () => {
