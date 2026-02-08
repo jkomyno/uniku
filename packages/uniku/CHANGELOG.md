@@ -1,5 +1,11 @@
 # uniku
 
+## 0.0.11
+
+### Patch Changes
+
+- e11e50a: Add CLI
+
 ## 0.0.10
 
 ### Patch Changes
