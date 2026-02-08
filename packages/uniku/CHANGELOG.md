@@ -1,5 +1,11 @@
 # uniku
 
+## 0.0.12
+
+### Patch Changes
+
+- 7c75ebb: Add background update check.
+
 ## 0.0.11
 
 ### Patch Changes
