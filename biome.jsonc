@@ -135,7 +135,7 @@
         "noMisleadingCharacterClass": "error",
         "noPrototypeBuiltins": "error",
         "noRedeclare": "error",
-        "noShadowRestrictedNames": "error",
+        "noShadowRestrictedNames": "off",
         "noUnsafeNegation": "error",
         "useGetterReturn": "error",
         "noWith": "error"

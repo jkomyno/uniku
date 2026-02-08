@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.test.json",
+  "include": ["src", "__tests__"],
+  "compilerOptions": {
+    "outDir": "build",
+    "emitDeclarationOnly": false,
+    "declaration": false,
+    "declarationMap": false,
+    "composite": false,
+    "isolatedDeclarations": false,
+    "types": ["bun"],
+    "paths": {
+      "@/src/*": ["./src/*"]
+    }
+  }
+}
