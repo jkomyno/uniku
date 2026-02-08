@@ -1,5 +1,6 @@
 import { sha3_512 } from '@noble/hashes/sha3.js'
 import { createPool, getPooledBytes, getRandomBytes, type RandomPool } from '../common/random-pool'
+import { InvalidInputError } from '../errors'
 
 export type Cuid2Options = {
   /**
@@ -136,7 +137,7 @@ function getCryptoRandom(): number {
 function getRandomFn(random?: Uint8Array): () => number {
   if (random) {
     if (random.length === 0) {
-      throw new Error('Random byte array cannot be empty')
+      throw new InvalidInputError('CUID2_RANDOM_BYTES_EMPTY', 'Random byte array cannot be empty')
     }
     let index = 0
     return () => {
@@ -154,7 +155,10 @@ function cuid2Fn(options?: Cuid2Options): string {
   const length = options?.length ?? DEFAULT_LENGTH
 
   if (length < MIN_LENGTH || length > MAX_LENGTH) {
-    throw new RangeError(`CUID2 length must be between ${MIN_LENGTH} and ${MAX_LENGTH}. Received: ${length}`)
+    throw new InvalidInputError(
+      'CUID2_LENGTH_OUT_OF_RANGE',
+      `CUID2 length must be between ${MIN_LENGTH} and ${MAX_LENGTH}. Received: ${length}`,
+    )
   }
 
   const random = getRandomFn(options?.random)
@@ -220,3 +224,5 @@ function isValid(id: unknown): id is string {
 export const cuid2: Cuid2 = Object.assign(cuid2Fn, {
   isValid,
 })
+
+export { InvalidInputError, UniqueIdError } from '../errors'

@@ -1,4 +1,5 @@
 import { rng } from '../common/random'
+import { BufferError, InvalidInputError } from '../errors'
 import { formatUuid, parseUuid } from './common/uuid'
 
 export type UuidV7Options = {
@@ -54,11 +55,14 @@ function v7Bytes(
   offset = 0,
 ): Uint8Array {
   if (rnds.length < 16) {
-    throw new Error('Random bytes length must be >= 16')
+    throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16')
   }
 
   if (offset < 0 || offset + 16 > buf.length) {
-    throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`)
+    throw new BufferError(
+      'UUID_BUFFER_OUT_OF_BOUNDS',
+      `UUID byte range ${offset}:${offset + 15} is out of buffer bounds`,
+    )
   }
 
   msecs ??= Date.now()
@@ -173,3 +177,5 @@ export const uuidv7: UuidV7 = Object.assign(v7, {
   NIL: '00000000-0000-0000-0000-000000000000',
   MAX: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
 })
+
+export { BufferError, InvalidInputError, ParseError, UniqueIdError } from '../errors'

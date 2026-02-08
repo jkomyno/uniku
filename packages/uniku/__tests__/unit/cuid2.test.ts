@@ -1,4 +1,4 @@
-import { cuid2 } from '@/src/cuid2/cuid2'
+import { cuid2, InvalidInputError } from '@/src/cuid2/cuid2'
 
 describe('cuid2', () => {
   it('generates a valid CUID2 string', () => {
@@ -48,10 +48,10 @@ describe('cuid2', () => {
   })
 
   it('throws on invalid length', () => {
-    expect(() => cuid2({ length: 1 })).toThrow(RangeError)
-    expect(() => cuid2({ length: 33 })).toThrow(RangeError)
-    expect(() => cuid2({ length: 0 })).toThrow(RangeError)
-    expect(() => cuid2({ length: -1 })).toThrow(RangeError)
+    expect(() => cuid2({ length: 1 })).toThrow(InvalidInputError)
+    expect(() => cuid2({ length: 33 })).toThrow(InvalidInputError)
+    expect(() => cuid2({ length: 0 })).toThrow(InvalidInputError)
+    expect(() => cuid2({ length: -1 })).toThrow(InvalidInputError)
   })
 
   it('supports custom random option for determinism', () => {

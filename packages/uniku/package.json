@@ -102,6 +102,14 @@
       },
       "default": "./build/ksuid/ksuid.mjs"
     },
+    "./errors": {
+      "types": "./build/errors.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/errors.ts",
+        "default": "./build/errors.mjs"
+      },
+      "default": "./build/errors.mjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

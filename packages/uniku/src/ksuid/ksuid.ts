@@ -1,5 +1,6 @@
 import { writeTimestamp32 } from '../common/bytes'
 import { rng } from '../common/random'
+import { BufferError, InvalidInputError } from '../errors'
 import { decodeBase62, encodeBase62 } from './base62'
 
 /**
@@ -60,7 +61,10 @@ function ksuidBytes(timestamp: number, payload: Uint8Array, buf?: Uint8Array, of
     buf = new Uint8Array(KSUID_BYTES)
     offset = 0
   } else if (offset < 0 || offset + KSUID_BYTES > buf.length) {
-    throw new RangeError(`KSUID byte range ${offset}:${offset + KSUID_BYTES - 1} is out of buffer bounds`)
+    throw new BufferError(
+      'KSUID_BUFFER_OUT_OF_BOUNDS',
+      `KSUID byte range ${offset}:${offset + KSUID_BYTES - 1} is out of buffer bounds`,
+    )
   }
 
   // Timestamp (32-bit big-endian seconds since KSUID epoch) -> bytes 0-3
@@ -91,11 +95,11 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(
 function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, buf?: TBuf, offset = 0): string | TBuf {
   if (options) {
     if (options.random && options.random.length < PAYLOAD_BYTES) {
-      throw new Error('Random bytes length must be >= 16 for KSUID')
+      throw new InvalidInputError('KSUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16 for KSUID')
     }
 
     if (options.secs && options.secs < KSUID_EPOCH) {
-      throw new Error('Timestamp must be >= KSUID epoch')
+      throw new InvalidInputError('KSUID_TIMESTAMP_TOO_LOW', 'Timestamp must be >= KSUID epoch')
     }
 
     if (options.secs) {
@@ -176,3 +180,5 @@ export const ksuid: Ksuid = Object.assign(ksuidFn, {
   NIL: '000000000000000000000000000',
   MAX: 'aWgEPTl1tmebfsQzFP4bxwgy80V',
 })
+
+export { BufferError, InvalidInputError, ParseError, UniqueIdError } from '../errors'
