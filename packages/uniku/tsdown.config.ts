@@ -4,9 +4,6 @@ import { baseConfig } from '../../tsdown.config.base'
 export default defineConfig({
   ...baseConfig,
   entry: [
-    // Internal platform-specific implementations
-    'src/platform/node.ts',
-    'src/platform/neutral.ts',
     // Public entry points
     'src/cuid2/cuid2.ts',
     'src/ksuid/ksuid.ts',
@@ -14,10 +11,6 @@ export default defineConfig({
     'src/ulid/ulid.ts',
     'src/uuid/v4.ts',
     'src/uuid/v7.ts',
-  ],
-  external: [
-    // #platform is resolved at runtime via package.json exports
-    '#platform',
   ],
   tsconfig: 'tsconfig.build.json',
   attw: {

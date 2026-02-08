@@ -1,4 +1,4 @@
-import { randomFill } from '#platform'
+const randomFill = /*@__PURE__*/ globalThis.crypto.getRandomValues.bind(globalThis.crypto)
 
 /**
  * Simple, fast random byte pool for ID generation.
