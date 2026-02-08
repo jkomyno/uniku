@@ -1,5 +1,11 @@
 # uniku
 
+## 0.0.9
+
+### Patch Changes
+
+- db9f558: Improved performance of uuid v4, ksuid, nanoid
+
 ## 0.0.8
 
 ### Patch Changes
