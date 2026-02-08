@@ -1,0 +1,156 @@
+# @uniku/cli
+
+[![npm version](https://img.shields.io/npm/v/@uniku/cli.svg)](https://www.npmjs.com/package/@uniku/cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+Command-line tool for generating, validating, and inspecting unique identifiers.
+
+Supports UUID v4/v7, ULID, CUID2, Nanoid, and KSUID.
+
+## Installation
+
+```bash
+# pnpm (recommended)
+pnpm add -g @uniku/cli
+
+# npm
+npm install -g @uniku/cli
+
+# bun
+bun add -g @uniku/cli
+```
+
+## Usage
+
+### Generate IDs
+
+```bash
+# UUID v4 (default)
+uniku uuid
+# => 550e8400-e29b-41d4-a716-446655440000
+
+# UUID v7 (time-ordered)
+uniku uuid --version 7
+# => 018e5e5c-7c8a-7000-8000-000000000000
+
+# Generate multiple IDs
+uniku uuid --count 5
+
+# ULID
+uniku ulid
+# => 01HW9T2W9W9YJ3JZ1H4P4M2T8Q
+
+# Monotonically increasing ULIDs
+uniku ulid --monotonic --count 3
+
+# Nanoid (custom size and alphabet)
+uniku nanoid --size 12 --alphabet hex
+
+# CUID2 (custom length)
+uniku cuid --length 16
+
+# KSUID
+uniku ksuid
+
+# Output as JSON
+uniku uuid --count 3 --json
+```
+
+All generate commands also work under `uniku generate <type>` (e.g., `uniku generate uuid`).
+
+### Validate IDs
+
+```bash
+# Validate a single ID (type auto-detected)
+uniku validate 018e5e5c-7c8a-7000-8000-000000000000
+
+# Validate with explicit type
+uniku validate --type ulid 01HW9T2W9W9YJ3JZ1H4P4M2T8Q
+
+# Batch validate from stdin
+echo -e "018e5e5c-7c8a-7000-8000-000000000000\ninvalid-id" | uniku validate --stdin
+
+# Quiet mode (exit code only: 0 = valid, 2 = invalid)
+uniku validate --quiet 018e5e5c-7c8a-7000-8000-000000000000
+
+# JSON output
+uniku validate --json 018e5e5c-7c8a-7000-8000-000000000000
+```
+
+### Inspect IDs
+
+```bash
+# Decode metadata from an ID (type auto-detected)
+uniku inspect 018e5e5c-7c8a-7000-8000-000000000000
+
+# Inspect with explicit type
+uniku inspect --type ulid 01HW9T2W9W9YJ3JZ1H4P4M2T8Q
+
+# JSON output
+uniku inspect --json 018e5e5c-7c8a-7000-8000-000000000000
+```
+
+For time-ordered IDs (UUID v7, ULID, KSUID), inspect extracts the embedded timestamp. For random-only IDs (UUID v4, CUID2, Nanoid), it reports that no decodable metadata is available.
+
+## Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `uniku uuid` | Generate UUIDs (v4 or v7) |
+| `uniku ulid` | Generate ULIDs |
+| `uniku nanoid` | Generate Nanoids |
+| `uniku cuid` | Generate CUIDs (v2) |
+| `uniku ksuid` | Generate KSUIDs |
+| `uniku validate <id>` | Check if an ID is valid |
+| `uniku inspect <id>` | Decode and inspect an ID |
+
+### Common Options
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--count` | `-n` | Number of IDs to generate (default: 1) |
+| `--json` | | Output as JSON |
+| `--help` | | Show help |
+| `--version` | `-V` | Show version |
+
+### Generator-Specific Options
+
+| Command | Option | Alias | Description |
+|---------|--------|-------|-------------|
+| `uuid` | `--version` | `-v` | UUID version: 4 or 7 (default: 4) |
+| `uuid` | `--lowercase` | `-l` | Output in lowercase |
+| `ulid` | `--monotonic` | | Generate monotonically increasing ULIDs |
+| `ulid` | `--timestamp` | | Unix timestamp in ms or "now" |
+| `ulid` | `--lowercase` | `-l` | Output in lowercase |
+| `nanoid` | `--size` | `-s` | Length of ID, 1-256 (default: 21) |
+| `nanoid` | `--alphabet` | `-a` | Custom alphabet or preset: hex, numeric, alpha |
+| `cuid` | `--length` | `-l` | Length of ID, 2-32 (default: 24) |
+| `ksuid` | `--timestamp` | | Unix timestamp in seconds or "now" |
+
+### Validate Options
+
+| Option | Description |
+|--------|-------------|
+| `--type` | Expected ID type: uuid, ulid, nanoid, cuid, ksuid (auto-detected if omitted) |
+| `--stdin` | Read IDs from stdin (one per line) |
+| `--quiet` | No output, exit code only (0 = valid, 2 = invalid) |
+| `--json` | Output as JSON |
+
+### Inspect Options
+
+| Option | Description |
+|--------|-------------|
+| `--type` | ID type: uuid, ulid, nanoid, cuid, ksuid (auto-detected if omitted) |
+| `--json` | Output as JSON |
+
+## Tech Stack
+
+- [Effect](https://effect.website/) — functional effect system for TypeScript
+- [@effect/cli](https://github.com/Effect-TS/effect/tree/main/packages/cli) — CLI framework built on Effect
+- [@effect/platform](https://github.com/Effect-TS/effect/tree/main/packages/platform) — platform abstraction layer
+- [Bun](https://bun.sh/) — JavaScript runtime
+- [uniku](https://github.com/jkomyno/uniku) — core ID generation library
+
+## License
+
+MIT — see [LICENSE](https://github.com/jkomyno/uniku/blob/main/LICENSE)

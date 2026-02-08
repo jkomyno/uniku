@@ -33,6 +33,14 @@
     "test:e2e:cloudflare": {
       "dependsOn": ["^build"]
     },
+    "build:binary": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"]
+    },
+    "install:binary": {
+      "dependsOn": ["build:binary"],
+      "cache": false
+    },
     "build:watch": {},
     "clean": {
       "cache": false,

@@ -110,7 +110,7 @@ Preview releases are automatically created for each PR via [pkg.pr.new](https://
 
 ```
 packages/
-  uniku/
+  uniku/                 # Core ID generation library
     src/
       common/
         bytes.ts         # Byte manipulation (increment, timestamp writing)
@@ -139,6 +139,16 @@ packages/
       e2e/
         runtimes/
           cloudflare/    # Cloudflare Workers E2E tests
+  cli/                   # CLI tool (@uniku/cli)
+    src/
+      commands/          # Command definitions (generate, validate, inspect)
+      domain/            # Constants, error types, shared types
+      generators/        # ID generation wrappers
+      inspectors/        # ID metadata extraction
+      validators/        # ID validation logic
+      services/          # Output and stdin services
+      bin.ts             # Entry point (Bun runtime)
+    __tests__/           # CLI tests
 ```
 
 ## Code Style

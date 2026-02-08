@@ -69,8 +69,14 @@ jobs:
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2.1.2
+
       - name: Build
         run: pnpm build
+
+      - name: Build CLI binary (smoke test)
+        run: pnpm --filter @uniku/cli build:binary
 
   preview:
     name: Preview Release

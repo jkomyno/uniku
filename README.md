@@ -460,6 +460,27 @@ ksuid.MAX  // "aWgEPTl1tmebfsQzFP4bxwgy80V"
 
 > **Note:** KSUID uses `secs` (seconds) while UUID v7 and ULID use `msecs` (milliseconds). This reflects KSUID's native second-precision timestamps.
 
+## CLI
+
+Generate, validate, and inspect IDs from the command line with [`@uniku/cli`](./packages/cli):
+
+```bash
+# Install globally
+pnpm add -g @uniku/cli
+
+# Generate IDs
+uniku uuid --version 7 --count 3
+uniku nanoid --size 12 --alphabet hex
+
+# Validate an ID (type auto-detected)
+uniku validate 018e5e5c-7c8a-7000-8000-000000000000
+
+# Inspect an ID's metadata
+uniku inspect 018e5e5c-7c8a-7000-8000-000000000000
+```
+
+See the [CLI README](./packages/cli/README.md) for the full list of commands and options.
+
 ## Related Projects
 
 Third-party libraries that inspired this project:

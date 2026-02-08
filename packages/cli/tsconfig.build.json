@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.src.json",
+  "include": ["src"],
+  "compilerOptions": {
+    "outDir": "build",
+    "composite": false,
+    "emitDeclarationOnly": false,
+    "paths": {
+      "@/src/*": ["./src/*"],
+    },
+  },
+}
