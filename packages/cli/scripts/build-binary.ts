@@ -98,6 +98,8 @@ const program = Effect.gen(function* () {
     './src/bin.ts',
     '--compile',
     '--minify',
+    '--define',
+    '__STANDALONE_BINARY__=true',
     `--target=${target}`,
     `--outfile=${outFile}`,
   )
