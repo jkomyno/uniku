@@ -18,6 +18,7 @@ export function incrementBytesInPlace(bytes: Uint8Array): boolean {
     }
     bytes[i] = 0
   }
+
   // All bytes overflowed to 0 - astronomically unlikely (1 in 2^80 for ULID, 1 in 2^128 for KSUID)
   return false
 }
@@ -42,6 +43,9 @@ export function writeTimestamp48(buf: Uint8Array, offset: number, msecs: number)
 /**
  * Write a 32-bit timestamp as big-endian bytes.
  * Used by KSUID for second-precision timestamps.
+ *
+ * `writeTimestamp32(buf, offset, timestamp)` is equivalent to `new DataView(buf.buffer, offset, 4).setUint32(offset, timestamp, false)`,
+ * but it's faster because it doesn't require creating a DataView object.
  *
  * @param buf - Target buffer
  * @param offset - Starting byte offset

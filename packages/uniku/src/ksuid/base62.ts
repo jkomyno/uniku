@@ -1,4 +1,9 @@
 /**
+ * Note: once ES2025 is widely adopted, we can use the built-in `Uint8Array.prototype.toHex` method.
+ */
+// import { toHex } from 'hextreme'
+
+/**
  * Base62 encoding/decoding for KSUID.
  * Alphabet: 0-9A-Za-z (standard Base62 ordering)
  *
@@ -10,7 +15,7 @@
  */
 
 // Base62 alphabet: digits (0-9), uppercase (A-Z), lowercase (a-z)
-const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 const BASE = 62n
 const KSUID_BYTES = 20
 const KSUID_STRING_LEN = 27
@@ -21,8 +26,8 @@ const KSUID_STRING_LEN = 27
 const DECODING = new Uint8Array(128)
 DECODING.fill(255) // 255 = invalid marker
 
-for (let i = 0; i < ALPHABET.length; i += 1) {
-  DECODING[ALPHABET.charCodeAt(i)] = i
+for (let i = 0; i < BASE62_ALPHABET.length; i += 1) {
+  DECODING[BASE62_ALPHABET.charCodeAt(i)] = i
 }
 
 /**
@@ -44,13 +49,15 @@ export function encodeBase62(bytes: Uint8Array): string {
 
   // Convert to Base62 string (build from right to left)
   // Direct string concatenation is faster than array + join in V8
-  let result = ''
-  for (let i = 0; i < KSUID_STRING_LEN; i += 1) {
-    result = ALPHABET[Number(num % BASE)] + result
+  let encoded = ''
+  while (num > 0n) {
+    const remainder = num % BASE
     num = num / BASE
+    encoded = BASE62_ALPHABET[Number(remainder)] + encoded
   }
 
-  return result
+  // Pad the result with the zero-character ('0') to ensure a fixed length
+  return encoded.padStart(KSUID_STRING_LEN, '0')
 }
 
 /**

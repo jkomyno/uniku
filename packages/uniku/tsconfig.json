@@ -7,8 +7,7 @@
     "emitDeclarationOnly": true,
     "types": ["vitest/globals", "bun"],
     "paths": {
-      "@/src/*": ["./src/*"],
-      "#platform": ["./src/platform/node.ts", "./src/platform/neutral.ts"]
+      "@/src/*": ["./src/*"]
     }
   }
 }

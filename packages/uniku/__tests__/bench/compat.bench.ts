@@ -40,7 +40,7 @@ const testIds = {
 }
 
 describe('Generation', () => {
-  describe.only('UUID v4', () => {
+  describe('UUID v4', () => {
     bench(
       'uniku',
       () => {
@@ -136,7 +136,10 @@ describe('Generation', () => {
     bench(
       'npm',
       () => {
-        npmKsuid.random()
+        /**
+         * Note: npmKsuid.random() returns a Buffer wrapper, not a string by default.
+         */
+        npmKsuid.random().toString()
       },
       benchOptions,
     )

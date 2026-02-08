@@ -15,7 +15,7 @@ export default defineConfig({
   tsconfig: 'tsconfig.build.json',
   attw: {
     ...baseConfig.attw,
-    // Only check public entry points, not internal #platform
+    // Only check public entry points
     entrypoints: ['./uuid/v4', './uuid/v7', './ulid', './cuid2', './nanoid', './ksuid'],
     profile: 'esm-only',
   },
