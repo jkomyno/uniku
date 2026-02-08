@@ -1,8 +1,7 @@
 import { rng } from '../common/random'
 import { formatUuid, parseUuid } from './common/uuid'
 
-// Cache the native randomUUID function at module load - always available in modern runtimes
-const nativeRandomUUID = globalThis.crypto.randomUUID.bind(globalThis.crypto)
+const randomUUID = /*@__PURE__*/ globalThis.crypto.randomUUID.bind(globalThis.crypto)
 
 export type UuidV4Options = {
   /**
@@ -11,9 +10,6 @@ export type UuidV4Options = {
    */
   random?: Uint8Array
 }
-
-/** @deprecated Use UuidV4Options instead */
-export type Version4Options = UuidV4Options
 
 export type UuidV4 = {
   (): string
@@ -67,9 +63,17 @@ function v4(options?: UuidV4Options, buf?: undefined, offset?: number): string
 function v4<TBuf extends Uint8Array = Uint8Array>(options: UuidV4Options | undefined, buf: TBuf, offset?: number): TBuf
 function v4<TBuf extends Uint8Array = Uint8Array>(options?: UuidV4Options, buf?: TBuf, offset?: number): string | TBuf {
   if (!buf && !options) {
-    return nativeRandomUUID()
+    return randomUUID()
   }
 
+  return _v4(options, buf, offset)
+}
+
+function _v4<TBuf extends Uint8Array = Uint8Array>(
+  options?: UuidV4Options,
+  buf?: TBuf,
+  offset?: number,
+): string | TBuf {
   const bytes = v4Bytes(options?.random ?? rng(), buf, offset)
   return buf ?? formatUuid(bytes)
 }

@@ -1,4 +1,4 @@
-import { incrementBytesInPlace, writeTimestamp32 } from '../common/bytes'
+import { writeTimestamp32 } from '../common/bytes'
 import { rng } from '../common/random'
 import { decodeBase62, encodeBase62 } from './base62'
 
@@ -52,28 +52,10 @@ export type Ksuid = {
   MAX: string
 }
 
-type KsuidState = {
-  secs: number
-  lastPayload: Uint8Array
-}
-
-/**
- * Module-level state for maintaining monotonic ordering within the same second.
- *
- * IMPORTANT: This state persists across all ksuid() calls in the module's lifetime.
- * - In serverless/edge functions with warm starts, state persists between invocations.
- * - For isolated state, pass explicit `secs` and `random` via options.
- * - Tests should mock Date.now() or provide explicit options for deterministic behavior.
- */
-const state: KsuidState = {
-  secs: -Infinity,
-  lastPayload: new Uint8Array(PAYLOAD_BYTES),
-}
-
 /**
  * Write KSUID bytes to a buffer.
  */
-function ksuidBytes(secs: number, payload: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
+function ksuidBytes(timestamp: number, payload: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
   if (!buf) {
     buf = new Uint8Array(KSUID_BYTES)
     offset = 0
@@ -82,9 +64,11 @@ function ksuidBytes(secs: number, payload: Uint8Array, buf?: Uint8Array, offset 
   }
 
   // Timestamp (32-bit big-endian seconds since KSUID epoch) -> bytes 0-3
-  writeTimestamp32(buf, offset, secs)
+  writeTimestamp32(buf, offset, timestamp)
 
   // Payload (128 bits) -> bytes 4-19
+  // copy from payload[TIMESTAMP_BYTES] into buf
+  buf.set(payload.subarray(TIMESTAMP_BYTES, TIMESTAMP_BYTES + PAYLOAD_BYTES), offset + TIMESTAMP_BYTES)
   for (let i = 0; i < PAYLOAD_BYTES; i += 1) {
     buf[offset + TIMESTAMP_BYTES + i] = payload[i]
   }
@@ -105,8 +89,19 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(
   offset?: number,
 ): TBuf
 function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, buf?: TBuf, offset = 0): string | TBuf {
-  let secs: number
-  let payload: Uint8Array
+  if (options) {
+    if (options.random && options.random.length < PAYLOAD_BYTES) {
+      throw new Error('Random bytes length must be >= 16 for KSUID')
+    }
+
+    if (options.secs && options.secs < KSUID_EPOCH) {
+      throw new Error('Timestamp must be >= KSUID epoch')
+    }
+
+    if (options.secs) {
+      options.secs = options.secs - KSUID_EPOCH
+    }
+  }
 
   /**
    * Note: by default, Cloudflare Workers "freezes" time during request handling to prevent
@@ -114,45 +109,18 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
    * duration of a request.
    * Implications:
    * - all KSUIDs generated within a single request will have the same timestamp.
-   * - the monotonic ordering will rely entirely on incrementing the payload portion.
    */
-  const now = Date.now()
-  const defaultSecs = Math.floor(now / 1000) - KSUID_EPOCH
-
-  if (options) {
-    // Explicit options provided - use them directly without monotonic state
-    secs = options.secs !== undefined ? options.secs - KSUID_EPOCH : defaultSecs
-
-    if (options.random) {
-      if (options.random.length < PAYLOAD_BYTES) {
-        throw new Error(`Random bytes length must be >= ${PAYLOAD_BYTES} for KSUID`)
-      }
-      payload = options.random
-    } else {
-      payload = rng()
-    }
-  } else {
-    secs = defaultSecs
-
-    if (secs > state.secs) {
-      // New second: generate fresh random payload
-      payload = rng()
-      state.secs = secs
-      state.lastPayload.set(payload.subarray(0, PAYLOAD_BYTES))
-    } else {
-      // Same second: increment payload for monotonic ordering
-      incrementBytesInPlace(state.lastPayload)
-      payload = state.lastPayload
-    }
-  }
+  const timestamp = options?.secs ?? Math.floor(Date.now() / 1000 - KSUID_EPOCH)
+  const payload = options?.random ?? rng()
 
   if (buf) {
-    ksuidBytes(secs, payload, buf, offset)
+    ksuidBytes(timestamp, payload, buf, offset)
     return buf
   }
 
+  const bytes = ksuidBytes(timestamp, payload)
+
   // String mode: create bytes then encode to Base62
-  const bytes = ksuidBytes(secs, payload)
   return encodeBase62(bytes)
 }
 

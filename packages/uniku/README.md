@@ -56,14 +56,12 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 
 | Generator | uniku vs npm |
 |-----------|-------------:|
-| ULID      |  **77× faster** |
-| CUID2     |   **8× faster** |
-| Nanoid    | **1.1× faster** |
-| UUID v4   | npm 1.2× faster |
-| UUID v7   |   npm 1.6× faster* |
-| KSUID   |   npm 1.8× faster* |
-
-<sub>*UUID v7 tradeoff: uniku prioritizes strict monotonic sequencing for database use cases.</sub>
+| ULID      | **85× faster** |
+| CUID2     | **8× faster** |
+| KSUID     | **1.5× faster** |
+| UUID v7   | **1.1× faster**  |
+| Nanoid    | **~comparable speed** |
+| UUID v4   | npm is 1.1× faster |
 
 ## Which ID Should I Use?
 
@@ -175,12 +173,12 @@ deno install npm:uniku
 
 | Import | Minified + gzipped |
 |--------|-------------------:|
-| `uniku/uuid/v4` | ~930 B |
+| `uniku/uuid/v4` | ~940 B |
 | `uniku/uuid/v7` | ~1.1 KB |
 | `uniku/ulid` | ~1.5 KB |
 | `uniku/cuid2` | ~1.1 KB* |
-| `uniku/nanoid` | ~967 B |
-| `uniku/ksuid` | ~1.1 KB |
+| `uniku/nanoid` | ~938 B |
+| `uniku/ksuid` | ~1.0 KB |
 
 ## Quick Start
 

@@ -10,13 +10,19 @@
       "outputs": []
     },
     "bench": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "__tests__/bench/**"],
+      "outputs": ["bench-results.json"]
     },
     "bench:compat": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "__tests__/bench/**"],
+      "outputs": ["bench-results.json"]
     },
     "bench:summary": {
-      "dependsOn": ["bench:compat"]
+      "dependsOn": ["bench:compat"],
+      "inputs": ["bench-results.json", "scripts/bench-summary.ts"],
+      "outputs": []
     },
     "bundle:summary": {
       "dependsOn": ["^build"]

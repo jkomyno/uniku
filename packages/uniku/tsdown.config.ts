@@ -4,6 +4,7 @@ import { baseConfig } from '../../tsdown.config.base'
 export default defineConfig({
   ...baseConfig,
   entry: [
+    // Public entry points
     'src/cuid2/cuid2.ts',
     'src/ksuid/ksuid.ts',
     'src/nanoid/nanoid.ts',
@@ -14,6 +15,7 @@ export default defineConfig({
   tsconfig: 'tsconfig.build.json',
   attw: {
     ...baseConfig.attw,
+    // Only check public entry points
     entrypoints: ['./uuid/v4', './uuid/v7', './ulid', './cuid2', './nanoid', './ksuid'],
     profile: 'esm-only',
   },

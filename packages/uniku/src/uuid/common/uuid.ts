@@ -1,4 +1,4 @@
-import { HEX_TABLE, hexValue } from './hex'
+import { hexValue } from './hex'
 
 const UUID_BYTE_LENGTH = 16
 const UUID_STRING_LENGTH = 36
@@ -84,6 +84,12 @@ const UUID_CHAR_IS_HIGH: boolean[] = [
   true,
   false, // chars 24-35
 ]
+
+// Pre-computed lookup table for byte-to-hex conversion (0x00 -> "00", 0xff -> "ff")
+//
+// Note: this table must remain defined in the same module as `formatUuid`, otherwise the v8 optimizer
+// will cause a performance drop of ~36%.
+const HEX_TABLE: string[] = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0'))
 
 export function formatUuid(bytes: Uint8Array): string {
   // Direct string concatenation - optimized for V8's string builder.

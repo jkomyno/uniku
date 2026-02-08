@@ -1,3 +1,5 @@
+const randomFill = /*@__PURE__*/ globalThis.crypto.getRandomValues.bind(globalThis.crypto)
+
 /**
  * Simple, fast random byte pool for ID generation.
  * Uses plain JavaScript for maximum performance - no Atomics overhead.
@@ -14,7 +16,7 @@ let poolPtr = POOL_SIZE // Start exhausted to trigger first fill
  */
 export function rng(): Uint8Array {
   if (poolPtr > POOL_SIZE - 16) {
-    crypto.getRandomValues(rnds8Pool)
+    randomFill(rnds8Pool)
     poolPtr = 0
   }
   // Return a view - consumed synchronously within the same call

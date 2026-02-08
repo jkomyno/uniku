@@ -1,4 +1,4 @@
-import { writeTimestamp48 } from '../common/bytes'
+import { rng } from '../common/random'
 import { formatUuid, parseUuid } from './common/uuid'
 
 export type UuidV7Options = {
@@ -10,9 +10,6 @@ export type UuidV7Options = {
   msecs?: number
   seq?: number
 }
-
-/** @deprecated Use UuidV7Options instead */
-export type Version7Options = UuidV7Options
 
 export type UuidV7 = {
   (): string
@@ -29,21 +26,6 @@ export type UuidV7 = {
 }
 
 const UUID_V7_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
-// Simple random pool (matches uuid npm approach)
-const POOL_SIZE = 256
-const rnds8Pool = new Uint8Array(POOL_SIZE)
-let poolPtr = POOL_SIZE // Start exhausted to trigger first fill
-
-function rng(): Uint8Array {
-  if (poolPtr > POOL_SIZE - 16) {
-    crypto.getRandomValues(rnds8Pool)
-    poolPtr = 0
-  }
-  const start = poolPtr
-  poolPtr += 16
-  return rnds8Pool.subarray(start, poolPtr)
-}
 
 // Reusable buffer for string output path - avoids allocation per call.
 // Safe because bytes are consumed synchronously by formatUuid().
@@ -85,8 +67,13 @@ function v7Bytes(
   seq ??= (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
 
   // Timestamp (48-bit big-endian milliseconds since Unix epoch).
-  writeTimestamp48(buf, offset, msecs)
-  offset += 6
+  // byte 0-5: timestamp (48 bits)
+  buf[offset++] = (msecs / 0x10000000000) & 0xff
+  buf[offset++] = (msecs / 0x100000000) & 0xff
+  buf[offset++] = (msecs / 0x1000000) & 0xff
+  buf[offset++] = (msecs / 0x10000) & 0xff
+  buf[offset++] = (msecs / 0x100) & 0xff
+  buf[offset++] = msecs & 0xff
 
   // Set version (7) and variant (10xx), then pack sequence and random tail bytes.
   buf[offset++] = 0x70 | ((seq >>> 28) & 0x0f)

@@ -73,39 +73,6 @@ describe('ksuid', () => {
     expect(ksuid.timestamp(id)).toBe(secs * 1000) // timestamp() returns milliseconds
   })
 
-  it('increases lexicographically within the same second', () => {
-    const secs = 1_702_387_456
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(secs * 1000)
-    const samples = 1_000
-    const ids = new Array<string>(samples)
-
-    for (let i = 0; i < samples; i += 1) {
-      ids[i] = ksuid()
-    }
-    nowSpy.mockRestore()
-
-    for (let i = 0; i < samples - 1; i += 1) {
-      // KSUIDs should sort lexicographically
-      expect(ids[i] < ids[i + 1]).toBe(true)
-    }
-  })
-
-  it('increases bytes within the same second', () => {
-    const secs = 1_702_387_456
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(secs * 1000)
-    const samples = 1_000
-    const bytesList = new Array<Uint8Array>(samples)
-
-    for (let i = 0; i < samples; i += 1) {
-      bytesList[i] = ksuid.toBytes(ksuid())
-    }
-    nowSpy.mockRestore()
-
-    for (let i = 0; i < samples - 1; i += 1) {
-      expect(compareBytes(bytesList[i], bytesList[i + 1])).toBeLessThan(0)
-    }
-  })
-
   it('round-trips through byte helpers', () => {
     const id = ksuid()
     expect(ksuid.fromBytes(ksuid.toBytes(id))).toBe(id)
