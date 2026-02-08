@@ -18,6 +18,10 @@
   "bin": {
     "uniku": "./build/bin.mjs"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "files": [
     "build",
     "README.md"
