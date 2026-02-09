@@ -465,7 +465,10 @@ ksuid.MAX  // "aWgEPTl1tmebfsQzFP4bxwgy80V"
 Generate, validate, and inspect IDs from the command line with [`@uniku/cli`](./packages/cli):
 
 ```bash
-# Install globally
+# Install pre-built binary (macOS, Linux)
+curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
+
+# Or install via npm
 pnpm add -g @uniku/cli
 
 # Generate IDs
