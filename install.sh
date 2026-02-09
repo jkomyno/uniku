@@ -159,6 +159,14 @@ download_and_install() {
   info "Extracting..."
   tar -xzf "$tmpdir/$tarball" -C "$tmpdir"
 
+  # The tarball contains a file named e.g. "uniku-darwin-arm64", rename to "uniku"
+  local extracted_name="${BINARY_NAME}-${platform}"
+  if [ -f "$tmpdir/$extracted_name" ]; then
+    mv "$tmpdir/$extracted_name" "$tmpdir/$BINARY_NAME"
+  elif [ ! -f "$tmpdir/$BINARY_NAME" ]; then
+    error "Expected binary not found after extraction (looked for $extracted_name and $BINARY_NAME)"
+  fi
+
   info "Installing to $INSTALL_DIR..."
   if [ -w "$INSTALL_DIR" ]; then
     mv "$tmpdir/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"

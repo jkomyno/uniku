@@ -9,6 +9,26 @@ Supports UUID v4/v7, ULID, CUID2, Nanoid, and KSUID.
 
 ## Installation
 
+### Pre-built Binary (recommended)
+
+Download and install a standalone binary — no Node.js required:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
+```
+
+Supports macOS (Intel & Apple Silicon) and Linux (x64). Override the install location or version with environment variables:
+
+```bash
+# Custom install directory
+UNIKU_INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
+
+# Specific version
+UNIKU_VERSION=0.0.12 curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
+```
+
+### npm
+
 ```bash
 # pnpm (recommended)
 pnpm add -g @uniku/cli
