@@ -18,10 +18,13 @@ const MAX_KSUID_VALUE = (1n << 160n) - 1n
 const KSUID_BYTES = 20
 const KSUID_STRING_LEN = 27
 
-// Pre-computed decode table indexed by ASCII code (0-127)
-// Uses Uint8Array for cache-efficient lookups via charCodeAt
+// Pre-computed decode table covering every UTF-16 code unit charCodeAt can
+// return, so lookups never go out of bounds and a single `=== 255` check
+// rejects invalid input (including non-ASCII) without a per-character range
+// check. Costs 64 KiB once at module load; valid inputs only touch the first
+// 128 bytes, so cache behavior is unaffected.
 // Note: Base62 is case-sensitive - 'A' (value 10) and 'a' (value 36) are different
-const DECODING = new Uint8Array(128)
+const DECODING = new Uint8Array(65536)
 DECODING.fill(255) // 255 = invalid marker
 
 for (let i = 0; i < BASE62_ALPHABET.length; i += 1) {
@@ -78,11 +81,7 @@ export function decodeBase62(str: string): Uint8Array {
   // Convert Base62 string to BigInt
   let num = 0n
   for (let i = 0; i < KSUID_STRING_LEN; i += 1) {
-    const code = str.charCodeAt(i)
-    if (code >= 128) {
-      throw new ParseError('KSUID_INVALID_CHAR', `Invalid KSUID character: ${str[i]}`)
-    }
-    const value = DECODING[code]
+    const value = DECODING[str.charCodeAt(i)]
     if (value === 255) {
       throw new ParseError('KSUID_INVALID_CHAR', `Invalid KSUID character: ${str[i]}`)
     }

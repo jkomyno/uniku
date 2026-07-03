@@ -21,7 +21,9 @@ const KSUID_STRING_LEN = 27
 const TIMESTAMP_BYTES = 4
 const PAYLOAD_BYTES = 16
 const KSUID_MAX_SECS = KSUID_EPOCH + 0xffffffff
-const KSUID_MAX_STRING = 'aWgEPTl1tmebfsQzFP4bxwgy80V'
+// 2^160 - 1 in Base62 ('aWgEPTl1tmebfsQzFP4bxwgy80V'), derived from the
+// encoder so it cannot drift from the decoder's 160-bit overflow bound.
+const KSUID_MAX_STRING = encodeBase62(new Uint8Array(KSUID_BYTES).fill(0xff))
 
 // Validation regex: 27 alphanumeric characters
 // Note: Both cases are valid Base62 characters, but they decode to different values
