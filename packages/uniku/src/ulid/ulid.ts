@@ -1,7 +1,7 @@
 import { incrementBytesInPlace, writeTimestamp48 } from '../common/bytes'
 import { rng } from '../common/random'
 import { BufferError, InvalidInputError } from '../errors'
-import { bytesToUlid, decodeTime, decodeToBytes, encodeRandom, encodeTime } from './crockford'
+import { bytesToUlid, decodeToBytes, decodeUlidTime, encodeRandom, encodeTime } from './crockford'
 
 export type UlidOptions = {
   /**
@@ -175,7 +175,7 @@ function isValid(id: unknown): id is string {
 export const ulid: Ulid = Object.assign(ulidFn, {
   toBytes: (id: string) => decodeToBytes(id),
   fromBytes: (bytes: Uint8Array) => bytesToUlid(bytes),
-  timestamp: (id: string) => decodeTime(id.slice(0, 10)),
+  timestamp: (id: string) => decodeUlidTime(id),
   isValid,
   NIL: '00000000000000000000000000',
   MAX: '7ZZZZZZZZZZZZZZZZZZZZZZZZZ',

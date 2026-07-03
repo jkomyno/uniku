@@ -144,11 +144,11 @@ describe('ksuid', () => {
       expect(ksuid.isValid('0ujtsYcgvSTl8PAuAdqWYSMnLOv')).toBe(true)
     })
 
-    it('validates format correctly (27 alphanumeric chars)', () => {
-      // Base62 allows any mix of 0-9, A-Z, a-z
+    it('validates format and numeric range correctly', () => {
+      // Base62 allows any mix of 0-9, A-Z, a-z within the 160-bit KSUID range.
       expect(ksuid.isValid('000000000000000000000000000')).toBe(true) // all zeros
       expect(ksuid.isValid('ZZZZZZZZZZZZZZZZZZZZZZZZZZZ')).toBe(true) // all uppercase Z
-      expect(ksuid.isValid('zzzzzzzzzzzzzzzzzzzzzzzzzzz')).toBe(true) // all lowercase z
+      expect(ksuid.isValid('zzzzzzzzzzzzzzzzzzzzzzzzzzz')).toBe(false) // exceeds 160 bits
     })
 
     it('returns false for wrong length', () => {
@@ -177,6 +177,27 @@ describe('ksuid', () => {
         // TypeScript should know maybeId is string here
         expect(maybeId.length).toBe(27)
       }
+    })
+  })
+
+  describe('decoder validation', () => {
+    const invalidIds = [
+      '0ujsswThIGTUYm2K8FjOOfXtY1',
+      '0ujsswThIGTUYm2K8FjOOfXtY1KX',
+      '0ujsswThIGTUYm2K8FjOOf-tY1K',
+      '€'.repeat(27),
+      'z'.repeat(27),
+    ]
+
+    it('throws from toBytes for IDs rejected by isValid', () => {
+      for (const id of invalidIds) {
+        expect(ksuid.isValid(id)).toBe(false)
+        expect(() => ksuid.toBytes(id)).toThrow()
+      }
+    })
+
+    it('round-trips the maximum valid KSUID', () => {
+      expect(ksuid.fromBytes(ksuid.toBytes(ksuid.MAX))).toBe(ksuid.MAX)
     })
   })
 

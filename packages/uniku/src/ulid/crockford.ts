@@ -19,6 +19,43 @@ for (let i = 0; i < ENCODING.length; i += 1) {
 }
 
 const TIME_LEN = 10
+const ULID_LEN = 26
+
+function invalidCharError(str: string, index: number): ParseError {
+  return new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[index]}`)
+}
+
+function decodeTimeChars(str: string): number {
+  const firstCode = str.charCodeAt(0)
+  if (firstCode >= 128) {
+    throw invalidCharError(str, 0)
+  }
+
+  const firstValue = DECODING[firstCode]
+  if (firstValue === 255) {
+    throw invalidCharError(str, 0)
+  }
+
+  if (firstValue > 7) {
+    throw new ParseError('ULID_TIMESTAMP_OVERFLOW', 'ULID timestamp exceeds 48 bits')
+  }
+
+  let time = firstValue
+  for (let i = 1; i < TIME_LEN; i += 1) {
+    const code = str.charCodeAt(i)
+    if (code >= 128) {
+      throw invalidCharError(str, i)
+    }
+
+    const value = DECODING[code]
+    if (value === 255) {
+      throw invalidCharError(str, i)
+    }
+
+    time = time * 32 + value
+  }
+  return time
+}
 
 /**
  * Encode a 48-bit timestamp to a 10-character Crockford Base32 string.
@@ -68,18 +105,23 @@ export function encodeRandom(bytes: Uint8Array): string {
 }
 
 /**
- * Decode the first 10 characters of a ULID string to a timestamp (Unix epoch milliseconds).
+ * Decode a 10-character ULID timestamp string to Unix epoch milliseconds.
  */
 export function decodeTime(str: string): number {
-  let time = 0
-  for (let i = 0; i < TIME_LEN; i += 1) {
-    const value = DECODING[str.charCodeAt(i)]
-    if (value === 255) {
-      throw new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[i]}`)
-    }
-    time = time * 32 + value
+  if (str.length !== TIME_LEN) {
+    throw new ParseError('ULID_INVALID_LENGTH', `ULID timestamp must be ${TIME_LEN} characters`)
   }
-  return time
+  return decodeTimeChars(str)
+}
+
+/**
+ * Decode the timestamp from a full 26-character ULID string.
+ */
+export function decodeUlidTime(str: string): number {
+  if (str.length !== ULID_LEN) {
+    throw new ParseError('ULID_INVALID_LENGTH', `ULID string must be ${ULID_LEN} characters`)
+  }
+  return decodeTimeChars(str)
 }
 
 /**
@@ -87,43 +129,98 @@ export function decodeTime(str: string): number {
  * Inlines all lookups to avoid intermediate array allocation.
  */
 export function decodeToBytes(str: string): Uint8Array {
-  if (str.length !== 26) {
+  if (str.length !== ULID_LEN) {
     throw new ParseError('ULID_INVALID_LENGTH', 'ULID string must be 26 characters')
   }
 
   const bytes = new Uint8Array(16)
 
   // Inline all 26 character lookups
-  const v0 = DECODING[str.charCodeAt(0)]
-  const v1 = DECODING[str.charCodeAt(1)]
-  const v2 = DECODING[str.charCodeAt(2)]
-  const v3 = DECODING[str.charCodeAt(3)]
-  const v4 = DECODING[str.charCodeAt(4)]
-  const v5 = DECODING[str.charCodeAt(5)]
-  const v6 = DECODING[str.charCodeAt(6)]
-  const v7 = DECODING[str.charCodeAt(7)]
-  const v8 = DECODING[str.charCodeAt(8)]
-  const v9 = DECODING[str.charCodeAt(9)]
-  const v10 = DECODING[str.charCodeAt(10)]
-  const v11 = DECODING[str.charCodeAt(11)]
-  const v12 = DECODING[str.charCodeAt(12)]
-  const v13 = DECODING[str.charCodeAt(13)]
-  const v14 = DECODING[str.charCodeAt(14)]
-  const v15 = DECODING[str.charCodeAt(15)]
-  const v16 = DECODING[str.charCodeAt(16)]
-  const v17 = DECODING[str.charCodeAt(17)]
-  const v18 = DECODING[str.charCodeAt(18)]
-  const v19 = DECODING[str.charCodeAt(19)]
-  const v20 = DECODING[str.charCodeAt(20)]
-  const v21 = DECODING[str.charCodeAt(21)]
-  const v22 = DECODING[str.charCodeAt(22)]
-  const v23 = DECODING[str.charCodeAt(23)]
-  const v24 = DECODING[str.charCodeAt(24)]
-  const v25 = DECODING[str.charCodeAt(25)]
+  const c0 = str.charCodeAt(0)
+  const c1 = str.charCodeAt(1)
+  const c2 = str.charCodeAt(2)
+  const c3 = str.charCodeAt(3)
+  const c4 = str.charCodeAt(4)
+  const c5 = str.charCodeAt(5)
+  const c6 = str.charCodeAt(6)
+  const c7 = str.charCodeAt(7)
+  const c8 = str.charCodeAt(8)
+  const c9 = str.charCodeAt(9)
+  const c10 = str.charCodeAt(10)
+  const c11 = str.charCodeAt(11)
+  const c12 = str.charCodeAt(12)
+  const c13 = str.charCodeAt(13)
+  const c14 = str.charCodeAt(14)
+  const c15 = str.charCodeAt(15)
+  const c16 = str.charCodeAt(16)
+  const c17 = str.charCodeAt(17)
+  const c18 = str.charCodeAt(18)
+  const c19 = str.charCodeAt(19)
+  const c20 = str.charCodeAt(20)
+  const c21 = str.charCodeAt(21)
+  const c22 = str.charCodeAt(22)
+  const c23 = str.charCodeAt(23)
+  const c24 = str.charCodeAt(24)
+  const c25 = str.charCodeAt(25)
+
+  const v0 = DECODING[c0]
+  const v1 = DECODING[c1]
+  const v2 = DECODING[c2]
+  const v3 = DECODING[c3]
+  const v4 = DECODING[c4]
+  const v5 = DECODING[c5]
+  const v6 = DECODING[c6]
+  const v7 = DECODING[c7]
+  const v8 = DECODING[c8]
+  const v9 = DECODING[c9]
+  const v10 = DECODING[c10]
+  const v11 = DECODING[c11]
+  const v12 = DECODING[c12]
+  const v13 = DECODING[c13]
+  const v14 = DECODING[c14]
+  const v15 = DECODING[c15]
+  const v16 = DECODING[c16]
+  const v17 = DECODING[c17]
+  const v18 = DECODING[c18]
+  const v19 = DECODING[c19]
+  const v20 = DECODING[c20]
+  const v21 = DECODING[c21]
+  const v22 = DECODING[c22]
+  const v23 = DECODING[c23]
+  const v24 = DECODING[c24]
+  const v25 = DECODING[c25]
 
   // Validate all characters (255 = invalid marker)
   if (
-    (v0 |
+    ((c0 |
+      c1 |
+      c2 |
+      c3 |
+      c4 |
+      c5 |
+      c6 |
+      c7 |
+      c8 |
+      c9 |
+      c10 |
+      c11 |
+      c12 |
+      c13 |
+      c14 |
+      c15 |
+      c16 |
+      c17 |
+      c18 |
+      c19 |
+      c20 |
+      c21 |
+      c22 |
+      c23 |
+      c24 |
+      c25) &
+      0xff80) !==
+      0 ||
+    ((v0 |
       v1 |
       v2 |
       v3 |
@@ -149,14 +246,20 @@ export function decodeToBytes(str: string): Uint8Array {
       v23 |
       v24 |
       v25) &
-    0x80
+      0x80) !==
+      0
   ) {
     // Find the invalid character for error message
-    for (let i = 0; i < 26; i += 1) {
-      if (DECODING[str.charCodeAt(i)] === 255) {
-        throw new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[i]}`)
+    for (let i = 0; i < ULID_LEN; i += 1) {
+      const code = str.charCodeAt(i)
+      if (code >= 128 || DECODING[code] === 255) {
+        throw invalidCharError(str, i)
       }
     }
+  }
+
+  if (v0 > 7) {
+    throw new ParseError('ULID_TIMESTAMP_OVERFLOW', 'ULID timestamp exceeds 48 bits')
   }
 
   // Timestamp: first 10 characters -> bytes 0-5

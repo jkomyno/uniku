@@ -1,8 +1,3 @@
-/**
- * Note: once ES2025 is widely adopted, we can use the built-in `Uint8Array.prototype.toHex` method.
- */
-// import { toHex } from 'hextreme'
-
 import { BufferError, ParseError } from '../errors'
 
 /**
@@ -19,6 +14,7 @@ import { BufferError, ParseError } from '../errors'
 // Base62 alphabet: digits (0-9), uppercase (A-Z), lowercase (a-z)
 const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 const BASE = 62n
+const MAX_KSUID_VALUE = (1n << 160n) - 1n
 const KSUID_BYTES = 20
 const KSUID_STRING_LEN = 27
 
@@ -91,6 +87,10 @@ export function decodeBase62(str: string): Uint8Array {
       throw new ParseError('KSUID_INVALID_CHAR', `Invalid KSUID character: ${str[i]}`)
     }
     num = num * BASE + BigInt(value)
+  }
+
+  if (num > MAX_KSUID_VALUE) {
+    throw new ParseError('KSUID_OVERFLOW', 'KSUID string exceeds 160-bit range')
   }
 
   // Convert BigInt to bytes (big-endian)
