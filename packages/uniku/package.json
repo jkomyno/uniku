@@ -121,6 +121,8 @@
     "test:integration": "vitest --project integration run",
     "test:e2e": "pnpm --filter @uniku/e2e-cloudflare test:e2e",
     "test:e2e:cloudflare": "pnpm --filter @uniku/e2e-cloudflare test:e2e:cloudflare",
+    "smoke:runtime:bun": "bun scripts/runtime-smoke.mjs",
+    "smoke:runtime:deno": "deno run --node-modules-dir=manual scripts/runtime-smoke.mjs",
     "bench": "vitest bench --run --project unit",
     "bench:compat": "vitest bench ./__tests__/bench/compat.bench.ts --run --project unit",
     "bench:summary": "bun scripts/bench-summary.ts",
