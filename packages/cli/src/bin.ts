@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { BunContext, BunRuntime } from '@effect/platform-bun'
 import * as Duration from 'effect/Duration'
 import * as Effect from 'effect/Effect'

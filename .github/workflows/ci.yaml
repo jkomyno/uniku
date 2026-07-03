@@ -75,6 +75,19 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Smoke test npm global CLI install
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pack_dir="$(mktemp -d)"
+          prefix_dir="$(mktemp -d)"
+          tarball="$(pnpm --filter @uniku/cli pack --pack-destination "$pack_dir" | tail -n 1)"
+
+          npm install --global --prefix "$prefix_dir" "$tarball"
+          "$prefix_dir/bin/uniku" --help >/dev/null
+          "$prefix_dir/bin/uniku" uuid >/dev/null
+
       - name: Build CLI binary (smoke test)
         run: pnpm --filter @uniku/cli build:binary
 
