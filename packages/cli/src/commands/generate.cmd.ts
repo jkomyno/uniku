@@ -22,7 +22,7 @@ const jsonOption = Options.boolean('json').pipe(Options.withDescription('Output 
 
 // ── UUID subcommand ─────────────────────────────────────────────────
 
-const uuidVersionOption = Options.choiceWithValue('version', [
+const uuidVersionOption = Options.choiceWithValue('uuid-version', [
   ['4', 4],
   ['7', 7],
 ] as const).pipe(
@@ -32,7 +32,6 @@ const uuidVersionOption = Options.choiceWithValue('version', [
 )
 
 const lowercaseOption = Options.boolean('lowercase').pipe(
-  Options.withAlias('l'),
   Options.withDescription('Output in lowercase'),
   Options.withDefault(false),
 )

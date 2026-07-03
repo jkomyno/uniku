@@ -1,6 +1,16 @@
 import { describe, expect, layer } from '@effect/vitest'
 import * as Effect from 'effect/Effect'
-import { cli, MockOutput, TestLive } from '../__utils__'
+import { cli, MockConsole, MockOutput, TestLive } from '../__utils__'
+
+const expectCliRejects = (args: ReadonlyArray<string>) =>
+  Effect.gen(function* () {
+    yield* MockOutput.reset
+    const didSucceed = yield* cli(args).pipe(
+      Effect.as(true),
+      Effect.catchAll(() => Effect.succeed(false)),
+    )
+    expect(didSucceed).toBe(false)
+  })
 
 describe('CLI: uniku generate uuid', () => {
   layer(TestLive())((it) => {
@@ -23,7 +33,7 @@ describe('CLI: uniku generate uuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate uuid --version 7 [Then] generates UUID v7', () =>
+    it.scoped('[Given] generate uuid -v 7 [Then] generates UUID v7', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'uuid', '-v', '7'])
@@ -64,6 +74,10 @@ describe('CLI: uniku generate uuid', () => {
         expect(output[0]).toBe(output[0].toLowerCase())
       }),
     )
+
+    it.scoped('[Given] generate uuid -l [Then] rejects the removed lowercase alias', () =>
+      expectCliRejects(['generate', 'uuid', '-l']),
+    )
   })
 })
 
@@ -87,6 +101,10 @@ describe('CLI: uniku generate ulid', () => {
         const parsed = JSON.parse(output[0])
         expect(typeof parsed).toBe('string')
       }),
+    )
+
+    it.scoped('[Given] generate ulid -l [Then] rejects the removed lowercase alias', () =>
+      expectCliRejects(['generate', 'ulid', '-l']),
     )
   })
 })
@@ -143,6 +161,15 @@ describe('CLI: uniku generate cuid', () => {
         expect(output[0].length).toBe(10)
       }),
     )
+
+    it.scoped('[Given] generate cuid -l 10 [Then] generates CUID of length 10', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'cuid', '-l', '10'])
+        const output = yield* MockOutput.getStdout
+        expect(output[0].length).toBe(10)
+      }),
+    )
   })
 })
 
@@ -180,6 +207,27 @@ describe('CLI: shorthand commands', () => {
         const output = yield* MockOutput.getStdout
         expect(output).toHaveLength(1)
         expect(output[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[47][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+      }),
+    )
+
+    it.scoped('[Given] uniku uuid --uuid-version 7 [Then] generates UUID v7', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['uuid', '--uuid-version', '7'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(output[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+      }),
+    )
+
+    it.scoped('[Given] uniku uuid --version [Then] prints CLI version', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['uuid', '--version'])
+        const output = yield* MockOutput.getStdout
+        const lines = yield* MockConsole.getLines({ stripAnsi: true })
+        expect(output).toHaveLength(0)
+        expect(lines.join('\n')).toContain('0.0.0-test')
       }),
     )
 
