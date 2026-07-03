@@ -55,6 +55,10 @@ pnpm test:e2e
 pnpm test:e2e:cloudflare
 ```
 
+CI runs package unit tests through the `test:unit` script and package
+integration tests through `test:integration`. Add those scripts to any package
+whose tests should run in the corresponding CI step.
+
 ### Benchmarks
 
 ```bash
