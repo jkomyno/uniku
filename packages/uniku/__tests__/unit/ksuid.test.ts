@@ -1,5 +1,8 @@
 import { BufferError, ksuid } from '@/src/ksuid/ksuid'
 
+const KSUID_EPOCH = 1_400_000_000
+const KSUID_MAX_SECS = KSUID_EPOCH + 0xffffffff
+
 function compareBytes(left: Uint8Array, right: Uint8Array): number {
   for (let i = 0; i < left.length; i += 1) {
     if (left[i] !== right[i]) {
@@ -180,7 +183,7 @@ describe('ksuid', () => {
   describe('timestamp edge cases', () => {
     it('handles KSUID epoch boundary', () => {
       // KSUID epoch: May 13, 2014 (1400000000 seconds since Unix epoch)
-      const epochSecs = 1400000000
+      const epochSecs = KSUID_EPOCH
       const id = ksuid({ secs: epochSecs, random: new Uint8Array(16) })
       expect(ksuid.timestamp(id)).toBe(epochSecs * 1000) // timestamp() returns milliseconds
       // First 4 bytes should be 0 at the epoch
@@ -196,6 +199,36 @@ describe('ksuid', () => {
       const secs = 2000000000 // ~2033
       const id = ksuid({ secs, random: new Uint8Array(16) })
       expect(ksuid.timestamp(id)).toBe(secs * 1000) // timestamp() returns milliseconds
+    })
+
+    it('does not mutate reusable timestamp options', () => {
+      const secs = 1_700_000_000
+      const options = { secs, random: new Uint8Array(16).fill(7) }
+
+      const first = ksuid(options)
+      const second = ksuid(options)
+
+      expect(options.secs).toBe(secs)
+      expect(second).toBe(first)
+      expect(ksuid.timestamp(second)).toBe(secs * 1000)
+    })
+
+    it('throws for Unix epoch timestamp before KSUID epoch', () => {
+      expect(() => ksuid({ secs: 0, random: new Uint8Array(16) })).toThrow('Timestamp must be >= KSUID epoch')
+    })
+
+    it('accepts the maximum 32-bit KSUID timestamp', () => {
+      const id = ksuid({ secs: KSUID_MAX_SECS, random: new Uint8Array(16) })
+      const bytes = ksuid.toBytes(id)
+
+      expect(ksuid.timestamp(id)).toBe(KSUID_MAX_SECS * 1000)
+      expect(Array.from(bytes.subarray(0, 4))).toEqual([0xff, 0xff, 0xff, 0xff])
+    })
+
+    it('throws for timestamps above the 32-bit KSUID range', () => {
+      expect(() => ksuid({ secs: KSUID_MAX_SECS + 1, random: new Uint8Array(16) })).toThrow(
+        'Timestamp must be <= maximum KSUID timestamp',
+      )
     })
   })
 

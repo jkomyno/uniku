@@ -20,6 +20,7 @@ const KSUID_BYTES = 20
 const KSUID_STRING_LEN = 27
 const TIMESTAMP_BYTES = 4
 const PAYLOAD_BYTES = 16
+const KSUID_MAX_SECS = KSUID_EPOCH + 0xffffffff
 
 // Validation regex: 27 alphanumeric characters
 // Note: Both cases are valid Base62 characters, but they decode to different values
@@ -71,8 +72,6 @@ function ksuidBytes(timestamp: number, payload: Uint8Array, buf?: Uint8Array, of
   writeTimestamp32(buf, offset, timestamp)
 
   // Payload (128 bits) -> bytes 4-19
-  // copy from payload[TIMESTAMP_BYTES] into buf
-  buf.set(payload.subarray(TIMESTAMP_BYTES, TIMESTAMP_BYTES + PAYLOAD_BYTES), offset + TIMESTAMP_BYTES)
   for (let i = 0; i < PAYLOAD_BYTES; i += 1) {
     buf[offset + TIMESTAMP_BYTES + i] = payload[i]
   }
@@ -93,29 +92,35 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(
   offset?: number,
 ): TBuf
 function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, buf?: TBuf, offset = 0): string | TBuf {
-  if (options) {
-    if (options.random && options.random.length < PAYLOAD_BYTES) {
-      throw new InvalidInputError('KSUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16 for KSUID')
-    }
+  const random = options?.random
+  if (random && random.length < PAYLOAD_BYTES) {
+    throw new InvalidInputError('KSUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16 for KSUID')
+  }
 
-    if (options.secs && options.secs < KSUID_EPOCH) {
+  let timestamp: number
+  const secs = options?.secs
+  if (secs !== undefined) {
+    if (secs < KSUID_EPOCH) {
       throw new InvalidInputError('KSUID_TIMESTAMP_TOO_LOW', 'Timestamp must be >= KSUID epoch')
     }
 
-    if (options.secs) {
-      options.secs = options.secs - KSUID_EPOCH
+    if (secs > KSUID_MAX_SECS) {
+      throw new InvalidInputError('KSUID_TIMESTAMP_TOO_HIGH', 'Timestamp must be <= maximum KSUID timestamp')
     }
+
+    timestamp = secs - KSUID_EPOCH
+  } else {
+    /**
+     * Note: by default, Cloudflare Workers "freezes" time during request handling to prevent
+     * side-channel attacks. This means that Date.now() will return the same value for the entire
+     * duration of a request.
+     * Implications:
+     * - all KSUIDs generated within a single request will have the same timestamp.
+     */
+    timestamp = Math.floor(Date.now() / 1000) - KSUID_EPOCH
   }
 
-  /**
-   * Note: by default, Cloudflare Workers "freezes" time during request handling to prevent
-   * side-channel attacks. This means that Date.now() will return the same value for the entire
-   * duration of a request.
-   * Implications:
-   * - all KSUIDs generated within a single request will have the same timestamp.
-   */
-  const timestamp = options?.secs ?? Math.floor(Date.now() / 1000 - KSUID_EPOCH)
-  const payload = options?.random ?? rng()
+  const payload = random ?? rng()
 
   if (buf) {
     ksuidBytes(timestamp, payload, buf, offset)
