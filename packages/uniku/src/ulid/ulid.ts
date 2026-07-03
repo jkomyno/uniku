@@ -119,8 +119,15 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
       state.msecs = time
       state.lastRandom.set(random.subarray(0, 10))
     } else {
-      // Same millisecond: increment random portion for monotonic ordering
-      incrementBytesInPlace(state.lastRandom)
+      // Same millisecond or clock rollback: preserve last timestamp and increment random portion.
+      time = state.msecs
+      if (!incrementBytesInPlace(state.lastRandom)) {
+        state.lastRandom.fill(0xff)
+        throw new InvalidInputError(
+          'ULID_RANDOM_OVERFLOW',
+          'ULID random component overflowed while preserving monotonic order',
+        )
+      }
       random = state.lastRandom
     }
   }

@@ -1,4 +1,10 @@
+import { afterEach } from 'vitest'
 import { BufferError, ulid } from '@/src/ulid/ulid'
+
+async function importFreshUlidModule() {
+  vi.resetModules()
+  return import('@/src/ulid/ulid')
+}
 
 function compareBytes(left: Uint8Array, right: Uint8Array): number {
   for (let i = 0; i < left.length; i += 1) {
@@ -10,6 +16,10 @@ function compareBytes(left: Uint8Array, right: Uint8Array): number {
 }
 
 describe('ulid', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('generates a valid ULID string', () => {
     const id = ulid()
     expect(id).toMatch(/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i)
@@ -77,16 +87,16 @@ describe('ulid', () => {
     expect(ulid.timestamp(id)).toBe(ms)
   })
 
-  it('increases lexicographically within the same millisecond', () => {
+  it('increases lexicographically within the same millisecond', async () => {
+    const { ulid: freshUlid } = await importFreshUlidModule()
     const ms = 1_702_387_456_789
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+    vi.spyOn(Date, 'now').mockReturnValue(ms)
     const samples = 1_000
     const ids = new Array<string>(samples)
 
     for (let i = 0; i < samples; i += 1) {
-      ids[i] = ulid()
+      ids[i] = freshUlid()
     }
-    nowSpy.mockRestore()
 
     for (let i = 0; i < samples - 1; i += 1) {
       // ULIDs should sort lexicographically
@@ -94,20 +104,35 @@ describe('ulid', () => {
     }
   })
 
-  it('increases bytes within the same millisecond', () => {
+  it('increases bytes within the same millisecond', async () => {
+    const { ulid: freshUlid } = await importFreshUlidModule()
     const ms = 1_702_387_456_789
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+    vi.spyOn(Date, 'now').mockReturnValue(ms)
     const samples = 1_000
     const bytesList = new Array<Uint8Array>(samples)
 
     for (let i = 0; i < samples; i += 1) {
-      bytesList[i] = ulid.toBytes(ulid())
+      bytesList[i] = freshUlid.toBytes(freshUlid())
     }
-    nowSpy.mockRestore()
 
     for (let i = 0; i < samples - 1; i += 1) {
       expect(compareBytes(bytesList[i], bytesList[i + 1])).toBeLessThan(0)
     }
+  })
+
+  it('preserves monotonic order and timestamp when the clock moves backwards', async () => {
+    const { ulid: freshUlid } = await importFreshUlidModule()
+    const ms = 1_702_387_456_789
+    vi.spyOn(Date, 'now')
+      .mockReturnValueOnce(ms)
+      .mockReturnValueOnce(ms - 5_000)
+
+    const first = freshUlid()
+    const second = freshUlid()
+
+    expect(first < second).toBe(true)
+    expect(freshUlid.timestamp(first)).toBe(ms)
+    expect(freshUlid.timestamp(second)).toBe(ms)
   })
 
   it('round-trips through byte helpers', () => {
@@ -232,20 +257,19 @@ describe('ulid', () => {
   })
 
   describe('monotonic increment behavior', () => {
-    it('increments random portion within same millisecond', () => {
+    it('increments random portion within same millisecond', async () => {
+      const { ulid: freshUlid } = await importFreshUlidModule()
       // Test that the internal incrementBytes function correctly handles
       // monotonic ordering by verifying consecutive IDs are strictly increasing
       const ms = 1_702_387_456_789
-      const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+      vi.spyOn(Date, 'now').mockReturnValue(ms)
 
       // Generate many IDs in the same millisecond
       // The random portion should be incrementing each time
       const ids: string[] = []
       for (let i = 0; i < 100; i += 1) {
-        ids[i] = ulid()
+        ids[i] = freshUlid()
       }
-
-      nowSpy.mockRestore()
 
       // Verify all IDs are strictly increasing (monotonic)
       for (let i = 0; i < ids.length - 1; i += 1) {
@@ -261,6 +285,34 @@ describe('ulid', () => {
       // Verify the random portions are different (incremented)
       const randomParts = new Set(ids.map((id) => id.slice(10)))
       expect(randomParts.size).toBe(ids.length)
+    })
+
+    it('throws when the monotonic random portion overflows', async () => {
+      vi.spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((array) => {
+        if (array instanceof Uint8Array) {
+          array.fill(0xff)
+        }
+        return array
+      })
+
+      const { InvalidInputError, ulid: freshUlid } = await importFreshUlidModule()
+      const ms = 1_702_387_456_789
+      vi.spyOn(Date, 'now').mockReturnValue(ms)
+
+      freshUlid()
+
+      let error: unknown
+      try {
+        freshUlid()
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({
+        code: 'ULID_RANDOM_OVERFLOW',
+        message: 'ULID random component overflowed while preserving monotonic order',
+      })
     })
   })
 })

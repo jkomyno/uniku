@@ -1,4 +1,10 @@
+import { afterEach } from 'vitest'
 import { uuidv7 } from '@/src/uuid/v7'
+
+async function importFreshUuidV7Module() {
+  vi.resetModules()
+  return import('@/src/uuid/v7')
+}
 
 function compareBytes(left: Uint8Array, right: Uint8Array): number {
   for (let i = 0; i < left.length; i += 1) {
@@ -10,6 +16,10 @@ function compareBytes(left: Uint8Array, right: Uint8Array): number {
 }
 
 describe('uuidv7', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('generates a valid UUID v7 string', () => {
     const id = uuidv7()
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
@@ -68,20 +78,35 @@ describe('uuidv7', () => {
     expect(uuidv7.timestamp(id)).toBe(ms)
   })
 
-  it('increases lexicographically within the same millisecond', () => {
+  it('increases lexicographically within the same millisecond', async () => {
+    const { uuidv7: freshUuidV7 } = await importFreshUuidV7Module()
     const ms = 1_702_387_456_789
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+    vi.spyOn(Date, 'now').mockReturnValue(ms)
     const samples = 1_000
     const bytesList = new Array<Uint8Array>(samples)
 
     for (let i = 0; i < samples; i += 1) {
-      bytesList[i] = uuidv7.toBytes(uuidv7())
+      bytesList[i] = freshUuidV7.toBytes(freshUuidV7())
     }
-    nowSpy.mockRestore()
 
     for (let i = 0; i < samples - 1; i += 1) {
       expect(compareBytes(bytesList[i], bytesList[i + 1])).toBeLessThan(0)
     }
+  })
+
+  it('preserves monotonic order and timestamp when the clock moves backwards', async () => {
+    const { uuidv7: freshUuidV7 } = await importFreshUuidV7Module()
+    const ms = 1_702_387_456_789
+    vi.spyOn(Date, 'now')
+      .mockReturnValueOnce(ms)
+      .mockReturnValueOnce(ms - 5_000)
+
+    const first = freshUuidV7()
+    const second = freshUuidV7()
+
+    expect(compareBytes(freshUuidV7.toBytes(first), freshUuidV7.toBytes(second))).toBeLessThan(0)
+    expect(freshUuidV7.timestamp(first)).toBe(ms)
+    expect(freshUuidV7.timestamp(second)).toBe(ms)
   })
 
   it('round-trips through byte helpers', () => {
@@ -154,30 +179,29 @@ describe('uuidv7', () => {
   })
 
   describe('sequence overflow', () => {
-    it('increments timestamp when sequence overflows', () => {
+    it('increments timestamp when sequence overflows', async () => {
+      const { uuidv7: freshUuidV7 } = await importFreshUuidV7Module()
       // When generating many UUIDs in the same millisecond, the sequence counter
       // eventually overflows to 0, which triggers a timestamp increment
       const ms = 1_702_387_456_789
-      const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(ms)
+      vi.spyOn(Date, 'now').mockReturnValue(ms)
 
       // Generate enough UUIDs to potentially trigger overflow (unlikely in practice)
       // but this tests the overflow handling code path
       const ids: string[] = []
       for (let i = 0; i < 100; i += 1) {
-        ids.push(uuidv7())
+        ids.push(freshUuidV7())
       }
-
-      nowSpy.mockRestore()
 
       // All should be valid and monotonically increasing
       for (let i = 0; i < ids.length - 1; i += 1) {
-        expect(uuidv7.isValid(ids[i])).toBe(true)
-        expect(compareBytes(uuidv7.toBytes(ids[i]), uuidv7.toBytes(ids[i + 1]))).toBeLessThan(0)
+        expect(freshUuidV7.isValid(ids[i])).toBe(true)
+        expect(compareBytes(freshUuidV7.toBytes(ids[i]), freshUuidV7.toBytes(ids[i + 1]))).toBeLessThan(0)
       }
 
       // All timestamps should be >= original ms (may increment on overflow)
       for (const id of ids) {
-        expect(uuidv7.timestamp(id)).toBeGreaterThanOrEqual(ms)
+        expect(freshUuidV7.timestamp(id)).toBeGreaterThanOrEqual(ms)
       }
     })
   })
