@@ -55,8 +55,11 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Test
+      - name: Unit tests
         run: pnpm test:unit
+
+      - name: Integration tests
+        run: pnpm test:integration
 
   build:
     name: Build

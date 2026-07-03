@@ -9,6 +9,14 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
+    "test:unit": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
     "bench": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "__tests__/bench/**"],
