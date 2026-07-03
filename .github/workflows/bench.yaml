@@ -138,12 +138,12 @@ jobs:
             -f content=eyes \
             --silent || true
 
-      # Fail if regression detected
-      - name: Check for regressions
+      # Report regressions without failing PRs. Shared-runner benchmark variance can
+      # exceed the threshold for rows unrelated to the current change.
+      - name: Report benchmark regressions
         if: github.event_name == 'pull_request' && steps.compare.outputs.has_regression == 'true'
         run: |
-          echo "::error::Performance regression detected! See PR comment for details."
-          exit 1
+          echo "::warning::Performance regression detected; see PR comment for details."
 
       # Update baseline on main merge
       - name: Update baseline
