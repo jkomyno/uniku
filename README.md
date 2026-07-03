@@ -472,7 +472,7 @@ curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
 pnpm add -g @uniku/cli
 
 # Generate IDs
-uniku uuid --version 7 --count 3
+uniku uuid --uuid-version 7 --count 3
 uniku nanoid --size 12 --alphabet hex
 
 # Validate an ID (type auto-detected)

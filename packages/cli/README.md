@@ -50,7 +50,7 @@ uniku uuid
 # => 550e8400-e29b-41d4-a716-446655440000
 
 # UUID v7 (time-ordered)
-uniku uuid --version 7
+uniku uuid --uuid-version 7
 # => 018e5e5c-7c8a-7000-8000-000000000000
 
 # Generate multiple IDs
@@ -137,11 +137,11 @@ For time-ordered IDs (UUID v7, ULID, KSUID), inspect extracts the embedded times
 
 | Command | Option | Alias | Description |
 |---------|--------|-------|-------------|
-| `uuid` | `--version` | `-v` | UUID version: 4 or 7 (default: 4) |
-| `uuid` | `--lowercase` | `-l` | Output in lowercase |
+| `uuid` | `--uuid-version` | `-v` | UUID version: 4 or 7 (default: 4) |
+| `uuid` | `--lowercase` | | Output in lowercase |
 | `ulid` | `--monotonic` | | Generate monotonically increasing ULIDs |
 | `ulid` | `--timestamp` | | Unix timestamp in ms or "now" |
-| `ulid` | `--lowercase` | `-l` | Output in lowercase |
+| `ulid` | `--lowercase` | | Output in lowercase |
 | `nanoid` | `--size` | `-s` | Length of ID, 1-256 (default: 21) |
 | `nanoid` | `--alphabet` | `-a` | Custom alphabet or preset: hex, numeric, alpha |
 | `cuid` | `--length` | `-l` | Length of ID, 2-32 (default: 24) |
