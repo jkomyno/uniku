@@ -7,9 +7,12 @@ import { BufferError, ParseError } from '../errors'
 
 const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 
-// Pre-computed decoding table indexed by ASCII code (0-127)
-// Uses Uint8Array for cache-efficient lookups via charCodeAt
-const DECODING = new Uint8Array(128)
+// Pre-computed decoding table covering every UTF-16 code unit charCodeAt can
+// return, so lookups never go out of bounds and a single `=== 255` check
+// rejects invalid input (including non-ASCII) without a per-character range
+// check. Costs 64 KiB once at module load; valid inputs only touch the first
+// 128 bytes, so cache behavior is unaffected.
+const DECODING = new Uint8Array(65536)
 DECODING.fill(255) // 255 = invalid marker
 for (let i = 0; i < ENCODING.length; i += 1) {
   const upper = ENCODING.charCodeAt(i)
@@ -19,6 +22,37 @@ for (let i = 0; i < ENCODING.length; i += 1) {
 }
 
 const TIME_LEN = 10
+const ULID_LEN = 26
+
+function invalidCharError(str: string, index: number): ParseError {
+  return new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[index]}`)
+}
+
+function timestampOverflowError(): ParseError {
+  return new ParseError('ULID_TIMESTAMP_OVERFLOW', 'ULID timestamp exceeds 48 bits')
+}
+
+function decodeTimeChars(str: string): number {
+  const firstValue = DECODING[str.charCodeAt(0)]
+  if (firstValue === 255) {
+    throw invalidCharError(str, 0)
+  }
+
+  if (firstValue > 7) {
+    throw timestampOverflowError()
+  }
+
+  let time = firstValue
+  for (let i = 1; i < TIME_LEN; i += 1) {
+    const value = DECODING[str.charCodeAt(i)]
+    if (value === 255) {
+      throw invalidCharError(str, i)
+    }
+
+    time = time * 32 + value
+  }
+  return time
+}
 
 /**
  * Encode a 48-bit timestamp to a 10-character Crockford Base32 string.
@@ -68,18 +102,23 @@ export function encodeRandom(bytes: Uint8Array): string {
 }
 
 /**
- * Decode the first 10 characters of a ULID string to a timestamp (Unix epoch milliseconds).
+ * Decode a 10-character ULID timestamp string to Unix epoch milliseconds.
  */
 export function decodeTime(str: string): number {
-  let time = 0
-  for (let i = 0; i < TIME_LEN; i += 1) {
-    const value = DECODING[str.charCodeAt(i)]
-    if (value === 255) {
-      throw new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[i]}`)
-    }
-    time = time * 32 + value
+  if (str.length !== TIME_LEN) {
+    throw new ParseError('ULID_INVALID_LENGTH', `ULID timestamp must be ${TIME_LEN} characters`)
   }
-  return time
+  return decodeTimeChars(str)
+}
+
+/**
+ * Decode the timestamp from a full 26-character ULID string.
+ */
+export function decodeUlidTime(str: string): number {
+  if (str.length !== ULID_LEN) {
+    throw new ParseError('ULID_INVALID_LENGTH', `ULID string must be ${ULID_LEN} characters`)
+  }
+  return decodeTimeChars(str)
 }
 
 /**
@@ -87,8 +126,8 @@ export function decodeTime(str: string): number {
  * Inlines all lookups to avoid intermediate array allocation.
  */
 export function decodeToBytes(str: string): Uint8Array {
-  if (str.length !== 26) {
-    throw new ParseError('ULID_INVALID_LENGTH', 'ULID string must be 26 characters')
+  if (str.length !== ULID_LEN) {
+    throw new ParseError('ULID_INVALID_LENGTH', `ULID string must be ${ULID_LEN} characters`)
   }
 
   const bytes = new Uint8Array(16)
@@ -121,9 +160,10 @@ export function decodeToBytes(str: string): Uint8Array {
   const v24 = DECODING[str.charCodeAt(24)]
   const v25 = DECODING[str.charCodeAt(25)]
 
-  // Validate all characters (255 = invalid marker)
+  // Validate all characters at once (255 = invalid marker, so any invalid
+  // character sets the 0x80 bit in the OR of all values)
   if (
-    (v0 |
+    ((v0 |
       v1 |
       v2 |
       v3 |
@@ -149,14 +189,19 @@ export function decodeToBytes(str: string): Uint8Array {
       v23 |
       v24 |
       v25) &
-    0x80
+      0x80) !==
+    0
   ) {
     // Find the invalid character for error message
-    for (let i = 0; i < 26; i += 1) {
+    for (let i = 0; i < ULID_LEN; i += 1) {
       if (DECODING[str.charCodeAt(i)] === 255) {
-        throw new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[i]}`)
+        throw invalidCharError(str, i)
       }
     }
+  }
+
+  if (v0 > 7) {
+    throw timestampOverflowError()
   }
 
   // Timestamp: first 10 characters -> bytes 0-5

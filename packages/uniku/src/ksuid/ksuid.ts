@@ -21,6 +21,9 @@ const KSUID_STRING_LEN = 27
 const TIMESTAMP_BYTES = 4
 const PAYLOAD_BYTES = 16
 const KSUID_MAX_SECS = KSUID_EPOCH + 0xffffffff
+// 2^160 - 1 in Base62 ('aWgEPTl1tmebfsQzFP4bxwgy80V'), derived from the
+// encoder so it cannot drift from the decoder's 160-bit overflow bound.
+const KSUID_MAX_STRING = encodeBase62(new Uint8Array(KSUID_BYTES).fill(0xff))
 
 // Validation regex: 27 alphanumeric characters
 // Note: Both cases are valid Base62 characters, but they decode to different values
@@ -164,13 +167,16 @@ function timestamp(id: string): number {
 }
 
 /**
- * Validate a KSUID string format.
- *
- * Note: Both uppercase and lowercase letters are valid Base62 characters,
- * but they represent different values (e.g., 'A' = 10, 'a' = 36).
+ * Validate a KSUID string format and 160-bit numeric range.
  */
 function isValid(id: unknown): id is string {
-  return typeof id === 'string' && id.length === KSUID_STRING_LEN && KSUID_REGEX.test(id)
+  return (
+    typeof id === 'string' &&
+    id.length === KSUID_STRING_LEN &&
+    KSUID_REGEX.test(id) &&
+    // Fixed-length Base62 strings preserve numeric order because the alphabet is ASCII-sorted.
+    id <= KSUID_MAX_STRING
+  )
 }
 
 /**
@@ -183,7 +189,7 @@ export const ksuid: Ksuid = Object.assign(ksuidFn, {
   timestamp,
   isValid,
   NIL: '000000000000000000000000000',
-  MAX: 'aWgEPTl1tmebfsQzFP4bxwgy80V',
+  MAX: KSUID_MAX_STRING,
 })
 
 export { BufferError, InvalidInputError, ParseError, UniqueIdError } from '../errors'

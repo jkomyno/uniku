@@ -216,6 +216,7 @@ describe('ulid', () => {
       expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAL')).toBe(false) // L is invalid
       expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAO')).toBe(false) // O is invalid
       expect(ulid.isValid('01ARZ3NDEKTSV4RRFFQ69G5FAU')).toBe(false) // U is invalid
+      expect(ulid.isValid('€'.repeat(26))).toBe(false)
     })
 
     it('returns false for overflow (first char > 7)', () => {
@@ -237,6 +238,28 @@ describe('ulid', () => {
       if (ulid.isValid(maybeId)) {
         // TypeScript should know maybeId is string here
         expect(maybeId.length).toBe(26)
+      }
+    })
+  })
+
+  describe('decoder validation', () => {
+    const invalidIds = [
+      '01ARZ3NDEKTSV4RRFFQ69G5FA',
+      '01ARZ3NDEKTSV4RRFFQ69G5FAVX',
+      '€'.repeat(26),
+      '81ARZ3NDEKTSV4RRFFQ69G5FAV',
+    ]
+
+    it('throws from toBytes for IDs rejected by isValid', () => {
+      for (const id of invalidIds) {
+        expect(ulid.isValid(id)).toBe(false)
+        expect(() => ulid.toBytes(id)).toThrow()
+      }
+    })
+
+    it('throws from timestamp for malformed timestamp inputs', () => {
+      for (const id of invalidIds) {
+        expect(() => ulid.timestamp(id)).toThrow()
       }
     })
   })

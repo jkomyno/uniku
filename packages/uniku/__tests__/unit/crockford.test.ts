@@ -44,6 +44,19 @@ describe('crockford encoding', () => {
       expect(() => decodeTime('01ARYZ6S4O')).toThrow() // O is invalid
       expect(() => decodeTime('01ARYZ6S4U')).toThrow() // U is invalid
     })
+
+    it('throws on wrong length', () => {
+      expect(() => decodeTime('ABC')).toThrow()
+      expect(() => decodeTime('01ARYZ6S410')).toThrow()
+    })
+
+    it('throws on non-ASCII characters', () => {
+      expect(() => decodeTime('€'.repeat(10))).toThrow()
+    })
+
+    it('throws when the timestamp exceeds 48 bits', () => {
+      expect(() => decodeTime('8ZZZZZZZZZ')).toThrow()
+    })
   })
 
   describe('encodeRandom', () => {
@@ -76,6 +89,14 @@ describe('crockford encoding', () => {
 
     it('throws on invalid characters', () => {
       expect(() => decodeToBytes('01ARZ3NDEKTSV4RRFFQ69G5FAI')).toThrow()
+    })
+
+    it('throws on non-ASCII characters', () => {
+      expect(() => decodeToBytes('€'.repeat(26))).toThrow()
+    })
+
+    it('throws when the timestamp exceeds 48 bits', () => {
+      expect(() => decodeToBytes('8ZZZZZZZZZZZZZZZZZZZZZZZZZ')).toThrow()
     })
 
     it('is case insensitive', () => {
