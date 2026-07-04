@@ -29,12 +29,6 @@ describe('cuid2', () => {
     })
   })
 
-  it('generates unique IDs under parallel generation', async () => {
-    const promises = Array.from({ length: 1000 }, () => Promise.resolve(cuid2()))
-    const ids = await Promise.all(promises)
-    expect(new Set(ids).size).toBe(1000)
-  })
-
   it('handles high-throughput generation (counter stress test)', { timeout: 30000 }, () => {
     expectDistinctRandomSamples({
       count: 50_000,

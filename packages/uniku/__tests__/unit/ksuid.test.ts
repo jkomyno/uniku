@@ -83,14 +83,6 @@ describe('ksuid', () => {
     expect(ksuid.fromBytes(ksuid.toBytes(id))).toBe(id)
   })
 
-  it('round-trips through toBytes and fromBytes', () => {
-    // Generate a KSUID and verify toBytes -> fromBytes produces the same string
-    const id = ksuid()
-    const bytes = ksuid.toBytes(id)
-    const recovered = ksuid.fromBytes(bytes)
-    expect(recovered).toBe(id)
-  })
-
   it('supports custom timestamp option', () => {
     const secs = 1_500_000_000
     const id = ksuid({ secs })

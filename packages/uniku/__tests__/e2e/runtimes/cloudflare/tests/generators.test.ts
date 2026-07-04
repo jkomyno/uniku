@@ -8,11 +8,17 @@ const generators = [
   { name: 'uuid-v4', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
   { name: 'uuid-v7', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
   { name: 'ulid', pattern: /^[0-9A-HJKMNP-TV-Z]{26}$/ },
+  { name: 'ksuid', pattern: /^[0-9A-Za-z]{27}$/ },
   { name: 'cuid2', pattern: /^[a-z][a-z0-9]+$/ },
   { name: 'nanoid', pattern: /^[A-Za-z0-9_-]+$/ },
 ] as const
 
-const generatorsWithBytes = ['uuid-v4', 'uuid-v7', 'ulid'] as const
+const generatorsWithBytes = [
+  { name: 'uuid-v4', byteLength: 16 },
+  { name: 'uuid-v7', byteLength: 16 },
+  { name: 'ulid', byteLength: 16 },
+  { name: 'ksuid', byteLength: 20 },
+] as const
 const generatorsWithTimestamp = ['uuid-v7', 'ulid'] as const
 
 describe('ID generators on Cloudflare Workers', () => {
@@ -60,11 +66,11 @@ describe('ID generators on Cloudflare Workers', () => {
   })
 
   // =========================================================================
-  // Byte conversion tests (uuid-v4, uuid-v7, ulid only)
+  // Byte conversion tests for generators with canonical binary encodings.
   // =========================================================================
 
   describe('byte conversion', () => {
-    it.each(generatorsWithBytes)('%s round-trips through toBytes/fromBytes', async (name) => {
+    it.each(generatorsWithBytes)('$name round-trips through toBytes/fromBytes', async ({ name, byteLength }) => {
       const response = await SELF.fetch(`http://localhost/${name}/to-bytes`)
       expect(response.status).toBe(200)
 
@@ -75,7 +81,7 @@ describe('ID generators on Cloudflare Workers', () => {
       }
       expect(body.success).toBe(true)
       expect(body.roundTripMatch).toBe(true)
-      expect(body.bytes).toHaveLength(16)
+      expect(body.bytes).toHaveLength(byteLength)
     })
   })
 

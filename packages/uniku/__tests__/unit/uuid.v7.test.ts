@@ -7,6 +7,23 @@ async function importFreshUuidV7Module() {
   return import('@/src/uuid/v7')
 }
 
+async function importFreshUuidV7ModuleWithRandom(random: Uint8Array) {
+  vi.resetModules()
+  vi.doMock('@/src/common/random', () => ({
+    rng: () => random,
+  }))
+  return import('@/src/uuid/v7')
+}
+
+function randomBytesWithV7Sequence(seq: number): Uint8Array {
+  const random = new Uint8Array(16)
+  random[6] = (seq >>> 23) & 0xff
+  random[7] = (seq >>> 16) & 0xff
+  random[8] = (seq >>> 8) & 0xff
+  random[9] = seq & 0xff
+  return random
+}
+
 function compareBytes(left: Uint8Array, right: Uint8Array): number {
   for (let i = 0; i < left.length; i += 1) {
     if (left[i] !== right[i]) {
@@ -18,6 +35,7 @@ function compareBytes(left: Uint8Array, right: Uint8Array): number {
 
 describe('uuidv7', () => {
   afterEach(() => {
+    vi.doUnmock('@/src/common/random')
     vi.restoreAllMocks()
   })
 
@@ -179,29 +197,18 @@ describe('uuidv7', () => {
 
   describe('sequence overflow', () => {
     it('increments timestamp when sequence overflows', async () => {
-      const { uuidv7: freshUuidV7 } = await importFreshUuidV7Module()
-      // When generating many UUIDs in the same millisecond, the sequence counter
-      // eventually overflows to 0, which triggers a timestamp increment
+      const { uuidv7: freshUuidV7 } = await importFreshUuidV7ModuleWithRandom(randomBytesWithV7Sequence(0x7fffffff))
       const ms = 1_702_387_456_789
       vi.spyOn(Date, 'now').mockReturnValue(ms)
 
-      // Generate enough UUIDs to potentially trigger overflow (unlikely in practice)
-      // but this tests the overflow handling code path
-      const ids: string[] = []
-      for (let i = 0; i < 100; i += 1) {
-        ids.push(freshUuidV7())
-      }
+      const first = freshUuidV7()
+      const second = freshUuidV7()
 
-      // All should be valid and monotonically increasing
-      for (let i = 0; i < ids.length - 1; i += 1) {
-        expect(freshUuidV7.isValid(ids[i])).toBe(true)
-        expect(compareBytes(freshUuidV7.toBytes(ids[i]), freshUuidV7.toBytes(ids[i + 1]))).toBeLessThan(0)
-      }
-
-      // All timestamps should be >= original ms (may increment on overflow)
-      for (const id of ids) {
-        expect(freshUuidV7.timestamp(id)).toBeGreaterThanOrEqual(ms)
-      }
+      expect(freshUuidV7.isValid(first)).toBe(true)
+      expect(freshUuidV7.isValid(second)).toBe(true)
+      expect(freshUuidV7.timestamp(first)).toBe(ms)
+      expect(freshUuidV7.timestamp(second)).toBe(ms + 1)
+      expect(compareBytes(freshUuidV7.toBytes(first), freshUuidV7.toBytes(second))).toBeLessThan(0)
     })
   })
 })
