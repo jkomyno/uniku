@@ -41,7 +41,6 @@ const exec = (label: string, cmd: string, ...args: Array<string>) =>
 
 function isWritable(dir: string): boolean {
   try {
-    Bun.spawnSync(['test', '-w', dir])
     return Bun.spawnSync(['test', '-w', dir]).exitCode === 0
   } catch {
     return false
@@ -69,15 +68,20 @@ const program = Effect.gen(function* () {
   yield* exec(`mkdir -p ${INSTALL_DIR}`, 'mkdir', '-p', INSTALL_DIR)
 
   // Copy binary — use sudo if the directory is not writable
-  if (isWritable(INSTALL_DIR)) {
-    yield* exec(`cp ${artifactName} → ${destPath}`, 'cp', binaryPath, destPath)
-  } else {
+  const runWithSudo = !isWritable(INSTALL_DIR)
+  if (runWithSudo) {
     yield* Console.log('  Elevated permissions required')
     yield* exec(`sudo cp ${artifactName} → ${destPath}`, 'sudo', 'cp', binaryPath, destPath)
+  } else {
+    yield* exec(`cp ${artifactName} → ${destPath}`, 'cp', binaryPath, destPath)
   }
 
   // Make executable
-  yield* exec('chmod +x', 'chmod', '+x', destPath)
+  if (runWithSudo) {
+    yield* exec('sudo chmod +x', 'sudo', 'chmod', '+x', destPath)
+  } else {
+    yield* exec('chmod +x', 'chmod', '+x', destPath)
+  }
 
   // Strip macOS quarantine attribute
   if (process.platform === 'darwin') {

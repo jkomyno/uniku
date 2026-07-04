@@ -28,8 +28,6 @@ error() {
 # ── Platform detection ───────────────────────────────────────────────
 
 detect_platform() {
-  local os arch
-
   os="$(uname -s)"
   arch="$(uname -m)"
 
@@ -58,39 +56,58 @@ detect_platform() {
 
 # ── Version resolution ───────────────────────────────────────────────
 
+github_curl() {
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" "$@"
+    return
+  fi
+
+  curl -fsSL "$@"
+}
+
 resolve_version() {
   if [ -n "${UNIKU_VERSION:-}" ]; then
     echo "uniku-cli-v${UNIKU_VERSION}"
     return
   fi
 
-  local auth_header=""
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
-    auth_header="Authorization: Bearer ${GITHUB_TOKEN}"
+  page=1
+  while :; do
+    releases_url="https://api.github.com/repos/$GITHUB_REPO/releases?per_page=100&page=$page"
+
+    releases_json="$(github_curl "$releases_url")" \
+      || error "Failed to fetch releases from GitHub API. If rate-limited, set GITHUB_TOKEN."
+
+    version="$(
+      printf '%s\n' "$releases_json" \
+        | grep -o '"tag_name": *"uniku-cli-v[^"]*"' \
+        | head -n 1 \
+        | cut -d'"' -f4
+    )"
+    if [ -n "$version" ]; then
+      echo "$version"
+      return
+    fi
+
+    releases_count="$(printf '%s\n' "$releases_json" | grep -c '"tag_name":' || true)"
+    [ "$releases_count" -eq 100 ] || break
+    page=$((page + 1))
+  done
+
+  error "Could not find any uniku CLI release. Check https://github.com/$GITHUB_REPO/releases"
+}
+
+ensure_install_dir() {
+  if [ -d "$INSTALL_DIR" ]; then
+    return
   fi
 
-  # Fetch latest CLI release tag (filter for uniku-cli-v* tags)
-  local version
-  if [ -n "$auth_header" ]; then
-    version="$(
-      curl -fsSL -H "$auth_header" \
-        "https://api.github.com/repos/$GITHUB_REPO/releases" \
-        | grep -o '"tag_name": *"uniku-cli-v[^"]*"' \
-        | head -1 \
-        | cut -d'"' -f4
-    )" || error "Failed to fetch releases from GitHub API"
-  else
-    version="$(
-      curl -fsSL \
-        "https://api.github.com/repos/$GITHUB_REPO/releases" \
-        | grep -o '"tag_name": *"uniku-cli-v[^"]*"' \
-        | head -1 \
-        | cut -d'"' -f4
-    )" || error "Failed to fetch releases from GitHub API. If rate-limited, set GITHUB_TOKEN."
+  if mkdir -p "$INSTALL_DIR" 2>/dev/null; then
+    return
   fi
 
-  [ -n "$version" ] || error "Could not find any uniku CLI release. Check https://github.com/$GITHUB_REPO/releases"
-  echo "$version"
+  info "Elevated permissions required to create $INSTALL_DIR"
+  sudo mkdir -p "$INSTALL_DIR"
 }
 
 # ── Checksum verification ────────────────────────────────────────────
@@ -106,12 +123,10 @@ compute_sha256() {
 }
 
 verify_checksum() {
-  local file="$1"
-  local checksums_file="$2"
-  local filename
+  file="$1"
+  checksums_file="$2"
   filename="$(basename "$file")"
 
-  local expected
   expected="$(grep "$filename" "$checksums_file" | cut -d' ' -f1)"
 
   if [ -z "$expected" ]; then
@@ -119,7 +134,6 @@ verify_checksum() {
     return 0
   fi
 
-  local actual
   actual="$(compute_sha256 "$file")"
 
   if [ "$actual" != "$expected" ]; then
@@ -134,23 +148,22 @@ verify_checksum() {
 # ── Download and install ─────────────────────────────────────────────
 
 download_and_install() {
-  local platform="$1"
-  local version="$2"
-  local tmpdir
+  download_platform="$1"
+  download_version="$2"
 
   tmpdir="$(mktemp -d)"
   trap 'rm -rf "$tmpdir"' EXIT
 
-  local tarball="${BINARY_NAME}-${platform}.tar.gz"
-  local base_url="https://github.com/$GITHUB_REPO/releases/download/${version}"
+  tarball="${BINARY_NAME}-${download_platform}.tar.gz"
+  base_url="https://github.com/$GITHUB_REPO/releases/download/${download_version}"
 
-  info "Downloading $BINARY_NAME $version for $platform..."
-  curl -fsSL --progress-bar -o "$tmpdir/$tarball" "${base_url}/${tarball}" \
-    || error "Download failed. Check that $version exists for $platform at:
+  info "Downloading $BINARY_NAME $download_version for $download_platform..."
+  curl -fL --progress-bar -o "$tmpdir/$tarball" "${base_url}/${tarball}" \
+    || error "Download failed. Check that $download_version exists for $download_platform at:
   ${base_url}/${tarball}"
 
   info "Downloading checksums..."
-  if curl -fsSL -o "$tmpdir/CHECKSUMS.sha256" "${base_url}/CHECKSUMS.sha256" 2>/dev/null; then
+  if github_curl -o "$tmpdir/CHECKSUMS.sha256" "${base_url}/CHECKSUMS.sha256" 2>/dev/null; then
     verify_checksum "$tmpdir/$tarball" "$tmpdir/CHECKSUMS.sha256"
   else
     warn "Could not download checksums file, skipping verification"
@@ -160,12 +173,15 @@ download_and_install() {
   tar -xzf "$tmpdir/$tarball" -C "$tmpdir"
 
   # The tarball contains a file named e.g. "uniku-darwin-arm64", rename to "uniku"
-  local extracted_name="${BINARY_NAME}-${platform}"
+  extracted_name="${BINARY_NAME}-${download_platform}"
   if [ -f "$tmpdir/$extracted_name" ]; then
     mv "$tmpdir/$extracted_name" "$tmpdir/$BINARY_NAME"
   elif [ ! -f "$tmpdir/$BINARY_NAME" ]; then
     error "Expected binary not found after extraction (looked for $extracted_name and $BINARY_NAME)"
   fi
+
+  chmod +x "$tmpdir/$BINARY_NAME"
+  ensure_install_dir
 
   info "Installing to $INSTALL_DIR..."
   if [ -w "$INSTALL_DIR" ]; then
@@ -175,10 +191,7 @@ download_and_install() {
     sudo mv "$tmpdir/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
   fi
 
-  chmod +x "$INSTALL_DIR/$BINARY_NAME"
-
   # Strip macOS quarantine attribute
-  local os
   os="$(uname -s)"
   if [ "$os" = "Darwin" ]; then
     xattr -d com.apple.quarantine "$INSTALL_DIR/$BINARY_NAME" 2>/dev/null || true
@@ -190,8 +203,6 @@ download_and_install() {
 # ── Main ─────────────────────────────────────────────────────────────
 
 main() {
-  local platform version
-
   platform="$(detect_platform)"
   version="$(resolve_version)"
 
