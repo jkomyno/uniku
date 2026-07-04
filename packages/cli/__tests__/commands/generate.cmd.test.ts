@@ -1,5 +1,6 @@
 import { describe, expect, layer } from '@effect/vitest'
 import * as Effect from 'effect/Effect'
+import { CliError } from '@/src/domain/errors'
 import { cli, MockConsole, MockOutput, TestLive } from '../__utils__'
 
 const expectCliRejects = (args: ReadonlyArray<string>) =>
@@ -106,6 +107,23 @@ describe('CLI: uniku generate ulid', () => {
     it.scoped('[Given] generate ulid -l [Then] rejects the removed lowercase alias', () =>
       expectCliRejects(['generate', 'ulid', '-l']),
     )
+
+    it.scoped('[Given] generate ulid --timestamp abc [Then] fails with a CliError', () =>
+      Effect.gen(function* () {
+        const result = yield* cli(['generate', 'ulid', '--timestamp', 'abc']).pipe(Effect.either)
+
+        expect(result._tag).toBe('Left')
+        if (result._tag === 'Left') {
+          const error = result.left
+          expect(error).toBeInstanceOf(CliError)
+          if (error instanceof CliError) {
+            expect(error.code).toBe('INVALID_TIMESTAMP')
+            expect(error.message).toBe('Invalid timestamp: "abc"')
+            expect(error.hint).toBe('Provide a Unix timestamp in milliseconds or "now"')
+          }
+        }
+      }),
+    )
   })
 })
 
@@ -193,6 +211,23 @@ describe('CLI: uniku generate ksuid', () => {
         const output = yield* MockOutput.getStdout
         const parsed = JSON.parse(output[0])
         expect(typeof parsed).toBe('string')
+      }),
+    )
+
+    it.scoped('[Given] generate ksuid --timestamp abc [Then] fails with a CliError', () =>
+      Effect.gen(function* () {
+        const result = yield* cli(['generate', 'ksuid', '--timestamp', 'abc']).pipe(Effect.either)
+
+        expect(result._tag).toBe('Left')
+        if (result._tag === 'Left') {
+          const error = result.left
+          expect(error).toBeInstanceOf(CliError)
+          if (error instanceof CliError) {
+            expect(error.code).toBe('INVALID_TIMESTAMP')
+            expect(error.message).toBe('Invalid timestamp: "abc"')
+            expect(error.hint).toBe('Provide a Unix timestamp in seconds or "now"')
+          }
+        }
       }),
     )
   })

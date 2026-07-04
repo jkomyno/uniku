@@ -4,7 +4,13 @@ import * as Effect from 'effect/Effect'
 import * as Ref from 'effect/Ref'
 import type { CliError } from '@/src/domain/errors'
 import type { InspectResult, ValidationResult } from '@/src/domain/types'
-import { type OutputOptions, OutputService } from '@/src/services/OutputService'
+import {
+  formatError,
+  formatInspectHuman,
+  formatValidationHuman,
+  type OutputOptions,
+  OutputService,
+} from '@/src/services/OutputService'
 
 // =============================================================================
 // Models
@@ -66,14 +72,7 @@ export const make = Effect.gen(function* () {
 
     writeError(error: CliError, options: OutputOptions) {
       return Ref.update(stderrRef, (lines) => {
-        if (options.json) {
-          const obj: Record<string, string> = { error: error.message, code: error.code }
-          if (error.hint) obj.hint = error.hint
-          return Array.append(lines, JSON.stringify(obj))
-        }
-        let msg = `Error: ${error.message}`
-        if (error.hint) msg += `\n  ${error.hint}`
-        return Array.append(lines, msg)
+        return Array.append(lines, formatError(error, options))
       })
     },
   })
@@ -94,29 +93,3 @@ export const make = Effect.gen(function* () {
 export const getStdout = Effect.flatMap(MockOutputTag, (mock) => mock.getStdout())
 export const getStderr = Effect.flatMap(MockOutputTag, (mock) => mock.getStderr())
 export const reset = Effect.flatMap(MockOutputTag, (mock) => mock.reset())
-
-// =============================================================================
-// Helpers (match OutputServiceLive formatting)
-// =============================================================================
-
-function formatValidationHuman(result: ValidationResult): string {
-  if (result.valid) {
-    const parts = [`valid (${result.type}`]
-    if (result.version != null) {
-      parts.push(` v${result.version}`)
-    }
-    parts.push(')')
-    return parts.join('')
-  }
-  return `invalid: ${result.error ?? 'malformed identifier'}`
-}
-
-function formatInspectHuman(result: InspectResult): string {
-  const lines: string[] = []
-  const typeLabel = result.version != null ? `${result.type} (v${result.version})` : result.type
-  lines.push(`Type:      ${typeLabel}`)
-  if (result.timestamp) lines.push(`Timestamp: ${result.timestamp}`)
-  if (result.random) lines.push(`Random:    ${result.random}`)
-  if (result.note) lines.push(`Note: ${result.note}`)
-  return lines.join('\n')
-}

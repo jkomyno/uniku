@@ -7,7 +7,7 @@ import * as Fiber from 'effect/Fiber'
 import * as Layer from 'effect/Layer'
 import * as Option from 'effect/Option'
 import { makeCliRunner } from '@/src/commands'
-import { CliError } from '@/src/domain/errors'
+import { handleCliFailure } from '@/src/runtime/cli-failure'
 import { OutputService, OutputServiceLive } from '@/src/services/OutputService'
 import { StdinService, StdinServiceLive } from '@/src/services/StdinService'
 import { shouldNotifyUpdate, UpdateCheckService, UpdateCheckServiceLive } from '@/src/services/UpdateCheckService'
@@ -58,22 +58,7 @@ const program = Effect.gen(function* () {
   const fiber = yield* Effect.fork(updateCheck.check(pkg.version))
 
   // Run the main CLI command
-  yield* Effect.suspend(() => cli(args)).pipe(
-    Effect.catchAll((err) =>
-      Effect.sync(() => {
-        if (err instanceof CliError) {
-          process.stderr.write(`Error: ${err.message}\n`)
-          if (err.hint) {
-            process.stderr.write(`  ${err.hint}\n`)
-          }
-          process.exitCode = err.exitCode
-        } else {
-          process.stderr.write(`Error: ${String(err)}\n`)
-          process.exitCode = 1
-        }
-      }),
-    ),
-  )
+  yield* Effect.suspend(() => cli(args)).pipe(Effect.catchAll((err) => handleCliFailure(err, args)))
 
   // After main command, join fiber with timeout
   const result = yield* Fiber.join(fiber).pipe(
