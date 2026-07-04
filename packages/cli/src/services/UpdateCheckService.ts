@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { tmpdir, userInfo } from 'node:os'
 import { dirname, join } from 'node:path'
+import * as Config from 'effect/Config'
 import * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
 import * as Option from 'effect/Option'
@@ -14,8 +15,17 @@ export interface UpdateInfo {
 }
 
 interface UpdateCache {
-  readonly latestVersion: string
+  readonly latestVersion?: string
   readonly checkedAt: number
+}
+
+interface UpdateCheckServiceOptions {
+  readonly cacheFile?: string
+  readonly fetchLatestVersion?: (currentVersion: string) => Effect.Effect<string | null>
+  readonly isStandaloneBinary?: () => boolean
+  readonly isStderrTTY?: () => boolean
+  readonly now?: () => number
+  readonly writeStderr?: (message: string) => void
 }
 
 // ── Service tag ──────────────────────────────────────────────────────
@@ -34,9 +44,30 @@ export class UpdateCheckService extends Context.Tag('UpdateCheckService')<
 
 const PACKAGE_NAME = '@uniku/cli'
 const REGISTRY_URL = `https://registry.npmjs.org/${encodeURIComponent(PACKAGE_NAME)}/latest`
-const CACHE_FILE = join(tmpdir(), 'uniku-update-check.json')
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+export const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 const FETCH_TIMEOUT_MS = 5_000
+
+function cacheUserSegment(): string | null {
+  const getuid = (process as { getuid?: () => number }).getuid
+  if (typeof getuid === 'function') {
+    return `uid-${getuid()}`
+  }
+
+  try {
+    const segment = userInfo().username.replace(/[^0-9A-Za-z._-]/g, '_')
+    return segment ? `user-${segment}` : null
+  } catch {
+    return null
+  }
+}
+
+function defaultCacheFile(): string {
+  const userSegment = cacheUserSegment()
+  const filename = userSegment ? `uniku-update-check-${userSegment}.json` : 'uniku-update-check.json'
+  return join(tmpdir(), filename)
+}
+
+export const DEFAULT_CACHE_FILE = defaultCacheFile()
 
 // ── Version comparison ───────────────────────────────────────────────
 
@@ -45,7 +76,7 @@ const FETCH_TIMEOUT_MS = 5_000
  * Returns null if the string is not a valid semver.
  */
 export function parseSemver(version: string) {
-  const match = version.match(/^v?(\d+)\.(\d+)\.(\d+)(?:-(.+))?$/)
+  const match = version.match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/)
   if (!match) return null
   return {
     major: Number(match[1]),
@@ -80,21 +111,37 @@ export function isNewerVersion(latest: string, current: string): boolean {
 
 // ── Skip conditions ──────────────────────────────────────────────────
 
-export function shouldSkipUpdateCheck(): boolean {
-  return (
-    !!process.env.NO_UPDATE_NOTIFIER ||
-    !!process.env.CI ||
-    !!process.env.CONTINUOUS_INTEGRATION ||
-    process.env.NODE_ENV === 'test' ||
-    !process.stderr.isTTY
+function optionalConfigString(name: string): Effect.Effect<Option.Option<string>> {
+  return Config.option(Config.string(name)).pipe(Effect.catchAll(() => Effect.succeed(Option.none())))
+}
+
+function isTruthyConfig(value: Option.Option<string>): boolean {
+  return Option.isSome(value) && value.value.length > 0
+}
+
+const updateCheckConfig = Effect.all({
+  noUpdateNotifier: optionalConfigString('NO_UPDATE_NOTIFIER'),
+  ci: optionalConfigString('CI'),
+  continuousIntegration: optionalConfigString('CONTINUOUS_INTEGRATION'),
+  nodeEnv: optionalConfigString('NODE_ENV'),
+})
+
+export function shouldSkipUpdateCheck(isStderrTTY = process.stderr.isTTY): Effect.Effect<boolean> {
+  return updateCheckConfig.pipe(
+    Effect.map(
+      (config) =>
+        isTruthyConfig(config.noUpdateNotifier) ||
+        isTruthyConfig(config.ci) ||
+        isTruthyConfig(config.continuousIntegration) ||
+        (Option.isSome(config.nodeEnv) && config.nodeEnv.value === 'test') ||
+        !isStderrTTY,
+    ),
   )
 }
 
 // ── Notification formatting ──────────────────────────────────────────
 
-export function formatNotification(info: UpdateInfo): string {
-  const noColor = !!process.env.NO_COLOR
-
+function formatNotificationWithColor(info: UpdateInfo, noColor: boolean): string {
   if (noColor) {
     const updateCmd = info.isStandaloneBinary
       ? `Download at https://github.com/jkomyno/uniku/releases`
@@ -126,25 +173,46 @@ export function formatNotification(info: UpdateInfo): string {
   ].join('\n')
 }
 
+export function formatNotification(info: UpdateInfo): Effect.Effect<string> {
+  return optionalConfigString('NO_COLOR').pipe(
+    Effect.map((noColor) => formatNotificationWithColor(info, isTruthyConfig(noColor))),
+  )
+}
+
+export function shouldNotifyUpdate(
+  args: readonly string[],
+  result: Option.Option<UpdateInfo>,
+): result is Option.Some<UpdateInfo> {
+  return Option.isSome(result) && !args.includes('--json')
+}
+
 // ── Cache helpers (plain Node.js — maximally resilient) ──────────────
 
-function readCache(): UpdateCache | null {
+function readCache(cacheFile: string): UpdateCache | null {
   try {
-    if (!existsSync(CACHE_FILE)) return null
-    const content = readFileSync(CACHE_FILE, 'utf-8')
-    return JSON.parse(content) as UpdateCache
+    const content = readFileSync(cacheFile, 'utf-8')
+    const parsed = JSON.parse(content) as unknown
+
+    if (typeof parsed !== 'object' || parsed === null) return null
+    const cache = parsed as { checkedAt?: unknown; latestVersion?: unknown }
+    if (typeof cache.checkedAt !== 'number' || !Number.isFinite(cache.checkedAt)) return null
+    if (cache.latestVersion !== undefined && typeof cache.latestVersion !== 'string') return null
+
+    return cache.latestVersion === undefined
+      ? { checkedAt: cache.checkedAt }
+      : { latestVersion: cache.latestVersion, checkedAt: cache.checkedAt }
   } catch {
     return null
   }
 }
 
-function writeCache(cache: UpdateCache): void {
+function writeCache(cache: UpdateCache, cacheFile: string): void {
   try {
-    const dir = dirname(CACHE_FILE)
+    const dir = dirname(cacheFile)
     mkdirSync(dir, { recursive: true })
-    const tmpPath = `${CACHE_FILE}.tmp`
+    const tmpPath = `${cacheFile}.tmp`
     writeFileSync(tmpPath, JSON.stringify(cache))
-    renameSync(tmpPath, CACHE_FILE)
+    renameSync(tmpPath, cacheFile)
   } catch {
     // Silently ignore write errors
   }
@@ -185,52 +253,67 @@ function isStandaloneBinary(): boolean {
 
 // ── Live implementation ──────────────────────────────────────────────
 
-export const UpdateCheckServiceLive = UpdateCheckService.of({
-  check(currentVersion) {
-    return Effect.gen(function* () {
-      if (shouldSkipUpdateCheck()) {
-        return Option.none()
-      }
+export function makeUpdateCheckService(options: UpdateCheckServiceOptions = {}) {
+  const cacheFile = options.cacheFile ?? DEFAULT_CACHE_FILE
+  const fetchVersion = options.fetchLatestVersion ?? fetchLatestVersion
+  const getNow = options.now ?? Date.now
+  const detectStandaloneBinary = options.isStandaloneBinary ?? isStandaloneBinary
+  const isStderrTTY = options.isStderrTTY ?? (() => process.stderr.isTTY)
+  const writeStderr = options.writeStderr ?? ((message: string) => process.stderr.write(message))
 
-      const cached = readCache()
-      const now = Date.now()
+  return UpdateCheckService.of({
+    check(currentVersion) {
+      return Effect.gen(function* () {
+        if (yield* shouldSkipUpdateCheck(isStderrTTY())) {
+          return Option.none()
+        }
 
-      // Cache is fresh — use cached result
-      if (cached && now - cached.checkedAt < CACHE_TTL_MS) {
-        if (isNewerVersion(cached.latestVersion, currentVersion)) {
+        const cached = readCache(cacheFile)
+        const now = getNow()
+
+        // Cache is fresh — use cached result
+        if (cached && now - cached.checkedAt < CACHE_TTL_MS) {
+          if (cached.latestVersion && isNewerVersion(cached.latestVersion, currentVersion)) {
+            return Option.some<UpdateInfo>({
+              currentVersion,
+              latestVersion: cached.latestVersion,
+              isStandaloneBinary: detectStandaloneBinary(),
+            })
+          }
+          return Option.none()
+        }
+
+        // Cache is stale or missing — fetch from registry
+        const latestVersion = yield* fetchVersion(currentVersion)
+
+        if (latestVersion === null) {
+          writeCache({ checkedAt: now }, cacheFile)
+          return Option.none()
+        }
+
+        writeCache({ latestVersion, checkedAt: now }, cacheFile)
+
+        if (isNewerVersion(latestVersion, currentVersion)) {
           return Option.some<UpdateInfo>({
             currentVersion,
-            latestVersion: cached.latestVersion,
-            isStandaloneBinary: isStandaloneBinary(),
+            latestVersion,
+            isStandaloneBinary: detectStandaloneBinary(),
           })
         }
+
         return Option.none()
-      }
+      }).pipe(Effect.catchAll(() => Effect.succeed(Option.none())))
+    },
 
-      // Cache is stale or missing — fetch from registry
-      const latestVersion = yield* fetchLatestVersion(currentVersion)
-
-      if (latestVersion === null) {
-        return Option.none()
-      }
-
-      writeCache({ latestVersion, checkedAt: now })
-
-      if (isNewerVersion(latestVersion, currentVersion)) {
-        return Option.some<UpdateInfo>({
-          currentVersion,
-          latestVersion,
-          isStandaloneBinary: isStandaloneBinary(),
+    notify(info) {
+      return Effect.gen(function* () {
+        const message = yield* formatNotification(info)
+        yield* Effect.sync(() => {
+          writeStderr(message)
         })
-      }
+      })
+    },
+  })
+}
 
-      return Option.none()
-    }).pipe(Effect.catchAll(() => Effect.succeed(Option.none())))
-  },
-
-  notify(info) {
-    return Effect.sync(() => {
-      process.stderr.write(formatNotification(info))
-    })
-  },
-})
+export const UpdateCheckServiceLive = makeUpdateCheckService()
