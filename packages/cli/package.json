@@ -18,6 +18,9 @@
   "bin": {
     "uniku": "./build/bin.mjs"
   },
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"

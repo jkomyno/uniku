@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-One library. Every ID format. Every runtime. Zero dependencies.
+One library. Every ID format. Every runtime. One runtime dependency (`@noble/hashes`, CUID2 only).
 
 > **uniku** */uˈniːku/* — Maltese for "unique"
 
@@ -32,12 +32,15 @@ console.log(first < second && second < third) // true
 | CUID2              |   ✅  |  ❌  |   ❌   |  ❌  |   ✅  |   ❌  |
 | Nanoid             |   ✅  |  ❌  |   ✅   |  ❌  |   ❌  |   ❌  |
 | KSUID              |   ✅  |  ❌  |   ❌   |  ❌  |   ❌  |   ✅  |
-| Tree-shakeable     |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |   ✅  |
-| ESM-only           |   ✅  |  ❌  |   ✅   |  ✅  |   ✅  |   ✅  |
-| Edge/Workers       |   ✅  |  ⚠️  |   ✅   |  ⚠️  |   ✅  |   ✅  |
-| Byte ↔ String      |   ✅  |  ✅  |   -   |  ✅   |   -  |   ✅  |
+| Tree-shakeable     |   ✅  |  ✅  |   ✅   |  ✅  |   ✅  |   ❌  |
+| ESM-only           |   ✅  | ✅¹  |   ✅   |  ❌  |   ✅  |   ❌  |
+| Edge/Workers       |   ✅  |  ✅  |   ✅   |  ⚠️  |   ✅  |  ⚠️  |
+| Byte ↔ String      |   ✅  |  ✅  |   -   |  ⚠️²  |   -  |   ✅  |
 
-> **Note**: Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
+> **Notes:**
+> - Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
+> - ¹ `uuid@13` is ESM-only; earlier versions support CommonJS.
+> - ² `ulid` only provides timestamp encoding/decoding, not full binary serialization.
 
 ### Works Everywhere
 
@@ -173,12 +176,14 @@ deno install npm:uniku
 
 | Import | Minified + gzipped |
 |--------|-------------------:|
-| `uniku/uuid/v4` | ~940 B |
-| `uniku/uuid/v7` | ~1.1 KB |
-| `uniku/ulid` | ~1.5 KB |
-| `uniku/cuid2` | ~1.1 KB* |
-| `uniku/nanoid` | ~938 B |
-| `uniku/ksuid` | ~1.0 KB |
+| `uniku/uuid/v4` | ~1.1 KB |
+| `uniku/uuid/v7` | ~1.4 KB |
+| `uniku/ulid` | ~1.8 KB |
+| `uniku/cuid2` | ~1007 B* |
+| `uniku/nanoid` | ~1.1 KB |
+| `uniku/ksuid` | ~1.3 KB |
+
+* The CUID2 entry point imports SHA3-512 from `@noble/hashes`; this table's entry-point size excludes that external dependency.
 
 ## Quick Start
 
