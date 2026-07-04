@@ -42,15 +42,21 @@ jobs:
         run: pnpm lint:ci
 
   test:
-    name: Test
+    name: Test (Node.js ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22, 24]
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
+        with:
+          node-version: ${{ matrix.node-version }}
 
       - name: Build
         run: pnpm build
@@ -60,6 +66,48 @@ jobs:
 
       - name: Integration tests
         run: pnpm test:integration
+
+  smoke-bun:
+    name: Bun Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2.1.2
+
+      - name: Build
+        run: pnpm build
+
+      - name: Runtime smoke
+        run: pnpm --filter uniku smoke:runtime:bun
+
+  smoke-deno:
+    name: Deno Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
+      - name: Build
+        run: pnpm build
+
+      - name: Runtime smoke
+        run: pnpm --filter uniku smoke:runtime:deno
 
   build:
     name: Build
@@ -98,7 +146,7 @@ jobs:
     name: Preview Release
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: [check, test, build]
+    needs: [check, test, smoke-bun, smoke-deno, build]
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
