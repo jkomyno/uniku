@@ -28,7 +28,8 @@
       "outputs": ["bench-results.json"]
     },
     "bench:summary": {
-      "inputs": ["bench-results.json", "scripts/bench-results.ts", "scripts/bench-summary.ts"],
+      "dependsOn": ["bench:compat"],
+      "inputs": ["bench-results.json", "scripts/bench-summary.ts"],
       "outputs": []
     },
     "bundle:summary": {
