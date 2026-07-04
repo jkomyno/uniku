@@ -10,7 +10,7 @@ import { makeCliRunner } from '@/src/commands'
 import { CliError } from '@/src/domain/errors'
 import { OutputService, OutputServiceLive } from '@/src/services/OutputService'
 import { StdinService, StdinServiceLive } from '@/src/services/StdinService'
-import { UpdateCheckService, UpdateCheckServiceLive } from '@/src/services/UpdateCheckService'
+import { shouldNotifyUpdate, UpdateCheckService, UpdateCheckServiceLive } from '@/src/services/UpdateCheckService'
 import pkg from '../package.json' with { type: 'json' }
 
 // ── CLI runner ──────────────────────────────────────────────────────
@@ -77,12 +77,12 @@ const program = Effect.gen(function* () {
 
   // After main command, join fiber with timeout
   const result = yield* Fiber.join(fiber).pipe(
-    Effect.timeout(Duration.seconds(5)),
+    Effect.timeout(Duration.millis(250)),
     Effect.catchAll(() => Effect.succeed(Option.none())),
   )
 
   // Show notification unless --json is active
-  if (Option.isSome(result) && !args.includes('--json')) {
+  if (shouldNotifyUpdate(args, result)) {
     yield* updateCheck.notify(result.value)
   }
 })
