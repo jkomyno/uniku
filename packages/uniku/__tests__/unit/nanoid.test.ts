@@ -43,12 +43,6 @@ describe('nanoid', () => {
     })
   })
 
-  it('generates unique IDs under parallel generation', async () => {
-    const promises = Array.from({ length: 1000 }, () => Promise.resolve(nanoid()))
-    const ids = await Promise.all(promises)
-    expect(new Set(ids).size).toBe(1000)
-  })
-
   it('handles high-throughput generation', { timeout: 30000 }, () => {
     expectDistinctRandomSamples({
       count: 50_000,
@@ -193,29 +187,6 @@ describe('nanoid', () => {
       const id = nanoid({ alphabet: BASE32_ALPHABET, size: 16 })
       expect(id).toHaveLength(16)
       expect(id).toMatch(/^[A-Z2-7]+$/)
-    })
-
-    it('works with 128-char alphabet', () => {
-      // 128 printable ASCII characters
-      const _ALPHABET_128 = Array.from({ length: 128 }, (_, i) => {
-        // Use printable ASCII range: 32-126 (95 chars) + extended via escape sequences
-        // Actually, let's use just lowercase, uppercase, digits, and some symbols
-        const chars =
-          'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' +
-          '!#$%&()*+,-./:;<=>?@[]^_`{|}~' +
-          "'" +
-          '"' +
-          ' ' +
-          '\\' // 128 chars total: 62 + 30 + 4 + 32 extra
-        return chars[i % chars.length]
-      }).join('')
-      // Simpler: just use 128 unique printable ASCII
-      const _SIMPLE_128 = String.fromCharCode(...Array.from({ length: 95 }, (_, i) => 32 + i)) // 32-126 = 95 chars
-      // Need exactly 128, so pad with first 33 chars again... that creates duplicates
-      // Let's just test with a subset: use 64 chars (the default) which is power-of-2
-      const id = nanoid({ alphabet: URL_ALPHABET, size: 21 })
-      expect(id).toHaveLength(21)
-      expect(id).toMatch(/^[A-Za-z0-9_-]+$/)
     })
 
     it('uses fast path for default 64-char alphabet', () => {

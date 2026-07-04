@@ -119,7 +119,8 @@ function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?:
       state.msecs = now
     } else {
       state.seq = (state.seq + 1) | 0
-      if (state.seq === 0) {
+      if (state.seq < 0) {
+        state.seq = 0
         state.msecs++
       }
     }

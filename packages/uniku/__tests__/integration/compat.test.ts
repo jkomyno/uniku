@@ -1,7 +1,9 @@
 import { KSUID as npmKsuid } from '@owpz/ksuid'
+import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
 import { nanoid as npmNanoid } from 'nanoid'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
+import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { ulid } from '@/src/ulid/ulid'
@@ -73,6 +75,20 @@ describe('Cross-Validation: NanoID', () => {
   it('npm IDs pass uniku validation', () => {
     const ids = Array.from({ length: BATCH_SIZE }, () => npmNanoid())
     const invalid = ids.filter((id) => !nanoid.isValid(id))
+    expect(invalid).toHaveLength(0)
+  })
+})
+
+describe('Cross-Validation: CUID2', () => {
+  it('uniku IDs pass npm validation', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => cuid2())
+    const invalid = ids.filter((id) => !npmIsCuid(id))
+    expect(invalid).toHaveLength(0)
+  })
+
+  it('npm IDs pass uniku validation', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => npmCuid2())
+    const invalid = ids.filter((id) => !cuid2.isValid(id))
     expect(invalid).toHaveLength(0)
   })
 })
