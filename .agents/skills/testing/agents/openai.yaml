@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Testing'
+  short_description: 'Testing guidance for uniku Vitest and CLI migration tests'
+  default_prompt: 'Use the testing skill to write, update, debug, or review uniku tests, including future Effect v4 CLI migration tests.'

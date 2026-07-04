@@ -25,11 +25,35 @@ pnpm changeset      # Create changeset for versioning
 - **Entry points**: Separate library imports per generator (`uniku/uuid/v7`, `uniku/ulid`, etc.) — no barrel exports
 - **Runtime**: Uses Web Crypto API (`globalThis.crypto`) for universal compatibility
 
+## Guidance Hierarchy
+
+`AGENTS.md` is the canonical repo-wide AI guidance file. `CLAUDE.md` is a symlink to this file so Claude Code reads the same instructions without duplicating them.
+
+Before editing, read this file plus any closer `AGENTS.md` that owns the paths you will touch. Keep guidance concise and operational: update it when a change affects durable structure, contracts, workflows, verification, or generated artifacts.
+
+Current child guidance:
+
+| Path                                                   | Scope                                                        |
+| ------------------------------------------------------ | ------------------------------------------------------------ |
+| [`.agents/skills/AGENTS.md`](.agents/skills/AGENTS.md) | Local agent skills, references, scripts, and source pointers |
+| [`packages/uniku/AGENTS.md`](packages/uniku/AGENTS.md) | Published ID generation package implementation               |
+
 ## Key Concepts
 
 - **Time-ordered IDs** (uuidv7, ulid, ksuid): Maintain module-level state for monotonic sequencing
 - **Random byte pooling**: Pre-allocated buffers for performance
 - **Tree-shakeable**: Each generator is a separate entry point
+- **Effect CLI**: `packages/cli` currently uses Effect v3. Use `.agents/skills/effect-v4` only for explicit v4 migration work, and verify APIs against `repos/effect-smol`.
+
+## Local Agent Skills
+
+Repo-local skills live under `.agents/skills`:
+
+- `typescript`: strict TypeScript, declaration emit, package boundaries, and CLI Effect interop.
+- `testing`: Vitest, CLI tests, integration tests, Cloudflare e2e tests, and future Effect v4 test migration.
+- `effect-v4`: source-grounded Effect v4 migration guidance for the CLI.
+
+`repos/effect-smol` is a read-only submodule clone of <https://github.com/effect-TS/effect-smol> for Effect v4 source lookup. If it is missing, run `git submodule update --init repos/effect-smol`. Never import from or edit `repos/**`; use installed package dependencies in source code.
 
 ## Testing
 
