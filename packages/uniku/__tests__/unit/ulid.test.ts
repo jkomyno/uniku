@@ -1,5 +1,7 @@
 import { afterEach } from 'vitest'
 import { BufferError, ulid } from '@/src/ulid/ulid'
+import { expectValidTypeGuard } from '../helpers/assertions'
+import { expectDistinctRandomSamples } from '../helpers/randomness'
 
 async function importFreshUlidModule() {
   vi.resetModules()
@@ -13,6 +15,15 @@ function compareBytes(left: Uint8Array, right: Uint8Array): number {
     }
   }
   return 0
+}
+
+function mockRandomFillWith(byte: number) {
+  return vi.spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((array) => {
+    if (array instanceof Uint8Array) {
+      array.fill(byte)
+    }
+    return array
+  })
 }
 
 describe('ulid', () => {
@@ -62,11 +73,11 @@ describe('ulid', () => {
   })
 
   it('generates unique ids in small sample', () => {
-    const ids = new Set<string>()
-    for (let i = 0; i < 10_000; i += 1) {
-      ids.add(ulid())
-    }
-    expect(ids.size).toBe(10_000)
+    expectDistinctRandomSamples({
+      count: 10_000,
+      maxDuplicateCount: 0,
+      generate: ulid,
+    })
   })
 
   it('encodes the timestamp in the first 6 bytes', () => {
@@ -235,10 +246,8 @@ describe('ulid', () => {
 
     it('acts as type guard', () => {
       const maybeId: unknown = ulid()
-      if (ulid.isValid(maybeId)) {
-        // TypeScript should know maybeId is string here
-        expect(maybeId.length).toBe(26)
-      }
+      expectValidTypeGuard<string>(maybeId, ulid.isValid)
+      expect(maybeId.length).toBe(26)
     })
   })
 
@@ -311,13 +320,7 @@ describe('ulid', () => {
     })
 
     it('throws when the monotonic random portion overflows', async () => {
-      vi.spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((array) => {
-        if (array instanceof Uint8Array) {
-          array.fill(0xff)
-        }
-        return array
-      })
-
+      mockRandomFillWith(0xff)
       const { InvalidInputError, ulid: freshUlid } = await importFreshUlidModule()
       const ms = 1_702_387_456_789
       vi.spyOn(Date, 'now').mockReturnValue(ms)

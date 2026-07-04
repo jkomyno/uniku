@@ -1,4 +1,6 @@
 import { BufferError, ksuid } from '@/src/ksuid/ksuid'
+import { expectValidTypeGuard } from '../helpers/assertions'
+import { expectDistinctRandomSamples } from '../helpers/randomness'
 
 const KSUID_EPOCH = 1_400_000_000
 const KSUID_MAX_SECS = KSUID_EPOCH + 0xffffffff
@@ -52,11 +54,11 @@ describe('ksuid', () => {
   })
 
   it('generates unique ids in small sample', () => {
-    const ids = new Set<string>()
-    for (let i = 0; i < 10_000; i += 1) {
-      ids.add(ksuid())
-    }
-    expect(ids.size).toBe(10_000)
+    expectDistinctRandomSamples({
+      count: 10_000,
+      randomBits: 128,
+      generate: ksuid,
+    })
   })
 
   it('encodes the timestamp in the first 4 bytes', () => {
@@ -173,10 +175,8 @@ describe('ksuid', () => {
 
     it('acts as type guard', () => {
       const maybeId: unknown = ksuid()
-      if (ksuid.isValid(maybeId)) {
-        // TypeScript should know maybeId is string here
-        expect(maybeId.length).toBe(27)
-      }
+      expectValidTypeGuard<string>(maybeId, ksuid.isValid)
+      expect(maybeId.length).toBe(27)
     })
   })
 

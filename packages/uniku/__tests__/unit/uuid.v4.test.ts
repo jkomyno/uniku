@@ -1,4 +1,6 @@
 import { uuidv4 } from '@/src/uuid/v4'
+import { expectValidTypeGuard } from '../helpers/assertions'
+import { expectDistinctRandomSamples } from '../helpers/randomness'
 
 describe('uuidv4', () => {
   it('generates a valid UUID v4 string', () => {
@@ -43,11 +45,11 @@ describe('uuidv4', () => {
   })
 
   it('generates unique ids in small sample', () => {
-    const ids = new Set<string>()
-    for (let i = 0; i < 100_000; i += 1) {
-      ids.add(uuidv4())
-    }
-    expect(ids.size).toBe(100_000)
+    expectDistinctRandomSamples({
+      count: 100_000,
+      randomBits: 122,
+      generate: uuidv4,
+    })
   })
 
   describe('isValid', () => {
@@ -89,10 +91,8 @@ describe('uuidv4', () => {
 
     it('acts as type guard', () => {
       const maybeId: unknown = uuidv4()
-      if (uuidv4.isValid(maybeId)) {
-        // TypeScript should know maybeId is string here
-        expect(maybeId.length).toBe(36)
-      }
+      expectValidTypeGuard<string>(maybeId, uuidv4.isValid)
+      expect(maybeId.length).toBe(36)
     })
   })
 })

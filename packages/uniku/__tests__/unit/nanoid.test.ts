@@ -1,4 +1,6 @@
 import { InvalidInputError, nanoid, URL_ALPHABET } from '@/src/nanoid/nanoid'
+import { expectValidTypeGuard } from '../helpers/assertions'
+import { expectDistinctRandomSamples } from '../helpers/randomness'
 
 describe('nanoid', () => {
   it('generates a 21-character string by default', () => {
@@ -34,8 +36,11 @@ describe('nanoid', () => {
   })
 
   it('generates unique IDs', () => {
-    const ids = new Set(Array.from({ length: 100_000 }, () => nanoid()))
-    expect(ids.size).toBe(100_000)
+    expectDistinctRandomSamples({
+      count: 100_000,
+      randomBits: 126,
+      generate: nanoid,
+    })
   })
 
   it('generates unique IDs under parallel generation', async () => {
@@ -45,11 +50,11 @@ describe('nanoid', () => {
   })
 
   it('handles high-throughput generation', { timeout: 30000 }, () => {
-    const ids = new Set<string>()
-    for (let i = 0; i < 50_000; i++) {
-      ids.add(nanoid())
-    }
-    expect(ids.size).toBe(50_000)
+    expectDistinctRandomSamples({
+      count: 50_000,
+      randomBits: 126,
+      generate: nanoid,
+    })
   })
 
   it('exports URL_ALPHABET constant', () => {
@@ -79,10 +84,8 @@ describe('nanoid', () => {
 
     it('acts as type guard', () => {
       const maybeId: unknown = nanoid()
-      if (nanoid.isValid(maybeId)) {
-        // TypeScript should know maybeId is string here
-        expect(maybeId.length).toBe(21)
-      }
+      expectValidTypeGuard<string>(maybeId, nanoid.isValid)
+      expect(maybeId.length).toBe(21)
     })
   })
 
@@ -147,8 +150,11 @@ describe('nanoid', () => {
 
     it('generates unique IDs with non-power-of-2 alphabet', () => {
       const ALPHA_ONLY = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-      const ids = new Set(Array.from({ length: 10_000 }, () => nanoid({ alphabet: ALPHA_ONLY, size: 20 })))
-      expect(ids.size).toBe(10_000)
+      expectDistinctRandomSamples({
+        count: 10_000,
+        randomBits: 94,
+        generate: () => nanoid({ alphabet: ALPHA_ONLY, size: 20 }),
+      })
     })
 
     it('has approximately uniform distribution for non-power-of-2 alphabet', () => {
@@ -235,8 +241,11 @@ describe('nanoid', () => {
 
     it('generates unique IDs with power-of-2 alphabet', () => {
       const HEX_ALPHABET = '0123456789abcdef'
-      const ids = new Set(Array.from({ length: 10_000 }, () => nanoid({ alphabet: HEX_ALPHABET, size: 24 })))
-      expect(ids.size).toBe(10_000)
+      expectDistinctRandomSamples({
+        count: 10_000,
+        randomBits: 96,
+        generate: () => nanoid({ alphabet: HEX_ALPHABET, size: 24 }),
+      })
     })
   })
 })

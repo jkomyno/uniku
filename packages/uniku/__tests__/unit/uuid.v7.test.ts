@@ -1,5 +1,6 @@
 import { afterEach } from 'vitest'
 import { uuidv7 } from '@/src/uuid/v7'
+import { expectValidTypeGuard } from '../helpers/assertions'
 
 async function importFreshUuidV7Module() {
   vi.resetModules()
@@ -171,10 +172,8 @@ describe('uuidv7', () => {
 
     it('acts as type guard', () => {
       const maybeId: unknown = uuidv7()
-      if (uuidv7.isValid(maybeId)) {
-        // TypeScript should know maybeId is string here
-        expect(maybeId.length).toBe(36)
-      }
+      expectValidTypeGuard<string>(maybeId, uuidv7.isValid)
+      expect(maybeId.length).toBe(36)
     })
   })
 
