@@ -9,3 +9,14 @@ catalog:
   "@cloudflare/vitest-pool-workers": ^0.12.9
   "@cloudflare/workers-types": ^4.20260203.0
   hono: ^4.11.7
+
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
+
+# @cloudflare/vitest-pool-workers@0.12.9 only supports vitest 2.0.x-3.2.x,
+# but this workspace uses Vitest 4.x at the root.
+peerDependencyRules:
+  allowedVersions:
+    "@vitest/runner": "4"
+    "@vitest/snapshot": "4"

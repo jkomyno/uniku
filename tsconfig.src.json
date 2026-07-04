@@ -1,10 +1,7 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.options.json",
+  "files": [],
   "compilerOptions": {
-    "composite": true,
-    "lib": ["ESNext", "DOM"],
-    "module": "ESNext",
     "target": "ES2023",
-    "moduleResolution": "Bundler",
   },
 }
