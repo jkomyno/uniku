@@ -149,9 +149,14 @@ jobs:
 
           pack_dir="$(mktemp -d)"
           prefix_dir="$(mktemp -d)"
-          tarball="$(pnpm --filter @uniku/cli pack --pack-destination "$pack_dir" | tail -n 1)"
+          # Pack uniku alongside the CLI: pnpm pack rewrites the CLI's
+          # "uniku": "workspace:*" to the exact workspace version, which is not
+          # on the registry yet on changeset release PRs. Installing both
+          # tarballs in one command lets npm resolve uniku locally.
+          uniku_tarball="$(pnpm --filter uniku pack --pack-destination "$pack_dir" | tail -n 1)"
+          cli_tarball="$(pnpm --filter @uniku/cli pack --pack-destination "$pack_dir" | tail -n 1)"
 
-          npm install --global --prefix "$prefix_dir" "$tarball"
+          npm install --global --prefix "$prefix_dir" "$uniku_tarball" "$cli_tarball"
           "$prefix_dir/bin/uniku" --help >/dev/null
           "$prefix_dir/bin/uniku" uuid >/dev/null
 
