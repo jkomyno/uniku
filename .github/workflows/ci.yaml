@@ -136,6 +136,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Smoke test uniku package exports
+        run: pnpm --filter uniku smoke:publish
+
       - name: Smoke test npm global CLI install
         shell: bash
         run: |

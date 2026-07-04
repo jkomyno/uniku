@@ -42,7 +42,45 @@
   ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
-    "access": "public"
+    "access": "public",
+    "exports": {
+      "./uuid/v4": {
+        "types": "./build/uuid/v4.d.mts",
+        "import": "./build/uuid/v4.mjs",
+        "default": "./build/uuid/v4.mjs"
+      },
+      "./uuid/v7": {
+        "types": "./build/uuid/v7.d.mts",
+        "import": "./build/uuid/v7.mjs",
+        "default": "./build/uuid/v7.mjs"
+      },
+      "./ulid": {
+        "types": "./build/ulid/ulid.d.mts",
+        "import": "./build/ulid/ulid.mjs",
+        "default": "./build/ulid/ulid.mjs"
+      },
+      "./cuid2": {
+        "types": "./build/cuid2/cuid2.d.mts",
+        "import": "./build/cuid2/cuid2.mjs",
+        "default": "./build/cuid2/cuid2.mjs"
+      },
+      "./nanoid": {
+        "types": "./build/nanoid/nanoid.d.mts",
+        "import": "./build/nanoid/nanoid.mjs",
+        "default": "./build/nanoid/nanoid.mjs"
+      },
+      "./ksuid": {
+        "types": "./build/ksuid/ksuid.d.mts",
+        "import": "./build/ksuid/ksuid.mjs",
+        "default": "./build/ksuid/ksuid.mjs"
+      },
+      "./errors": {
+        "types": "./build/errors.d.mts",
+        "import": "./build/errors.mjs",
+        "default": "./build/errors.mjs"
+      },
+      "./package.json": "./package.json"
+    }
   },
   "engines": {
     "node": ">=24.13.0"
@@ -50,6 +88,7 @@
   "type": "module",
   "sideEffects": false,
   "files": [
+    "src/**/*.ts",
     "build",
     "README.md"
   ],
@@ -121,6 +160,7 @@
     "test:integration": "vitest --project integration run",
     "test:e2e": "pnpm --filter @uniku/e2e-cloudflare test:e2e",
     "test:e2e:cloudflare": "pnpm --filter @uniku/e2e-cloudflare test:e2e:cloudflare",
+    "smoke:publish": "node scripts/publish-smoke.mjs",
     "smoke:runtime:bun": "bun scripts/runtime-smoke.mjs",
     "smoke:runtime:deno": "deno run --node-modules-dir=manual scripts/runtime-smoke.mjs",
     "bench": "vitest bench --run --project unit",
