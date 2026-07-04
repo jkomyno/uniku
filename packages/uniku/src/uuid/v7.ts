@@ -67,11 +67,11 @@ function v7Bytes(
 
   msecs ??= Date.now()
   // Derive a 31-bit sequence if not provided by the caller.
-  // Uses same formula as hot path (line 130) for consistency.
+  // Uses the same formula as the hot path for consistency.
   seq ??= (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
 
-  // Timestamp (48-bit big-endian milliseconds since Unix epoch).
-  // byte 0-5: timestamp (48 bits)
+  // Keep this inline on the UUID v7 hot path. Using writeTimestamp48() here
+  // benchmarked slower than the direct byte writes.
   buf[offset++] = (msecs / 0x10000000000) & 0xff
   buf[offset++] = (msecs / 0x100000000) & 0xff
   buf[offset++] = (msecs / 0x1000000) & 0xff

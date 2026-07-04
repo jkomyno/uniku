@@ -7,7 +7,8 @@ const DEFAULT_SIZE = 21
 const MAX_SIZE = 2048
 const NANOID_REGEX = /^[A-Za-z0-9_-]+$/
 
-// Simple random pool for ultra-fast path (npm nanoid style - no thread-safety overhead)
+// Keep Nanoid's private pool for its default hot path. It consumes `size`
+// bytes directly without the shared helper's UUID/CUID2-oriented branches.
 const POOL_SIZE_MULTIPLIER = 128
 let pool: Uint8Array | undefined
 let poolOffset = 0

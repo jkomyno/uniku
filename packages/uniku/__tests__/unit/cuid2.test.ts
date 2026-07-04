@@ -1,4 +1,6 @@
 import { cuid2, InvalidInputError } from '@/src/cuid2/cuid2'
+import { expectValidTypeGuard } from '../helpers/assertions'
+import { expectDistinctRandomSamples } from '../helpers/randomness'
 
 describe('cuid2', () => {
   it('generates a valid CUID2 string', () => {
@@ -20,11 +22,11 @@ describe('cuid2', () => {
   })
 
   it('generates unique ids in small sample', () => {
-    const ids = new Set<string>()
-    for (let i = 0; i < 10_000; i += 1) {
-      ids.add(cuid2())
-    }
-    expect(ids.size).toBe(10_000)
+    expectDistinctRandomSamples({
+      count: 10_000,
+      maxDuplicateCount: 0,
+      generate: cuid2,
+    })
   })
 
   it('generates unique IDs under parallel generation', async () => {
@@ -34,11 +36,11 @@ describe('cuid2', () => {
   })
 
   it('handles high-throughput generation (counter stress test)', { timeout: 30000 }, () => {
-    const ids = new Set<string>()
-    for (let i = 0; i < 50_000; i += 1) {
-      ids.add(cuid2())
-    }
-    expect(ids.size).toBe(50_000)
+    expectDistinctRandomSamples({
+      count: 50_000,
+      maxDuplicateCount: 0,
+      generate: cuid2,
+    })
   })
 
   it('supports custom length option', () => {
@@ -104,10 +106,8 @@ describe('cuid2', () => {
 
     it('acts as type guard for unknown values', () => {
       const maybeId: unknown = cuid2()
-      if (cuid2.isValid(maybeId)) {
-        // TypeScript should know maybeId is string here
-        expect(maybeId.length).toBeGreaterThan(0)
-      }
+      expectValidTypeGuard<string>(maybeId, cuid2.isValid)
+      expect(maybeId.length).toBeGreaterThan(0)
     })
   })
 })
