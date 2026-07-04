@@ -16,44 +16,29 @@
  * @module
  */
 
-import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import {
+  type BenchGroup,
+  type Benchmark,
+  type BenchResults,
+  collectBenchGroups,
+  formatOps,
+  loadBenchResults,
+} from './bench-results'
 
 const isCI = Bun.env.CI === 'true'
 const BENCH_RESULTS_PATH = resolve(import.meta.dir, '../bench-results.json')
 
-if (!existsSync(BENCH_RESULTS_PATH)) {
-  console.error('Error: bench-results.json not found.')
-  console.error("Run 'pnpm bench' first to generate benchmark results.")
-  process.exit(1)
-}
-
-type Benchmark = {
-  name: string
-  rank: number
-  hz: number
-  rme: number // Relative margin of error (%)
-}
-
-type BenchGroup = {
-  fullName: string
-  benchmarks: Benchmark[]
-}
-
-type BenchFile = {
-  filepath: string
-  groups: BenchGroup[]
-}
-
-type BenchResults = {
-  files: BenchFile[]
-}
-
 let results: BenchResults
 try {
-  results = JSON.parse(readFileSync(BENCH_RESULTS_PATH, 'utf-8'))
-} catch {
-  console.error('Error: Failed to parse bench-results.json')
+  results = loadBenchResults(BENCH_RESULTS_PATH)
+} catch (error) {
+  if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+    console.error('Error: bench-results.json not found.')
+    console.error("Run 'pnpm bench' first to generate benchmark results.")
+  } else {
+    console.error('Error: Failed to parse bench-results.json')
+  }
   process.exit(1)
 }
 
@@ -62,8 +47,7 @@ if (results.files.length === 0) {
   process.exit(1)
 }
 
-// Use first file entry (compat benchmarks produce a single file)
-const groups = results.files[0].groups
+const groups = collectBenchGroups(results)
 
 function parseGroupName(fullName: string): { category: string; name: string } | null {
   const match = fullName.match(/> (Generation|Validation) > (.+)$/)
@@ -83,15 +67,6 @@ type ComparisonResult = {
   comparison: string
   hasRmeWarning: boolean
   maxRme: number
-}
-
-function formatOps(hz: number): string {
-  if (hz >= 1_000_000) {
-    return `${(hz / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
-  } else if (hz >= 1_000) {
-    return `${(hz / 1_000).toFixed(1).replace(/\.0$/, '')}K`
-  }
-  return hz.toFixed(0)
 }
 
 function formatComparison(benchmarks: Benchmark[]): ComparisonResult {
@@ -139,10 +114,14 @@ function formatComparison(benchmarks: Benchmark[]): ComparisonResult {
 
 const generation: Map<string, ComparisonResult> = new Map()
 const validation: Map<string, ComparisonResult> = new Map()
+const internal: Map<string, BenchGroup> = new Map()
 
 for (const group of groups) {
   const parsed = parseGroupName(group.fullName)
-  if (!parsed) continue
+  if (!parsed) {
+    internal.set(formatInternalGroupName(group.fullName), group)
+    continue
+  }
 
   const comparison = formatComparison(group.benchmarks)
   if (parsed.category === 'Generation') {
@@ -161,6 +140,7 @@ const sortByPerformance = (a: [string, ComparisonResult], b: [string, Comparison
 
 const generationSorted = [...generation.entries()].sort(sortByPerformance)
 const validationSorted = [...validation.entries()].sort(sortByPerformance)
+const internalSorted = [...internal.entries()].sort(([a], [b]) => a.localeCompare(b))
 
 type TableRow = {
   name: string
@@ -169,6 +149,13 @@ type TableRow = {
   comparison: string
   hasRmeWarning: boolean
   maxRme: number
+}
+
+type InternalTableRow = {
+  group: string
+  name: string
+  ops: string
+  rme: string
 }
 
 // Build markdown table string with ops/s columns
@@ -180,6 +167,17 @@ function buildMarkdownTable(title: string, rows: TableRow[]): string {
   for (const row of rows) {
     const warning = row.hasRmeWarning ? ` ⚠️ ±${row.maxRme.toFixed(1)}%` : ''
     lines.push(`| ${row.name} | ${row.unikuOps} ops/s | ${row.competitorOps} ops/s | ${row.comparison}${warning} |`)
+  }
+  return lines.join('\n')
+}
+
+function buildInternalMarkdownTable(rows: InternalTableRow[]): string {
+  const lines: string[] = []
+  lines.push('### Internal Benchmarks\n')
+  lines.push('| Group | Benchmark | ops/s | RME |')
+  lines.push('|-------|-----------|-------|-----|')
+  for (const row of rows) {
+    lines.push(`| ${row.group} | ${row.name} | ${row.ops} ops/s | ${row.rme} |`)
   }
   return lines.join('\n')
 }
@@ -231,7 +229,18 @@ const validationRows: TableRow[] = validationSorted.map(([name, result]) => ({
   maxRme: result.maxRme,
 }))
 
-if (generationRows.length === 0 && validationRows.length === 0) {
+const internalRows: InternalTableRow[] = internalSorted.flatMap(([groupName, group]) =>
+  [...group.benchmarks]
+    .sort((a, b) => b.hz - a.hz)
+    .map((benchmark) => ({
+      group: groupName,
+      name: benchmark.name,
+      ops: formatOps(benchmark.hz),
+      rme: `±${(benchmark.rme ?? 0).toFixed(1)}%`,
+    })),
+)
+
+if (generationRows.length === 0 && validationRows.length === 0 && internalRows.length === 0) {
   console.log('No benchmark results to display.')
   process.exit(0)
 }
@@ -245,6 +254,10 @@ if (isCI) {
   if (validationRows.length > 0) {
     if (generationRows.length > 0) console.log()
     console.log(buildMarkdownTable('Validation', validationRows))
+  }
+  if (internalRows.length > 0) {
+    if (generationRows.length > 0 || validationRows.length > 0) console.log()
+    console.log(buildInternalMarkdownTable(internalRows))
   }
 } else {
   // In terminal, use Bun.inspect.table() for clean formatting
@@ -280,4 +293,24 @@ if (isCI) {
       ),
     )
   }
+
+  if (internalRows.length > 0) {
+    if (generationRows.length > 0 || validationRows.length > 0) console.log()
+    console.log('\x1b[1;33m### Internal Benchmarks\x1b[0m\n')
+    console.log(
+      Bun.inspect.table(
+        internalRows.map((row) => ({
+          Group: row.group,
+          Benchmark: row.name,
+          'ops/s': row.ops,
+          RME: row.rme,
+        })),
+        { colors: true },
+      ),
+    )
+  }
+}
+
+function formatInternalGroupName(fullName: string): string {
+  return fullName.replace(/^__tests__\/bench\/[^>]+ > /, '')
 }
