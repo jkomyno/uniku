@@ -1,5 +1,17 @@
 # uniku
 
+## 0.0.13
+
+### Patch Changes
+
+- 9a6a9b7: Reject malformed ULID and KSUID strings consistently from decoders, including non-ASCII input and values outside each ID format's numeric range.
+- 12ead93: Fix KSUID timestamp option handling so `secs` validation is non-mutating and rejects values outside the KSUID 32-bit timestamp range.
+- bfc9126: Correct published metadata by lowering the Node engine floor to Node 20.19 and documenting the CUID2 `@noble/hashes` runtime dependency in the READMEs.
+- 816101a: Consolidate CUID2 random-byte pooling onto the shared lightweight random pool.
+- 4cb29cc: Ship TypeScript source files in the npm tarball while keeping published exports resolved to built runtime files.
+- 874718e: Preserve ULID monotonicity across clock rollback and fail when the monotonic random portion overflows.
+- 49d6a98: Fix UUID v7 monotonic sequence rollover so same-millisecond IDs advance the embedded timestamp when the 31-bit sequence is exhausted.
+
 ## 0.0.12
 
 ### Patch Changes
