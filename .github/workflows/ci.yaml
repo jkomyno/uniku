@@ -63,19 +63,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - name: Setup Node.js
+      - name: Install dependencies
         uses: ./.github/actions/setup-node
+
+      - name: Build
+        run: pnpm --filter uniku build
+
+      - name: Setup test Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Build
-        run: pnpm build
-
       - name: Unit tests
-        run: pnpm test:unit
-
-      - name: Integration tests
-        run: pnpm test:integration
+        env:
+          npm_config_loglevel: "error"
+          npm_config_update_notifier: "false"
+        run: npm run test:ci:node-matrix
 
   smoke-bun:
     name: Bun Smoke

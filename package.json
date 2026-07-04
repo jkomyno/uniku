@@ -22,6 +22,7 @@
     "lint": "biome check --fix --unsafe",
     "lint:fix": "biome check --fix --unsafe",
     "test": "pnpm -r --if-present test",
+    "test:ci:node-matrix": "bash scripts/ci-node-matrix-tests.sh",
     "test:unit": "turbo run test:unit",
     "test:integration": "turbo run test:integration",
     "test:e2e": "turbo run test:e2e",
@@ -56,5 +57,5 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
-  "packageManager": "pnpm@10.28.2"
+  "packageManager": "pnpm@11.10.0"
 }
