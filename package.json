@@ -1,7 +1,7 @@
 {
   "private": true,
   "type": "module",
-  "description": "Practical example of a `TypeScript` monorepo with `pnpm`, `turborepo`, and `vitest`",
+  "description": "Runtime-portable unique ID generators and CLI tooling",
   "repository": "https://github.com/jkomyno/uniku.git",
   "author": {
     "name": "Alberto Schiabel",
@@ -22,6 +22,7 @@
     "lint": "biome check --fix --unsafe",
     "lint:fix": "biome check --fix --unsafe",
     "test": "pnpm -r --if-present test",
+    "test:ci:node-matrix": "bash scripts/ci-node-matrix-tests.sh",
     "test:unit": "turbo run test:unit",
     "test:integration": "turbo run test:integration",
     "test:e2e": "turbo run test:e2e",
@@ -50,25 +51,11 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "pre-commit": "lint-staged",
   "lint-staged": {
     "*.{js,ts,cjs,mjs,md,json,jsonc}": "biome check --fix --unsafe --no-errors-on-unmatched"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
-  "packageManager": "pnpm@10.28.2",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "workerd"
-    ],
-    "// peerDependencyRules": "@cloudflare/vitest-pool-workers@0.12.9 only supports vitest 2.0.x-3.2.x, but we use vitest 4.x in the workspace root",
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "@vitest/runner": "4",
-        "@vitest/snapshot": "4"
-      }
-    }
-  }
+  "packageManager": "pnpm@11.10.0"
 }

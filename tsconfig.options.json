@@ -1,10 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "files": [],
   "compilerOptions": {
     // Use custom import conditions to resolve paths to the source directory.
     // Useful to prevent "Go to definition" from navigating to the `build` folder of an imported package from this monorepo.
     // Reference: Chapter 5 of https://colinhacks.com/essays/live-types-typescript-monorepo
     "customConditions": ["@jkomyno/source"],
+    "lib": ["ESNext", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     // Enable all strict type checking options.
     "strict": true,
     // Enables project references and informs the TypeScript program where to find referenced outputs.

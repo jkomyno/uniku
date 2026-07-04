@@ -2,6 +2,13 @@ packages:
   - 'packages/*'
   - 'packages/uniku/__tests__/e2e/runtimes/cloudflare'
 
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: true
+  msgpackr-extract: false
+  sharp: false
+  workerd: true
+
 catalog:
   typescript: ^5.9.3
   vitest: ^4.0.18
@@ -9,3 +16,10 @@ catalog:
   "@cloudflare/vitest-pool-workers": ^0.12.9
   "@cloudflare/workers-types": ^4.20260203.0
   hono: ^4.11.7
+
+# @cloudflare/vitest-pool-workers@0.12.9 only supports vitest 2.0.x-3.2.x,
+# but this workspace uses Vitest 4.x at the root.
+peerDependencyRules:
+  allowedVersions:
+    "@vitest/runner": "4"
+    "@vitest/snapshot": "4"

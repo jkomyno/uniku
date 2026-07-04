@@ -5,7 +5,7 @@ Thanks for your interest in contributing to uniku.
 ## Prerequisites
 
 - Node.js 24.13.0
-- pnpm 10.28.2
+- pnpm via Corepack, pinned by `package.json`
 - Bun (optional, for `pnpm bench:summary`)
 
 ## Getting Started
@@ -16,6 +16,7 @@ git clone https://github.com/jkomyno/uniku.git
 cd uniku
 
 # Install dependencies
+corepack enable
 pnpm install
 
 # Build all packages
@@ -55,9 +56,10 @@ pnpm test:e2e
 pnpm test:e2e:cloudflare
 ```
 
-CI runs package unit tests through the `test:unit` script and package
-integration tests through `test:integration`. Add those scripts to any package
-whose tests should run in the corresponding CI step.
+CI's Node-version matrix runs `npm run test:ci:node-matrix` so package tests
+execute on the target Node version without invoking pnpm under unsupported Node
+versions. Add package-local `test:unit` or `test:integration` scripts there
+when new packages need matrix coverage.
 
 ### Benchmarks
 
