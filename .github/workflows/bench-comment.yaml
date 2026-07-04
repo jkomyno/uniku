@@ -1,0 +1,47 @@
+name: Benchmark Comments
+
+on:
+  workflow_run:
+    workflows: ["Benchmarks"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    name: Post Benchmark Comment
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.pull_requests[0].number
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Download benchmark comment artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: benchmark-pr-comment
+          path: benchmark-comment
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Find existing comment
+        uses: peter-evans/find-comment@a4ef349b8c29f841860ce94ed82b20f0a39b6961 # v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.workflow_run.pull_requests[0].number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "<!-- benchmark-results -->"
+
+      - name: Post PR comment
+        uses: peter-evans/create-or-update-comment@f5b41f6a455733f2c5f73ca67a62631e75861578 # v5
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.workflow_run.pull_requests[0].number }}
+          body-path: benchmark-comment/benchmark-pr-comment.md
+          edit-mode: replace
+          reactions: eyes
+          reactions-edit-mode: append
