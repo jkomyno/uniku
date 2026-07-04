@@ -76,7 +76,9 @@ const ulidSubcommand = Command.make(
   ({ count, json, monotonic, timestamp: timestampOpt, lowercase }) =>
     Effect.gen(function* () {
       const output = yield* OutputService
-      const timestamp = Option.isSome(timestampOpt) ? parseTimestampMs(Option.getOrThrow(timestampOpt)) : undefined
+      const timestamp = Option.isSome(timestampOpt)
+        ? yield* parseTimestampMs(Option.getOrThrow(timestampOpt))
+        : undefined
       const ids = yield* generateUlid({ count, monotonic, timestamp, lowercase })
       yield* output.writeIds(ids, { json })
     }),
@@ -153,7 +155,9 @@ const ksuidSubcommand = Command.make(
   ({ count, json, timestamp: timestampOpt }) =>
     Effect.gen(function* () {
       const output = yield* OutputService
-      const timestamp = Option.isSome(timestampOpt) ? parseTimestampSecs(Option.getOrThrow(timestampOpt)) : undefined
+      const timestamp = Option.isSome(timestampOpt)
+        ? yield* parseTimestampSecs(Option.getOrThrow(timestampOpt))
+        : undefined
       const ids = yield* generateKsuid({ count, timestamp })
       yield* output.writeIds(ids, { json })
     }),
@@ -176,28 +180,17 @@ export const ksuidShorthand = ksuidSubcommand
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-function parseTimestampMs(input: string): number {
-  if (input === 'now') return Date.now()
-  const n = Number(input)
-  if (!Number.isFinite(n) || n < 0) {
-    throw new CliError(
-      'INVALID_TIMESTAMP',
-      `Invalid timestamp: "${input}"`,
-      'Provide a Unix timestamp in milliseconds or "now"',
-    )
-  }
-  return n
-}
+const parseTimestampMs = (input: string): Effect.Effect<number, CliError> =>
+  parseTimestamp(input, () => Date.now(), 'Provide a Unix timestamp in milliseconds or "now"')
 
-function parseTimestampSecs(input: string): number {
-  if (input === 'now') return Math.floor(Date.now() / 1000)
+const parseTimestampSecs = (input: string): Effect.Effect<number, CliError> =>
+  parseTimestamp(input, () => Math.floor(Date.now() / 1000), 'Provide a Unix timestamp in seconds or "now"')
+
+function parseTimestamp(input: string, now: () => number, hint: string): Effect.Effect<number, CliError> {
+  if (input === 'now') return Effect.sync(now)
   const n = Number(input)
   if (!Number.isFinite(n) || n < 0) {
-    throw new CliError(
-      'INVALID_TIMESTAMP',
-      `Invalid timestamp: "${input}"`,
-      'Provide a Unix timestamp in seconds or "now"',
-    )
+    return Effect.fail(new CliError('INVALID_TIMESTAMP', `Invalid timestamp: "${input}"`, hint))
   }
-  return n
+  return Effect.succeed(n)
 }

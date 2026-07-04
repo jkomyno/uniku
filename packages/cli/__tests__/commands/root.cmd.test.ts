@@ -1,3 +1,4 @@
+import * as ValidationError from '@effect/cli/ValidationError'
 import { describe, expect, layer } from '@effect/vitest'
 import * as Effect from 'effect/Effect'
 import { cli, MockConsole, TestLive } from '../__utils__'
@@ -28,7 +29,16 @@ describe('CLI: uniku root', () => {
     it.scoped('[Given] unknown subcommand [Then] returns ValidationError', () =>
       Effect.gen(function* () {
         const result = yield* cli(['nonexistent']).pipe(Effect.catchAll((e) => Effect.succeed(e)))
-        expect(result).toBeDefined()
+        expect(ValidationError.isValidationError(result)).toBe(true)
+        if (ValidationError.isValidationError(result)) {
+          expect(result._tag).toBe('CommandMismatch')
+        }
+
+        const lines = yield* MockConsole.getLines({ stripAnsi: true })
+        const output = lines.join('\n')
+        expect(output).toContain('USAGE')
+        expect(output).toContain('COMMANDS')
+        expect(output).toContain('generate')
       }),
     )
   })

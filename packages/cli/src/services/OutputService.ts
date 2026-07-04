@@ -18,7 +18,7 @@ export class OutputService extends Context.Tag('OutputService')<
   }
 >() {}
 
-function formatValidationHuman(result: ValidationResult): string {
+export function formatValidationHuman(result: ValidationResult): string {
   if (result.valid) {
     const parts = [`valid (${result.type}`]
     if (result.version != null) {
@@ -30,7 +30,7 @@ function formatValidationHuman(result: ValidationResult): string {
   return `invalid: ${result.error ?? 'malformed identifier'}`
 }
 
-function formatInspectHuman(result: InspectResult): string {
+export function formatInspectHuman(result: InspectResult): string {
   const lines: string[] = []
   const typeLabel = result.version != null ? `${result.type} (v${result.version})` : result.type
   lines.push(`Type:      ${typeLabel}`)
@@ -44,6 +44,18 @@ function formatInspectHuman(result: InspectResult): string {
     lines.push(`Note: ${result.note}`)
   }
   return lines.join('\n')
+}
+
+export function formatError(error: CliError, options: OutputOptions): string {
+  if (options.json) {
+    return JSON.stringify(errorToJson(error))
+  }
+
+  let msg = `Error: ${error.message}`
+  if (error.hint) {
+    msg += `\n  ${error.hint}`
+  }
+  return msg
 }
 
 /**
@@ -90,15 +102,7 @@ export const OutputServiceLive = OutputService.of({
 
   writeError(error, options) {
     return Effect.sync(() => {
-      if (options.json) {
-        process.stderr.write(`${JSON.stringify(errorToJson(error))}\n`)
-      } else {
-        let msg = `Error: ${error.message}`
-        if (error.hint) {
-          msg += `\n  ${error.hint}`
-        }
-        process.stderr.write(`${msg}\n`)
-      }
+      process.stderr.write(`${formatError(error, options)}\n`)
     })
   },
 })
