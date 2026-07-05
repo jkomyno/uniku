@@ -161,7 +161,13 @@ jobs:
           "$prefix_dir/bin/uniku" uuid >/dev/null
 
       - name: Build CLI binary (smoke test)
-        run: pnpm --filter @uniku/cli build:binary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pnpm --filter @uniku/cli build:binary
+          tar -tzf packages/cli/dist/uniku-linux-x64.tar.gz | grep -qx 'uniku'
+          test -x packages/cli/dist/uniku-linux-x64
 
   preview:
     name: Preview Release

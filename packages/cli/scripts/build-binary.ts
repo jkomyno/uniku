@@ -12,6 +12,8 @@ import * as BunServices from '@effect/platform-bun/BunServices'
 import { Console, Effect } from 'effect'
 import { exec } from './exec'
 
+const BINARY_NAME = 'uniku'
+
 // ── Platform detection ──────────────────────────────────────────────
 
 function detectTarget(): string {
@@ -69,6 +71,8 @@ const program = Effect.gen(function* () {
   const { target, name } = parseArgs(process.argv)
   const outDir = 'dist'
   const outFile = `${outDir}/${name}`
+  const packageDir = `${outDir}/${name}-package`
+  const packageBinary = `${packageDir}/${BINARY_NAME}`
 
   yield* Console.log(`Building CLI binary`)
   yield* Console.log(`  Target:   ${target}`)
@@ -93,8 +97,14 @@ const program = Effect.gen(function* () {
   )
 
   // 3. Create tarball
+  yield* exec(`rm -rf ${packageDir}`, 'rm', '-rf', packageDir)
+  yield* exec(`mkdir -p ${packageDir}`, 'mkdir', '-p', packageDir)
+  yield* exec(`cp ${name} → ${BINARY_NAME}`, 'cp', outFile, packageBinary)
+  yield* exec(`chmod +x ${BINARY_NAME}`, 'chmod', '+x', packageBinary)
+
   const tarball = `${name}.tar.gz`
-  yield* exec(`tar -czf ${tarball}`, 'tar', '-czf', `${outDir}/${tarball}`, '-C', outDir, name)
+  yield* exec(`tar -czf ${tarball}`, 'tar', '-czf', `${outDir}/${tarball}`, '-C', packageDir, BINARY_NAME)
+  yield* exec(`rm -rf ${packageDir}`, 'rm', '-rf', packageDir)
 
   // 4. Generate SHA256 checksum (using Bun crypto — platform-independent)
   const hash = yield* computeSha256(`${outDir}/${tarball}`)
