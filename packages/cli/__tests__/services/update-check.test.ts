@@ -20,7 +20,9 @@ import * as MockUpdateCheck from '../__utils__/services/mock-update-check'
 type ConfigEntries = ReadonlyArray<readonly [string, string]>
 
 const withConfig = <A, E, R>(effect: Effect.Effect<A, E, R>, entries: ConfigEntries = []) =>
-  effect.pipe(Effect.withConfigProvider(ConfigProvider.fromMap(new Map(entries))))
+  effect.pipe(
+    Effect.provideService(ConfigProvider.ConfigProvider, ConfigProvider.fromEnv({ env: Object.fromEntries(entries) })),
+  )
 
 const makeCacheFile = () => {
   const dir = mkdtempSync(join(tmpdir(), 'uniku-update-check-test-'))

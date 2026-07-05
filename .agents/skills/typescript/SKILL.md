@@ -1,6 +1,6 @@
 ---
 name: typescript
-description: Focused TypeScript type-safety guide for uniku. Use when fixing typecheck, isolatedDeclarations, isolatedModules, or verbatimModuleSyntax errors; designing or reviewing exported TypeScript APIs, package entry points, CLI service shapes, unknown/any boundaries, type-only imports, Promise boundaries, or future Effect v4 migration code. Do not use for routine TypeScript edits that only follow nearby code.
+description: Focused TypeScript type-safety guide for uniku. Use when fixing typecheck, isolatedDeclarations, isolatedModules, or verbatimModuleSyntax errors; designing or reviewing exported TypeScript APIs, package entry points, CLI service shapes, unknown/any boundaries, type-only imports, Promise boundaries, or Effect v4 CLI code. Do not use for routine TypeScript edits that only follow nearby code.
 ---
 
 # TypeScript
@@ -49,10 +49,10 @@ Use this skill for typecheck failures, declaration emit constraints, exported AP
 - Use `Promise.all` or `Promise.race` only at Promise boundaries. Prefer Effect concurrency primitives inside Effect-based CLI code.
 - Avoid silent `.catch(() => fallback)` handlers. Log or map the error deliberately, and never leak secrets in logs.
 
-## Effect v4 Migration
+## Effect v4
 
-- The CLI currently uses Effect v3 packages. Do not mix v4 APIs into current CLI code unless the change is explicitly part of the migration.
-- For migration work, use `.agents/skills/effect-v4` and verify unfamiliar APIs against `repos/effect-smol/`.
+- The CLI runs on Effect v4 (`effect@4.0.0-beta.x`, pinned exact). Never use Effect v3 packages (`@effect/cli`, `@effect/platform`) — they have no v4 equivalents.
+- For any Effect work in the CLI, use `.agents/skills/effect-v4` and verify unfamiliar APIs against `repos/effect-smol/`.
 - Treat `repos/effect-smol/` as a read-only local source reference; never import from it.
 - Use the `effect-v4` skill for exact generator syntax, function helpers, Schema-backed tagged errors, services, layers, and v4 traps.
 

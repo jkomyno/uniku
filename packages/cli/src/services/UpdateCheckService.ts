@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import * as Config from 'effect/Config'
 import * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
+import * as Layer from 'effect/Layer'
 import * as Option from 'effect/Option'
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -28,9 +29,9 @@ interface UpdateCheckServiceOptions {
   readonly writeStderr?: (message: string) => void
 }
 
-// ── Service tag ──────────────────────────────────────────────────────
+// ── Service ──────────────────────────────────────────────────────────
 
-export class UpdateCheckService extends Context.Tag('UpdateCheckService')<
+export class UpdateCheckService extends Context.Service<
   UpdateCheckService,
   {
     /** Check for available updates. Returns Some(info) if update available, None otherwise. */
@@ -38,7 +39,9 @@ export class UpdateCheckService extends Context.Tag('UpdateCheckService')<
     /** Print the update notification to stderr. */
     readonly notify: (info: UpdateInfo) => Effect.Effect<void>
   }
->() {}
+>()('uniku/cli/UpdateCheckService') {
+  static readonly layer = Layer.sync(UpdateCheckService, () => makeUpdateCheckService())
+}
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -112,7 +115,7 @@ export function isNewerVersion(latest: string, current: string): boolean {
 // ── Skip conditions ──────────────────────────────────────────────────
 
 function optionalConfigString(name: string): Effect.Effect<Option.Option<string>> {
-  return Config.option(Config.string(name)).pipe(Effect.catchAll(() => Effect.succeed(Option.none())))
+  return Config.option(Config.string(name)).pipe(Effect.catch(() => Effect.succeed(Option.none())))
 }
 
 function isTruthyConfig(value: Option.Option<string>): boolean {
@@ -236,7 +239,7 @@ function fetchLatestVersion(currentVersion: string): Effect.Effect<string | null
         return data.version
       }),
     catch: () => new Error('fetch failed'),
-  }).pipe(Effect.catchAll(() => Effect.succeed(null)))
+  }).pipe(Effect.catch(() => Effect.succeed(null)))
 }
 
 // ── Standalone binary detection ──────────────────────────────────────
@@ -262,10 +265,10 @@ export function makeUpdateCheckService(options: UpdateCheckServiceOptions = {}) 
   const writeStderr = options.writeStderr ?? ((message: string) => process.stderr.write(message))
 
   return UpdateCheckService.of({
-    check(currentVersion) {
-      return Effect.gen(function* () {
+    check: Effect.fn('UpdateCheckService.check')(
+      function* (currentVersion: string) {
         if (yield* shouldSkipUpdateCheck(isStderrTTY())) {
-          return Option.none()
+          return Option.none<UpdateInfo>()
         }
 
         const cached = readCache(cacheFile)
@@ -280,7 +283,7 @@ export function makeUpdateCheckService(options: UpdateCheckServiceOptions = {}) 
               isStandaloneBinary: detectStandaloneBinary(),
             })
           }
-          return Option.none()
+          return Option.none<UpdateInfo>()
         }
 
         // Cache is stale or missing — fetch from registry
@@ -288,7 +291,7 @@ export function makeUpdateCheckService(options: UpdateCheckServiceOptions = {}) 
 
         if (latestVersion === null) {
           writeCache({ checkedAt: now }, cacheFile)
-          return Option.none()
+          return Option.none<UpdateInfo>()
         }
 
         writeCache({ latestVersion, checkedAt: now }, cacheFile)
@@ -301,19 +304,16 @@ export function makeUpdateCheckService(options: UpdateCheckServiceOptions = {}) 
           })
         }
 
-        return Option.none()
-      }).pipe(Effect.catchAll(() => Effect.succeed(Option.none())))
-    },
+        return Option.none<UpdateInfo>()
+      },
+      Effect.catch(() => Effect.succeed(Option.none<UpdateInfo>())),
+    ),
 
-    notify(info) {
-      return Effect.gen(function* () {
-        const message = yield* formatNotification(info)
-        yield* Effect.sync(() => {
-          writeStderr(message)
-        })
+    notify: Effect.fn('UpdateCheckService.notify')(function* (info: UpdateInfo) {
+      const message = yield* formatNotification(info)
+      yield* Effect.sync(() => {
+        writeStderr(message)
       })
-    },
+    }),
   })
 }
-
-export const UpdateCheckServiceLive = makeUpdateCheckService()

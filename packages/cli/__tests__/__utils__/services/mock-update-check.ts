@@ -19,10 +19,9 @@ export interface MockUpdateCheckAccess {
 // Context Tag
 // =============================================================================
 
-export class MockUpdateCheckTag extends Context.Tag('test/MockUpdateCheck')<
-  MockUpdateCheckTag,
-  MockUpdateCheckAccess
->() {}
+export class MockUpdateCheckTag extends Context.Service<MockUpdateCheckTag, MockUpdateCheckAccess>()(
+  'test/MockUpdateCheck',
+) {}
 
 // =============================================================================
 // Constructors
@@ -33,7 +32,7 @@ export class MockUpdateCheckTag extends Context.Tag('test/MockUpdateCheck')<
  * This is the default for tests — the update check is a no-op.
  */
 export const make = Effect.gen(function* () {
-  const notificationsRef = yield* Ref.make<UpdateInfo[]>([])
+  const notificationsRef = yield* Ref.make<ReadonlyArray<UpdateInfo>>([])
 
   const service = UpdateCheckService.of({
     check(_currentVersion) {
@@ -56,5 +55,5 @@ export const make = Effect.gen(function* () {
 // Accessors
 // =============================================================================
 
-export const getNotifications = Effect.flatMap(MockUpdateCheckTag, (mock) => mock.getNotifications())
-export const reset = Effect.flatMap(MockUpdateCheckTag, (mock) => mock.reset())
+export const getNotifications = MockUpdateCheckTag.use((mock) => mock.getNotifications())
+export const reset = MockUpdateCheckTag.use((mock) => mock.reset())

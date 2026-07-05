@@ -26,7 +26,7 @@ export function generateUuid(options: UuidGenerateOptions): Effect.Effect<string
     },
     catch: (err) => {
       if (err instanceof UniqueIdError) return fromUnikuError(err)
-      return new CliError('GENERATE_FAILED', String(err))
+      return new CliError({ code: 'GENERATE_FAILED', message: String(err) })
     },
   })
 }

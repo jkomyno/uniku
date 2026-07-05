@@ -2,7 +2,7 @@ import * as Array from 'effect/Array'
 import * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
 import * as Ref from 'effect/Ref'
-import type { CliError } from '@/src/domain/errors'
+import type { CliFailure } from '@/src/domain/errors'
 import type { InspectResult, ValidationResult } from '@/src/domain/types'
 import {
   formatError,
@@ -26,15 +26,15 @@ export interface MockOutputAccess {
 // Context Tag
 // =============================================================================
 
-export class MockOutputTag extends Context.Tag('test/MockOutput')<MockOutputTag, MockOutputAccess>() {}
+export class MockOutputTag extends Context.Service<MockOutputTag, MockOutputAccess>()('test/MockOutput') {}
 
 // =============================================================================
 // Constructors
 // =============================================================================
 
 export const make = Effect.gen(function* () {
-  const stdoutRef = yield* Ref.make<string[]>([])
-  const stderrRef = yield* Ref.make<string[]>([])
+  const stdoutRef = yield* Ref.make<ReadonlyArray<string>>([])
+  const stderrRef = yield* Ref.make<ReadonlyArray<string>>([])
 
   const service = OutputService.of({
     writeIds(ids: readonly string[], options: OutputOptions) {
@@ -43,7 +43,7 @@ export const make = Effect.gen(function* () {
           const out = ids.length === 1 ? JSON.stringify(ids[0]) : JSON.stringify(ids)
           return Array.append(lines, out)
         }
-        return Array.appendAll(lines, ids as string[])
+        return Array.appendAll(lines, ids)
       })
     },
 
@@ -70,10 +70,8 @@ export const make = Effect.gen(function* () {
       })
     },
 
-    writeError(error: CliError, options: OutputOptions) {
-      return Ref.update(stderrRef, (lines) => {
-        return Array.append(lines, formatError(error, options))
-      })
+    writeError(error: CliFailure, options: OutputOptions) {
+      return Ref.update(stderrRef, (lines) => Array.append(lines, formatError(error, options)))
     },
   })
 
@@ -90,6 +88,6 @@ export const make = Effect.gen(function* () {
 // Accessors
 // =============================================================================
 
-export const getStdout = Effect.flatMap(MockOutputTag, (mock) => mock.getStdout())
-export const getStderr = Effect.flatMap(MockOutputTag, (mock) => mock.getStderr())
-export const reset = Effect.flatMap(MockOutputTag, (mock) => mock.reset())
+export const getStdout = MockOutputTag.use((mock) => mock.getStdout())
+export const getStderr = MockOutputTag.use((mock) => mock.getStderr())
+export const reset = MockOutputTag.use((mock) => mock.reset())

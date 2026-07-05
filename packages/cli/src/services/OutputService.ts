@@ -1,6 +1,7 @@
 import * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
-import { type CliError, errorToJson } from '@/src/domain/errors'
+import * as Layer from 'effect/Layer'
+import { type CliFailure, errorToJson } from '@/src/domain/errors'
 import type { InspectResult, ValidationResult } from '@/src/domain/types'
 
 export type OutputOptions = {
@@ -8,15 +9,67 @@ export type OutputOptions = {
   readonly quiet?: boolean
 }
 
-export class OutputService extends Context.Tag('OutputService')<
+export class OutputService extends Context.Service<
   OutputService,
   {
     readonly writeIds: (ids: readonly string[], options: OutputOptions) => Effect.Effect<void>
     readonly writeValidation: (results: readonly ValidationResult[], options: OutputOptions) => Effect.Effect<void>
     readonly writeInspect: (result: InspectResult, options: OutputOptions) => Effect.Effect<void>
-    readonly writeError: (error: CliError, options: OutputOptions) => Effect.Effect<void>
+    readonly writeError: (error: CliFailure, options: OutputOptions) => Effect.Effect<void>
   }
->() {}
+>()('uniku/cli/OutputService') {
+  /**
+   * Default implementation writing to process.stdout / process.stderr.
+   */
+  static readonly layer = Layer.succeed(
+    OutputService,
+    OutputService.of({
+      writeIds(ids, options) {
+        return Effect.sync(() => {
+          if (options.json) {
+            const out = ids.length === 1 ? JSON.stringify(ids[0]) : JSON.stringify(ids)
+            process.stdout.write(`${out}\n`)
+          } else {
+            for (const id of ids) {
+              process.stdout.write(`${id}\n`)
+            }
+          }
+        })
+      },
+
+      writeValidation(results, options) {
+        return Effect.sync(() => {
+          if (options.quiet) return
+
+          if (options.json) {
+            const out = results.length === 1 ? JSON.stringify(results[0]) : JSON.stringify(results)
+            process.stdout.write(`${out}\n`)
+          } else {
+            for (const result of results) {
+              process.stdout.write(`${formatValidationHuman(result)}\n`)
+            }
+          }
+        })
+      },
+
+      writeInspect(result, options) {
+        return Effect.sync(() => {
+          if (options.json) {
+            process.stdout.write(`${JSON.stringify(result)}\n`)
+          } else {
+            process.stdout.write(`${formatInspectHuman(result)}\n`)
+          }
+        })
+      },
+
+      writeError(error, options) {
+        return Effect.sync(() => {
+          process.stderr.write(`${formatError(error, options)}\n`)
+        })
+      },
+    }),
+  )
+}
 
 export function formatValidationHuman(result: ValidationResult): string {
   if (result.valid) {
@@ -46,7 +99,7 @@ export function formatInspectHuman(result: InspectResult): string {
   return lines.join('\n')
 }
 
-export function formatError(error: CliError, options: OutputOptions): string {
+export function formatError(error: CliFailure, options: OutputOptions): string {
   if (options.json) {
     return JSON.stringify(errorToJson(error))
   }
@@ -57,52 +110,3 @@ export function formatError(error: CliError, options: OutputOptions): string {
   }
   return msg
 }
-
-/**
- * Default implementation writing to process.stdout / process.stderr.
- */
-export const OutputServiceLive = OutputService.of({
-  writeIds(ids, options) {
-    return Effect.sync(() => {
-      if (options.json) {
-        const out = ids.length === 1 ? JSON.stringify(ids[0]) : JSON.stringify(ids)
-        process.stdout.write(`${out}\n`)
-      } else {
-        for (const id of ids) {
-          process.stdout.write(`${id}\n`)
-        }
-      }
-    })
-  },
-
-  writeValidation(results, options) {
-    return Effect.sync(() => {
-      if (options.quiet) return
-
-      if (options.json) {
-        const out = results.length === 1 ? JSON.stringify(results[0]) : JSON.stringify(results)
-        process.stdout.write(`${out}\n`)
-      } else {
-        for (const result of results) {
-          process.stdout.write(`${formatValidationHuman(result)}\n`)
-        }
-      }
-    })
-  },
-
-  writeInspect(result, options) {
-    return Effect.sync(() => {
-      if (options.json) {
-        process.stdout.write(`${JSON.stringify(result)}\n`)
-      } else {
-        process.stdout.write(`${formatInspectHuman(result)}\n`)
-      }
-    })
-  },
-
-  writeError(error, options) {
-    return Effect.sync(() => {
-      process.stderr.write(`${formatError(error, options)}\n`)
-    })
-  },
-})

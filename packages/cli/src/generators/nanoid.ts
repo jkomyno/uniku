@@ -27,7 +27,7 @@ export function generateNanoid(options: NanoidGenerateOptions): Effect.Effect<st
     },
     catch: (err) => {
       if (err instanceof UniqueIdError) return fromUnikuError(err)
-      return new CliError('GENERATE_FAILED', String(err))
+      return new CliError({ code: 'GENERATE_FAILED', message: String(err) })
     },
   })
 }

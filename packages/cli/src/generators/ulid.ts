@@ -13,11 +13,11 @@ export type UlidGenerateOptions = {
 export function generateUlid(options: UlidGenerateOptions): Effect.Effect<string[], CliError> {
   if (options.monotonic && options.timestamp != null) {
     return Effect.fail(
-      new CliError(
-        'INVALID_OPTIONS',
-        '--monotonic and --timestamp are mutually exclusive',
-        'Use --monotonic for monotonically increasing ULIDs, or --timestamp to specify a fixed timestamp',
-      ),
+      new CliError({
+        code: 'INVALID_OPTIONS',
+        message: '--monotonic and --timestamp are mutually exclusive',
+        hint: 'Use --monotonic for monotonically increasing ULIDs, or --timestamp to specify a fixed timestamp',
+      }),
     )
   }
 
@@ -36,7 +36,7 @@ export function generateUlid(options: UlidGenerateOptions): Effect.Effect<string
     },
     catch: (err) => {
       if (err instanceof UniqueIdError) return fromUnikuError(err)
-      return new CliError('GENERATE_FAILED', String(err))
+      return new CliError({ code: 'GENERATE_FAILED', message: String(err) })
     },
   })
 }

@@ -43,15 +43,15 @@ Current child guidance:
 - **Time-ordered IDs** (uuidv7, ulid, ksuid): Maintain module-level state for monotonic sequencing
 - **Random byte pooling**: Pre-allocated buffers for performance
 - **Tree-shakeable**: Each generator is a separate entry point
-- **Effect CLI**: `packages/cli` currently uses Effect v3. Use `.agents/skills/effect-v4` only for explicit v4 migration work, and verify APIs against `repos/effect-smol`.
+- **Effect CLI**: `packages/cli` uses Effect v4 (`effect@4.0.0-beta.x`, pinned exact — no `^` or `@beta` ranges; do not auto-bump betas). Read `.agents/skills/effect-v4` before any Effect work in the CLI and verify APIs against `repos/effect-smol`. Never use Effect v3 packages (`@effect/cli`, `@effect/platform`) — they have no v4 equivalents.
 
 ## Local Agent Skills
 
 Repo-local skills live under `.agents/skills`:
 
 - `typescript`: strict TypeScript, declaration emit, package boundaries, and CLI Effect interop.
-- `testing`: Vitest, CLI tests, integration tests, Cloudflare e2e tests, and future Effect v4 test migration.
-- `effect-v4`: source-grounded Effect v4 migration guidance for the CLI.
+- `testing`: Vitest, CLI tests, integration tests, Cloudflare e2e tests, and Effect v4 CLI tests.
+- `effect-v4`: source-grounded Effect v4 guidance for the CLI (conventions, v3→v4 rename maps, verification workflow).
 
 `repos/effect-smol` is a read-only submodule clone of <https://github.com/effect-TS/effect-smol> for Effect v4 source lookup. If it is missing, run `git submodule update --init repos/effect-smol`. Never import from or edit `repos/**`; use installed package dependencies in source code.
 

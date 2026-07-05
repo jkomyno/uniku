@@ -1,4 +1,4 @@
-import { Command } from '@effect/cli'
+import { Command } from 'effect/unstable/cli'
 import {
   cuidShorthand,
   generateCommand,
@@ -29,8 +29,4 @@ export const rootCommand = Command.make('uniku').pipe(
 
 // ── CLI runner (reusable for testing) ───────────────────────────────
 
-export const makeCliRunner = (version: string) =>
-  Command.run(rootCommand, {
-    name: 'uniku',
-    version,
-  })
+export const makeCliRunner = (version: string) => Command.runWith(rootCommand, { version })

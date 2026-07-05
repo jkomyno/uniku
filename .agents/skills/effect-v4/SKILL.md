@@ -1,11 +1,11 @@
 ---
 name: effect-v4
-description: Guides deliberate Effect v4 TypeScript work for uniku. Use when migrating the CLI from Effect v3 to Effect v4, evaluating v3-to-v4 API changes, writing future code against effect@4.0.0-beta.x, or checking @effect/vitest v4 examples against the local repos/effect-smol source clone. Do not use for ordinary current Effect v3 CLI edits unless the task is specifically about migration.
+description: Guides Effect v4 TypeScript work for uniku. Use for any Effect work in packages/cli (which runs on effect@4.0.0-beta.x), evaluating v3-to-v4 API changes, or checking @effect/vitest v4 examples against the local repos/effect-smol source clone.
 ---
 
 # Effect v4
 
-The `uniku` CLI currently uses Effect v3. Effect v4 work in this repo is migration-oriented until the package manifests are changed.
+The `uniku` CLI runs on Effect v4 (`effect@4.0.0-beta.x`, pinned exact — betas may break between releases, so never widen to `^` or `@beta` ranges, and keep `repos/effect-smol` in sync with the pinned beta when bumping).
 
 Use `repos/effect-smol/` as the local source oracle for Effect v4. It is a read-only submodule; if it is missing, run `git submodule update --init repos/effect-smol`. At creation time that clone was `effect@4.0.0-beta.93` on `main`, but the checkout may move; inspect `repos/effect-smol/packages/effect/package.json` and `git -C repos/effect-smol rev-parse HEAD` before treating any version as current.
 
@@ -115,6 +115,13 @@ Open the file matching the task before writing code:
 | [schema-transformations.md](references/schema-transformations.md) | Transforming during decode, branded types, custom messages, SchemaError/SchemaIssue formatting, effectful validation, fallbacks                |
 | [schema-json-http.md](references/schema-json-http.md)             | Decoding anything that crosses a process boundary: JSON strings/files, schema evolution, DB JSON columns, HTTP responses, web-standard formats |
 | [schema-config-forms-ai.md](references/schema-config-forms-ai.md) | `Config.schema` + Redacted secrets, form-style validation (collect all issues, cross-field rules), JSON Schema for LLM structured output       |
+
+## Repo-specific gotchas (learned during the v3→v4 port)
+
+- **Deep-import `@effect/platform-bun`**: the package barrel re-exports `BunRedis`, which imports the `bun` builtin. The published CLI bin and vitest both run under Node, so import `@effect/platform-bun/BunRuntime` / `@effect/platform-bun/BunServices` directly, never the barrel.
+- **`@effect/vitest` v4 must share the workspace vitest**: its dist imports `@vitest/runner` directly (undeclared), which pnpm resolves to the hoisted copy dictated by the root catalog. `packages/cli` must use `vitest: "catalog:"` (v4); pinning an older vitest in the package splits the runner instances and every `layer(...)` block fails with "Vitest failed to find the current suite".
+- **`Command.runWith` renders `ShowHelp` itself** (help via `Console.log`, attached parse errors via `Console.error`) and then re-fails with the `ShowHelp` error. The entrypoint only maps errors to exit codes (`src/runtime/cli-failure.ts`); it must not re-render framework errors. A parent command without a handler fails with `ShowHelp({ errors: [] })` → exit 0.
+- **Built-in global flags own `-h`/`-v`** (help/version) plus `--completions` and `--log-level`. A subcommand-local flag with the same alias wins at its own command level (see `unstable/cli/SEMANTICS.md`), which is how `uniku uuid -v 7` still selects `--uuid-version`.
 
 ## Ground truth and verification
 
