@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 const generators = [
   { name: 'uuid-v4', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
   { name: 'uuid-v7', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
+  { name: 'typeid', pattern: /^user_[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/ },
   { name: 'ulid', pattern: /^[0-9A-HJKMNP-TV-Z]{26}$/ },
   { name: 'ksuid', pattern: /^[0-9A-Za-z]{27}$/ },
   { name: 'cuid2', pattern: /^[a-z][a-z0-9]+$/ },
@@ -16,10 +17,11 @@ const generators = [
 const generatorsWithBytes = [
   { name: 'uuid-v4', byteLength: 16 },
   { name: 'uuid-v7', byteLength: 16 },
+  { name: 'typeid', byteLength: 16 },
   { name: 'ulid', byteLength: 16 },
   { name: 'ksuid', byteLength: 20 },
 ] as const
-const generatorsWithTimestamp = ['uuid-v7', 'ulid'] as const
+const generatorsWithTimestamp = ['uuid-v7', 'typeid', 'ulid'] as const
 
 describe('ID generators on Cloudflare Workers', () => {
   // =========================================================================

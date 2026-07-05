@@ -1,6 +1,7 @@
 import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
+import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
@@ -39,6 +40,26 @@ describe('CLI: uniku validate', () => {
         yield* cli(['validate', '!!!bad!!!']).pipe(Effect.catch(() => Effect.void))
         const output = yield* MockOutput.getStdout
         expect(output.join('')).toContain('invalid')
+      }),
+    )
+
+    it.effect('[Given] TypeID [Then] auto-detects and validates as TypeID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = typeid('user')
+        yield* cli(['validate', id])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (typeid v7)'])
+      }),
+    )
+
+    it.effect('[Given] --type typeid and valid TypeID [Then] validates as TypeID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = typeid('user')
+        yield* cli(['validate', id, '--type', 'typeid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (typeid v7)'])
       }),
     )
 

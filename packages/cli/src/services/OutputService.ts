@@ -100,6 +100,12 @@ function formatInspectHuman(result: InspectResult): string {
   const lines: string[] = []
   const typeLabel = result.version != null ? `${result.type} (v${result.version})` : result.type
   lines.push(`Type:      ${typeLabel}`)
+  if (result.prefix != null) {
+    lines.push(`Prefix:    ${result.prefix === '' ? '(empty)' : result.prefix}`)
+  }
+  if (result.suffix) {
+    lines.push(`Suffix:    ${result.suffix}`)
+  }
   if (result.timestamp) {
     lines.push(`Timestamp: ${result.timestamp}`)
   }

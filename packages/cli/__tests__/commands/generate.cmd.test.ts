@@ -122,6 +122,42 @@ describe('CLI: uniku generate ulid', () => {
   })
 })
 
+describe('CLI: uniku generate typeid', () => {
+  layer(TestLive())((it) => {
+    it.effect('[Given] generate typeid [Then] generates 1 prefixless TypeID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'typeid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(output[0]).toMatch(/^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/)
+      }),
+    )
+
+    it.effect('[Given] generate typeid --prefix user [Then] generates a user TypeID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'typeid', '--prefix', 'user'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(output[0]).toMatch(/^user_[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/)
+      }),
+    )
+
+    it.effect('[Given] generate typeid -p api_key --json -n 2 [Then] outputs JSON array', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'typeid', '-p', 'api_key', '--json', '-n', '2'])
+        const output = yield* MockOutput.getStdout
+        const parsed = JSON.parse(output[0])
+        expect(Array.isArray(parsed)).toBe(true)
+        expect(parsed).toHaveLength(2)
+        expect(parsed[0]).toMatch(/^api_key_[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/)
+      }),
+    )
+  })
+})
+
 describe('CLI: uniku generate nanoid', () => {
   layer(TestLive())((it) => {
     it.effect('[Given] generate nanoid [Then] generates 1 nanoid (size=21)', () =>
@@ -262,6 +298,16 @@ describe('CLI: shorthand commands', () => {
         const output = yield* MockOutput.getStdout
         expect(output).toHaveLength(1)
         expect(output[0]).toMatch(/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i)
+      }),
+    )
+
+    it.effect('[Given] uniku typeid --prefix user [Then] same as generate typeid', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['typeid', '--prefix', 'user'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(output[0]).toMatch(/^user_[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/)
       }),
     )
 

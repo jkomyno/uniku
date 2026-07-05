@@ -2,6 +2,7 @@ import { bench, describe } from 'vitest'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
+import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
@@ -35,6 +36,14 @@ describe('ID Generation', () => {
     'ulid',
     () => {
       ulid()
+    },
+    benchOptions,
+  )
+
+  bench(
+    'typeid',
+    () => {
+      typeid('user')
     },
     benchOptions,
   )
@@ -86,6 +95,7 @@ describe('ID toBytes', () => {
   const v4String = uuidv4()
   const v7String = uuidv7()
   const ulidString = ulid()
+  const typeidString = typeid('user')
   const ksuidString = ksuid()
 
   bench(
@@ -113,6 +123,14 @@ describe('ID toBytes', () => {
   )
 
   bench(
+    'typeid.toBytes',
+    () => {
+      typeid.toBytes(typeidString)
+    },
+    benchOptions,
+  )
+
+  bench(
     'ksuid.toBytes',
     () => {
       ksuid.toBytes(ksuidString)
@@ -127,6 +145,7 @@ describe('ID fromBytes', () => {
   const v4Bytes = uuidv4.toBytes(uuidv4())
   const v7Bytes = uuidv7.toBytes(uuidv7())
   const ulidBytes = ulid.toBytes(ulid())
+  const typeidBytes = typeid.toBytes(typeid('user'))
   const ksuidBytes = ksuid.toBytes(ksuid())
 
   bench(
@@ -154,6 +173,14 @@ describe('ID fromBytes', () => {
   )
 
   bench(
+    'typeid.fromBytes',
+    () => {
+      typeid.fromBytes('user', typeidBytes)
+    },
+    benchOptions,
+  )
+
+  bench(
     'ksuid.fromBytes',
     () => {
       ksuid.fromBytes(ksuidBytes)
@@ -168,6 +195,7 @@ describe('ID isValid', () => {
   const v4String = uuidv4()
   const v7String = uuidv7()
   const ulidString = ulid()
+  const typeidString = typeid('user')
   const cuid2String = cuid2()
   const ksuidString = ksuid()
 
@@ -191,6 +219,14 @@ describe('ID isValid', () => {
     'ulid.isValid',
     () => {
       ulid.isValid(ulidString)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'typeid.isValid',
+    () => {
+      typeid.isValid(typeidString)
     },
     benchOptions,
   )

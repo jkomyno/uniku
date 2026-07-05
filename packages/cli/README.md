@@ -5,7 +5,7 @@
 
 Command-line tool for generating, validating, and inspecting unique identifiers.
 
-Supports UUID v4/v7, ULID, CUID2, Nanoid, and KSUID.
+Supports UUID v4/v7, ULID, TypeID, CUID2, Nanoid, and KSUID.
 
 ## Installation
 
@@ -70,6 +70,10 @@ uniku uuid --count 5
 uniku ulid
 # => 01HW9T2W9W9YJ3JZ1H4P4M2T8Q
 
+# TypeID
+uniku typeid --prefix user
+# => user_01h2xcejqtf2nbrexx3vqjhp41
+
 # Monotonically increasing ULIDs
 uniku ulid --monotonic --count 3
 
@@ -97,6 +101,9 @@ uniku validate 018e5e5c-7c8a-7000-8000-000000000000
 # Validate with explicit type
 uniku validate --type ulid 01HW9T2W9W9YJ3JZ1H4P4M2T8Q
 
+# Validate a TypeID
+uniku validate --type typeid user_01h2xcejqtf2nbrexx3vqjhp41
+
 # Batch validate from stdin
 echo -e "018e5e5c-7c8a-7000-8000-000000000000\ninvalid-id" | uniku validate --stdin
 
@@ -116,11 +123,14 @@ uniku inspect 018e5e5c-7c8a-7000-8000-000000000000
 # Inspect with explicit type
 uniku inspect --type ulid 01HW9T2W9W9YJ3JZ1H4P4M2T8Q
 
+# Inspect TypeID metadata
+uniku inspect user_01h2xcejqtf2nbrexx3vqjhp41
+
 # JSON output
 uniku inspect --json 018e5e5c-7c8a-7000-8000-000000000000
 ```
 
-For time-ordered IDs (UUID v7, ULID, KSUID), inspect extracts the embedded timestamp. For random-only IDs (UUID v4, CUID2, Nanoid), it reports that no decodable metadata is available.
+For time-ordered IDs (UUID v7, ULID, TypeID, KSUID), inspect extracts the embedded timestamp. For random-only IDs (UUID v4, CUID2, Nanoid), it reports that no decodable metadata is available.
 
 ## Commands Reference
 
@@ -128,6 +138,7 @@ For time-ordered IDs (UUID v7, ULID, KSUID), inspect extracts the embedded times
 |---------|-------------|
 | `uniku uuid` | Generate UUIDs (v4 or v7) |
 | `uniku ulid` | Generate ULIDs |
+| `uniku typeid` | Generate TypeIDs |
 | `uniku nanoid` | Generate Nanoids |
 | `uniku cuid` | Generate CUIDs (v2) |
 | `uniku ksuid` | Generate KSUIDs |
@@ -152,6 +163,7 @@ For time-ordered IDs (UUID v7, ULID, KSUID), inspect extracts the embedded times
 | `ulid` | `--monotonic` | | Generate monotonically increasing ULIDs |
 | `ulid` | `--timestamp` | | Unix timestamp in ms or "now" |
 | `ulid` | `--lowercase` | | Output in lowercase |
+| `typeid` | `--prefix` | `-p` | Type prefix, e.g. `user` for `user_...` |
 | `nanoid` | `--size` | `-s` | Length of ID, 1-256 (default: 21) |
 | `nanoid` | `--alphabet` | `-a` | Custom alphabet or preset: hex, numeric, alpha |
 | `cuid` | `--length` | `-l` | Length of ID, 2-32 (default: 24) |
@@ -161,7 +173,7 @@ For time-ordered IDs (UUID v7, ULID, KSUID), inspect extracts the embedded times
 
 | Option | Description |
 |--------|-------------|
-| `--type` | Expected ID type: uuid, ulid, nanoid, cuid, ksuid (auto-detected if omitted) |
+| `--type` | Expected ID type: uuid, ulid, typeid, nanoid, cuid, ksuid (auto-detected if omitted) |
 | `--stdin` | Read IDs from stdin (one per line) |
 | `--quiet` | No output, exit code only (0 = valid, 2 = invalid) |
 | `--json` | Output as JSON |
@@ -170,7 +182,7 @@ For time-ordered IDs (UUID v7, ULID, KSUID), inspect extracts the embedded times
 
 | Option | Description |
 |--------|-------------|
-| `--type` | ID type: uuid, ulid, nanoid, cuid, ksuid (auto-detected if omitted) |
+| `--type` | ID type: uuid, ulid, typeid, nanoid, cuid, ksuid (auto-detected if omitted) |
 | `--json` | Output as JSON |
 
 ## Tech Stack

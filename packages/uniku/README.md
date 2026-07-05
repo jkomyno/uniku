@@ -28,6 +28,7 @@ console.log(first < second && second < third) // true
 |--------------------|:-----:|:----:|:------:|:----:|:-----:|:-----:|
 | UUID v4            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
 | UUID v7            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
+| TypeID             |   ✅  |  ❌  |   ❌   |  ❌  |   ❌  |   ❌  |
 | ULID               |   ✅  |  ❌  |   ❌   |  ✅  |   ❌  |   ❌  |
 | CUID2              |   ✅  |  ❌  |   ❌   |  ❌  |   ✅  |   ❌  |
 | Nanoid             |   ✅  |  ❌  |   ✅   |  ❌  |   ❌  |   ❌  |
@@ -64,6 +65,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | KSUID     | **1.5× faster** |
 | UUID v7   | **1.1× faster**  |
 | Nanoid    | **~comparable speed** |
+| TypeID    | **2.6× faster** |
 | UUID v4   | npm is 1.1× faster |
 
 ## Which ID Should I Use?
@@ -73,6 +75,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | Use Case | Recommended | Why |
 |----------|-------------|-----|
 | Database primary keys | **UUID v7** or **ULID** | Time-ordered for index efficiency |
+| API/domain identifiers | **TypeID** | UUID v7 with readable type prefixes like `user_...` |
 | URL shorteners | **Nanoid** | Compact, URL-safe characters |
 | Prevent enumeration | **CUID2** | Non-sequential, secure |
 | Maximum compatibility | **UUID v4** | Universal standard |
@@ -97,6 +100,12 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 - URL-safe (no hyphens), case-insensitive
 - 80-bit random entropy per millisecond
 - Best for: APIs, URLs, distributed systems needing sortability
+
+**TypeID** — Use when API IDs should expose their entity type.
+- Prefix plus 26-character UUID v7 suffix, e.g. `user_01h2xcejqtf2nbrexx3vqjhp41`
+- Empty prefix support for canonical 26-character TypeIDs
+- Time-ordered through UUID v7, with lowercase snake_case type prefixes
+- Best for: Public API identifiers, logs, debugging, domain-specific IDs
 
 **KSUID** — Use when you need highest collision resistance.
 - 27 characters, time-ordered with second precision
@@ -147,6 +156,7 @@ const id = uuidv7.fromBytes(row.id)
 |--------|--------------|-------------|---------|
 | UUID v4/v7 | 36 chars | 16 bytes | 56% |
 | ULID | 26 chars | 16 bytes | 38% |
+| TypeID | prefix + 27 chars | 16 bytes | prefix-dependent |
 | KSUID | 27 chars | 20 bytes | 26% |
 | Nanoid | 21 chars | N/A | - |
 | CUID2 | 24 chars | N/A | - |
@@ -179,6 +189,7 @@ deno install npm:uniku
 | `uniku/uuid/v4` | ~1.1 KB |
 | `uniku/uuid/v7` | ~1.4 KB |
 | `uniku/ulid` | ~1.8 KB |
+| `uniku/typeid` | ~1.6 KB |
 | `uniku/cuid2` | ~1007 B* |
 | `uniku/nanoid` | ~1.1 KB |
 | `uniku/ksuid` | ~1.3 KB |
@@ -224,6 +235,21 @@ const id = ulid()
 // Convert to/from bytes
 const bytes = ulid.toBytes(id)
 const str = ulid.fromBytes(bytes)
+```
+
+### TypeID (prefixed UUID v7)
+
+```ts
+import { typeid } from 'uniku/typeid'
+
+const id = typeid('user')
+// => "user_01h2xcejqtf2nbrexx3vqjhp41"
+
+const uuid = typeid.toUuid(id)
+const restored = typeid.fromUuid('user', uuid)
+
+const canonical = typeid('')
+// => "01h2xcejqtf2nbrexx3vqjhp41"
 ```
 
 ### CUID2 (secure, non-time-ordered)
@@ -361,6 +387,22 @@ ulid.NIL  // "00000000000000000000000000"
 ulid.MAX  // "7ZZZZZZZZZZZZZZZZZZZZZZZZZ"
 ```
 
+### `typeid` (from `uniku/typeid`)
+
+```ts
+typeid(prefix: string, options?: TypeidOptions): string
+typeid.toBytes(id: string): Uint8Array
+typeid.fromBytes(prefix: string, bytes: Uint8Array): string
+typeid.toUuid(id: string): string
+typeid.fromUuid(prefix: string, uuid: string): string
+typeid.timestamp(id: string): number
+typeid.prefix(id: string): string
+typeid.suffix(id: string): string
+typeid.isValid(id: unknown): id is string
+```
+
+Use an empty prefix (`typeid('')`) to generate Jetify-compatible prefixless TypeIDs.
+
 ### `cuid2` (from `uniku/cuid2`)
 
 ```ts
@@ -403,6 +445,7 @@ Third-party libraries that inspired this project:
 
 - [uuid](https://github.com/uuidjs/uuid): the most popular UUID library for JavaScript
 - [ulid](https://github.com/ulid/javascript): the reference ULID implementation for JavaScript
+- [TypeID](https://github.com/jetify-com/typeid): type-safe UUID v7 extension with readable prefixes
 - [@paralleldrive/cuid2](https://github.com/paralleldrive/cuid2): secure, collision-resistant IDs
 - [@owpz/ksuid](https://github.com/owpz/ksuid): K-Sortable Unique Identifier
 - [nanoid](https://github.com/ai/nanoid): tiny, URL-friendly unique string ID generator
