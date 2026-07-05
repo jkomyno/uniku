@@ -80,7 +80,8 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | URL shorteners | **Nanoid** | Compact, URL-safe characters |
 | Prevent enumeration | **CUID2** | Non-sequential, secure |
 | Maximum compatibility | **UUID v4** | Universal standard |
-| Distributed systems (high entropy) | **KSUID** | 128-bit payload, second precision |
+| Distributed systems needing sortable, URL-safe IDs | **ULID** | Millisecond ordering + 80-bit entropy |
+| Very high-volume distributed systems | **KSUID** | Time-ordered with 128-bit entropy |
 
 ### Detailed Guide
 
