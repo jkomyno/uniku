@@ -11,7 +11,7 @@
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "typescript": "catalog:",
-    "vitest": "3.2.0",
+    "vitest": "catalog:",
     "wrangler": "catalog:"
   },
   "dependencies": {
