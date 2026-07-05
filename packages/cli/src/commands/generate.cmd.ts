@@ -7,6 +7,7 @@ import { CliError } from '@/src/domain/errors'
 import { generateCuid } from '@/src/generators/cuid'
 import { generateKsuid } from '@/src/generators/ksuid'
 import { generateNanoid } from '@/src/generators/nanoid'
+import { generateTypeid } from '@/src/generators/typeid'
 import { generateUlid } from '@/src/generators/ulid'
 import { generateUuid } from '@/src/generators/uuid'
 import { idsOutput, OutputService } from '@/src/services/OutputService'
@@ -56,6 +57,35 @@ const uuidSubcommand = Command.make(
     { command: 'uniku uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array (machine-readable)' },
     { command: 'uniku uuid -v 7', description: 'Generate a time-sortable UUID v7' },
     { command: 'uniku uuid', description: 'Generate one random UUID v4' },
+  ]),
+)
+
+// ── TypeID subcommand ───────────────────────────────────────────────
+
+const typeidPrefixFlag = Flag.string('prefix').pipe(
+  Flag.withAlias('p'),
+  Flag.withDescription('Type prefix, e.g. "user" for user_... (empty by default)'),
+  Flag.withDefault(''),
+)
+
+const typeidSubcommand = Command.make(
+  'typeid',
+  {
+    count: countFlag,
+    json: jsonFlag,
+    prefix: typeidPrefixFlag,
+  },
+  Effect.fn('cli.generate.typeid')(function* ({ count, json, prefix }) {
+    const output = yield* OutputService
+    const ids = yield* generateTypeid({ count, prefix })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate TypeIDs'),
+  Command.withExamples([
+    { command: 'uniku typeid --prefix user', description: 'Generate a TypeID such as user_...' },
+    { command: 'uniku typeid -p api_key -n 5 --json', description: 'Generate 5 api_key TypeIDs as JSON' },
+    { command: 'uniku typeid', description: 'Generate a canonical prefixless TypeID' },
   ]),
 )
 
@@ -195,9 +225,17 @@ const ksuidSubcommand = Command.make(
 
 export const generateCommand = Command.make('generate').pipe(
   Command.withDescription('Generate new IDs'),
-  Command.withSubcommands([uuidSubcommand, ulidSubcommand, nanoidSubcommand, cuidSubcommand, ksuidSubcommand]),
+  Command.withSubcommands([
+    uuidSubcommand,
+    ulidSubcommand,
+    typeidSubcommand,
+    nanoidSubcommand,
+    cuidSubcommand,
+    ksuidSubcommand,
+  ]),
   Command.withExamples([
     { command: 'uniku generate uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array' },
+    { command: 'uniku generate typeid --prefix user', description: 'Generate one user TypeID' },
     {
       command: 'uniku generate ulid',
       description: 'Generate one ULID (subcommands also work top-level: `uniku ulid`)',
@@ -209,6 +247,7 @@ export const generateCommand = Command.make('generate').pipe(
 
 export const uuidShorthand = uuidSubcommand
 export const ulidShorthand = ulidSubcommand
+export const typeidShorthand = typeidSubcommand
 export const nanoidShorthand = nanoidSubcommand
 export const cuidShorthand = cuidSubcommand
 export const ksuidShorthand = ksuidSubcommand

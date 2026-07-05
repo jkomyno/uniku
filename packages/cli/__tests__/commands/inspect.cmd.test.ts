@@ -2,6 +2,7 @@ import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
 import { ksuid } from 'uniku/ksuid'
+import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
@@ -53,6 +54,20 @@ describe('CLI: uniku inspect', () => {
         yield* cli(['inspect', id])
         const output = yield* MockOutput.getStdout
         expect(output[0]).toContain('ksuid')
+        expect(output[0]).toContain('Timestamp:')
+      }),
+    )
+
+    it.effect('[Given] TypeID [Then] shows prefix, suffix, timestamp, and random', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = typeid('user')
+        yield* cli(['inspect', id])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('typeid')
+        expect(output[0]).toContain('Prefix:')
+        expect(output[0]).toContain('user')
+        expect(output[0]).toContain('Suffix:')
         expect(output[0]).toContain('Timestamp:')
       }),
     )

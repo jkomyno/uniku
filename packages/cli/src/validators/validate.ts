@@ -1,6 +1,7 @@
 import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
+import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
@@ -15,6 +16,8 @@ export function validateAs(id: string, type: IdType): ValidationResult {
       return validateUuid(id)
     case 'ulid':
       return validateUlid(id)
+    case 'typeid':
+      return validateTypeid(id)
     case 'ksuid':
       return validateKsuid(id)
     case 'cuid':
@@ -26,7 +29,7 @@ export function validateAs(id: string, type: IdType): ValidationResult {
 
 /**
  * Auto-detect ID type and validate.
- * Detection order: UUID > ULID > KSUID > CUID > Nanoid.
+ * Detection order: UUID > TypeID > ULID > KSUID > CUID > Nanoid.
  */
 export function validateAutoDetect(id: string): ValidationResult {
   // 1. UUID (36 chars, 8-4-4-4-12 format with hyphens)
@@ -37,22 +40,27 @@ export function validateAutoDetect(id: string): ValidationResult {
     return { id, valid: true, type: 'uuid', version: 4 }
   }
 
-  // 2. ULID (26 chars, Crockford Base32)
+  // 2. TypeID (optional prefix + UUID v7 base32 suffix)
+  if (typeid.isValid(id)) {
+    return { id, valid: true, type: 'typeid', version: 7 }
+  }
+
+  // 3. ULID (26 chars, Crockford Base32)
   if (ulid.isValid(id)) {
     return { id, valid: true, type: 'ulid' }
   }
 
-  // 3. KSUID (27 chars, Base62)
+  // 4. KSUID (27 chars, Base62)
   if (ksuid.isValid(id)) {
     return { id, valid: true, type: 'ksuid' }
   }
 
-  // 4. CUID (starts with letter, Base36)
+  // 5. CUID (starts with letter, Base36)
   if (cuid2.isValid(id)) {
     return { id, valid: true, type: 'cuid' }
   }
 
-  // 5. Nanoid (fallback: URL-safe A-Za-z0-9_- and length 1-256)
+  // 6. Nanoid (fallback: URL-safe A-Za-z0-9_- and length 1-256)
   if (nanoid.isValid(id)) {
     return { id, valid: true, type: 'nanoid' }
   }
@@ -75,6 +83,13 @@ function validateUlid(id: string): ValidationResult {
     return { id, valid: true, type: 'ulid' }
   }
   return { id, valid: false, type: 'ulid', error: 'invalid ULID format' }
+}
+
+function validateTypeid(id: string): ValidationResult {
+  if (typeid.isValid(id)) {
+    return { id, valid: true, type: 'typeid', version: 7 }
+  }
+  return { id, valid: false, type: 'typeid', error: 'invalid TypeID format' }
 }
 
 function validateKsuid(id: string): ValidationResult {

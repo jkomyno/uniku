@@ -1,6 +1,7 @@
 import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
+import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
@@ -40,6 +41,20 @@ describe('validateAs', () => {
   it('rejects an invalid ULID', () => {
     const result = validateAs('bad-ulid', 'ulid')
     expect(result.valid).toBe(false)
+  })
+
+  it('validates a valid TypeID', () => {
+    const id = typeid('user')
+    const result = validateAs(id, 'typeid')
+    expect(result.valid).toBe(true)
+    expect(result.type).toBe('typeid')
+    expect(result.version).toBe(7)
+  })
+
+  it('rejects an invalid TypeID', () => {
+    const result = validateAs('user_not-a-typeid', 'typeid')
+    expect(result.valid).toBe(false)
+    expect(result.error).toContain('invalid TypeID')
   })
 
   it('validates a valid KSUID', () => {
@@ -92,6 +107,14 @@ describe('validateAutoDetect', () => {
     const result = validateAutoDetect(id)
     expect(result.valid).toBe(true)
     expect(result.type).toBe('ulid')
+  })
+
+  it('auto-detects TypeID', () => {
+    const id = typeid('user')
+    const result = validateAutoDetect(id)
+    expect(result.valid).toBe(true)
+    expect(result.type).toBe('typeid')
+    expect(result.version).toBe(7)
   })
 
   it('auto-detects KSUID', () => {
