@@ -1,5 +1,11 @@
 # @uniku/cli
 
+## 0.2.0
+
+### Minor Changes
+
+- 0d491a6: Package standalone CLI release archives with an internal `uniku` executable name, and document mise-based binary installs.
+
 ## 0.1.0
 
 ### Minor Changes
