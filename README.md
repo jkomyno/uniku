@@ -89,7 +89,8 @@ Benchmarks comparing `uniku` string ID generation with equivalent npm packages:
 | URL shorteners | **Nanoid** | Compact, URL-safe characters |
 | Prevent enumeration | **CUID2** | Non-sequential, secure |
 | Maximum compatibility | **UUID v4** | Universal standard |
-| Distributed systems | **ULID** | Sortable + high entropy |
+| Distributed systems needing sortable, URL-safe IDs | **ULID** | Millisecond ordering + 80-bit entropy |
+| Very high-volume distributed systems | **KSUID** | Time-ordered with 128-bit entropy |
 
 ## Installation
 
