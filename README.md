@@ -470,6 +470,9 @@ Generate, validate, and inspect IDs from the command line with [`@uniku/cli`](./
 # Install pre-built binary (macOS, Linux)
 curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
 
+# Or install the v0.2.0 binary release with mise
+mise use -g github:jkomyno/uniku@uniku-cli-v0.2.0
+
 # Or install via npm
 pnpm add -g @uniku/cli
 

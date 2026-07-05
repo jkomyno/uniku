@@ -96,6 +96,14 @@ jobs:
         working-directory: packages/cli
         run: bun scripts/build-binary.ts --target=${{ matrix.target }} --name=${{ matrix.artifact_name }}
 
+      - name: Verify CLI binary archive
+        working-directory: packages/cli
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tar -tzf dist/${{ matrix.artifact_name }}.tar.gz | grep -qx 'uniku'
+
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

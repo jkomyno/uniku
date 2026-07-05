@@ -24,8 +24,18 @@ Supports macOS (Intel & Apple Silicon) and Linux (x64). Override the install loc
 UNIKU_INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
 
 # Specific version
-UNIKU_VERSION=0.0.12 curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
+UNIKU_VERSION=0.2.0 curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
 ```
+
+### mise
+
+Install the `uniku-cli-v0.2.0` GitHub release binary with [mise](https://mise.jdx.dev):
+
+```bash
+mise use -g github:jkomyno/uniku@uniku-cli-v0.2.0
+```
+
+This uses the exact CLI release tag.
 
 ### npm
 
