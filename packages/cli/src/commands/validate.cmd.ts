@@ -3,6 +3,7 @@ import * as Option from 'effect/Option'
 import { Argument, Command, Flag } from 'effect/unstable/cli'
 import { CliError, ValidationFailedError } from '@/src/domain/errors'
 import type { IdType, ValidationResult } from '@/src/domain/types'
+import { decodePreprocessedArg } from '@/src/runtime/args'
 import { OutputService } from '@/src/services/OutputService'
 import { StdinService } from '@/src/services/StdinService'
 import { validateAs, validateAutoDetect } from '@/src/validators/validate'
@@ -48,7 +49,7 @@ export const validateCommand = Command.make(
         return yield* new CliError({ code: 'NO_INPUT', message: 'No IDs provided on stdin' })
       }
     } else if (Option.isSome(idOpt)) {
-      ids = [idOpt.value]
+      ids = [decodePreprocessedArg(idOpt.value)]
     } else {
       return yield* new CliError({
         code: 'NO_INPUT',

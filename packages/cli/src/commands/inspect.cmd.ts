@@ -4,6 +4,7 @@ import { Argument, Command, Flag } from 'effect/unstable/cli'
 import { CliError } from '@/src/domain/errors'
 import type { IdType } from '@/src/domain/types'
 import { inspectId } from '@/src/inspectors/inspect'
+import { decodePreprocessedArg } from '@/src/runtime/args'
 import { OutputService } from '@/src/services/OutputService'
 
 const idArg = Argument.string('id').pipe(Argument.withDescription('The ID to inspect'))
@@ -25,12 +26,13 @@ export const inspectCommand = Command.make(
   Effect.fn('cli.inspect')(function* ({ id, type: typeOpt, json }) {
     const output = yield* OutputService
     const type: IdType | undefined = Option.getOrUndefined(typeOpt)
+    const input = decodePreprocessedArg(id)
 
-    const result = inspectId(id, type)
+    const result = inspectId(input, type)
     if (!result) {
       return yield* new CliError({
         code: 'UNKNOWN_ID_TYPE',
-        message: `Could not identify ID type for: "${id}"`,
+        message: `Could not identify ID type for: "${input}"`,
         hint: 'Use --type to specify the ID type',
       })
     }

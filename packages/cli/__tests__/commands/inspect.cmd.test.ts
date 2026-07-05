@@ -9,6 +9,8 @@ import { CliError } from '@/src/domain/errors'
 import { cli, MockOutput, TestLive } from '../__utils__'
 
 describe('CLI: uniku inspect', () => {
+  const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'
+
   layer(TestLive())((it) => {
     it.effect('[Given] UUID v7 [Then] shows timestamp and random', () =>
       Effect.gen(function* () {
@@ -76,6 +78,26 @@ describe('CLI: uniku inspect', () => {
         yield* cli(['inspect', id, '--type', 'uuid'])
         const output = yield* MockOutput.getStdout
         expect(output[0]).toContain('uuid')
+      }),
+    )
+
+    it.effect('[Given] dash-leading nanoid after end-of-options marker [Then] inspects it as an ID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['inspect', '--', dashLeadingNanoid])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('nanoid')
+        expect(output[0]).toContain('no decodable metadata')
+      }),
+    )
+
+    it.effect('[Given] flag-shaped nanoid after end-of-options marker [Then] treats it as an ID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['inspect', '--', '--json'])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('nanoid')
+        expect(output[0]).toContain('no decodable metadata')
       }),
     )
 

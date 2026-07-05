@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@effect/vitest'
-import { preprocessArgs } from '@/src/runtime/args'
+import { decodePreprocessedArg, preprocessArgs } from '@/src/runtime/args'
 
 describe('preprocessArgs', () => {
   it('returns user args unchanged in the common case', () => {
@@ -15,15 +15,33 @@ describe('preprocessArgs', () => {
     expect(preprocessArgs(['uuid', '-V'])).toEqual(['uuid', '--version'])
   })
 
-  it('preserves a literal -V after the end-of-options marker', () => {
-    expect(preprocessArgs(['validate', '--', '-V'])).toEqual(['validate', '--', '-V'])
+  it('preserves a literal -V after the end-of-options marker for ID commands', () => {
+    const processed = preprocessArgs(['validate', '--', '-V'])
+
+    expect(processed).toHaveLength(2)
+    expect(processed[0]).toBe('validate')
+    expect(processed[1]?.startsWith('-')).toBe(false)
+    expect(decodePreprocessedArg(processed[1] ?? '')).toBe('-V')
   })
 
-  it('drops the end-of-options marker when no trailing operand looks like a flag', () => {
-    expect(preprocessArgs(['validate', '--', 'some-id'])).toEqual(['validate', 'some-id'])
+  it('routes non-dash operands after the end-of-options marker to ID commands', () => {
+    const processed = preprocessArgs(['inspect', '--', 'some-id'])
+
+    expect(processed).toHaveLength(2)
+    expect(processed[0]).toBe('inspect')
+    expect(decodePreprocessedArg(processed[1] ?? '')).toBe('some-id')
   })
 
-  it('keeps the end-of-options marker when a trailing operand starts with a dash', () => {
-    expect(preprocessArgs(['validate', '--', '--not-a-flag'])).toEqual(['validate', '--', '--not-a-flag'])
+  it('routes dash-leading operands after the end-of-options marker to ID commands', () => {
+    const processed = preprocessArgs(['validate', '--', '--not-a-flag'])
+
+    expect(processed).toHaveLength(2)
+    expect(processed[0]).toBe('validate')
+    expect(processed[1]?.startsWith('-')).toBe(false)
+    expect(decodePreprocessedArg(processed[1] ?? '')).toBe('--not-a-flag')
+  })
+
+  it('leaves the end-of-options marker alone for commands without literal ID operands', () => {
+    expect(preprocessArgs(['uuid', '--', 'some-id'])).toEqual(['uuid', '--', 'some-id'])
   })
 })

@@ -8,6 +8,8 @@ import { CliError, ValidationFailedError } from '@/src/domain/errors'
 import { cli, MockOutput, TestLive } from '../__utils__'
 
 describe('CLI: uniku validate', () => {
+  const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'
+
   layer(TestLive())((it) => {
     it.effect('[Given] valid UUID v4 [Then] outputs valid', () =>
       Effect.gen(function* () {
@@ -89,6 +91,24 @@ describe('CLI: uniku validate', () => {
         yield* cli(['validate', '--', id])
         const output = yield* MockOutput.getStdout
         expect(output.join('')).toContain('valid')
+      }),
+    )
+
+    it.effect('[Given] dash-leading nanoid after end-of-options marker [Then] validates it as an ID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['validate', '--', dashLeadingNanoid])
+        const output = yield* MockOutput.getStdout
+        expect(output.join('')).toContain('valid (nanoid)')
+      }),
+    )
+
+    it.effect('[Given] flag-shaped nanoid after end-of-options marker [Then] treats it as an ID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['validate', '--', '--json'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (nanoid)'])
       }),
     )
   })

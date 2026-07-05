@@ -12,14 +12,46 @@ export function preprocessArgs(args: readonly string[]): string[] {
   )
 
   // Effect v4's parser attaches operands found after `--` to the parent
-  // command instead of the resolved subcommand, so `validate -- <id>` would
-  // lose its id. When no post-`--` token looks like a flag, dropping the
-  // marker is lexically equivalent and restores the v3 routing. Operands that
-  // do start with `-` keep the marker and remain subject to the upstream
-  // limitation.
-  if (doubleDash !== -1 && result.slice(doubleDash + 1).every((arg) => !arg.startsWith('-'))) {
-    result.splice(doubleDash, 1)
+  // command instead of the resolved subcommand. Encode post-`--` operands for
+  // commands whose public contract accepts a literal positional ID, then drop
+  // the marker so the parser routes them to the selected subcommand.
+  if (doubleDash !== -1 && acceptsLiteralIdOperand(result.slice(0, doubleDash))) {
+    return [...result.slice(0, doubleDash), ...result.slice(doubleDash + 1).map(encodeLiteralArg)]
   }
 
   return result
+}
+
+const literalArgPrefix = '\0uniku-literal:'
+const literalIdCommands = new Set(['inspect', 'validate'])
+const valueTakingGlobalFlags = new Set(['--completions', '--log-level'])
+const valueTakingGlobalFlagAssignments = ['--completions=', '--log-level='] as const
+
+export function decodePreprocessedArg(arg: string): string {
+  return arg.startsWith(literalArgPrefix) ? arg.slice(literalArgPrefix.length) : arg
+}
+
+function encodeLiteralArg(arg: string): string {
+  return `${literalArgPrefix}${arg}`
+}
+
+function acceptsLiteralIdOperand(argsBeforeDoubleDash: readonly string[]): boolean {
+  for (let index = 0; index < argsBeforeDoubleDash.length; index += 1) {
+    const arg = argsBeforeDoubleDash[index]
+
+    if (valueTakingGlobalFlags.has(arg)) {
+      index += 1
+      continue
+    }
+    if (valueTakingGlobalFlagAssignments.some((prefix) => arg.startsWith(prefix))) {
+      continue
+    }
+    if (arg.startsWith('-')) {
+      continue
+    }
+
+    return literalIdCommands.has(arg)
+  }
+
+  return false
 }
