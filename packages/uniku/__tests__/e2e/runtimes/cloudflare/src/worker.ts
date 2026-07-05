@@ -7,6 +7,7 @@ import { Hono } from 'hono'
 import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid, URL_ALPHABET } from 'uniku/nanoid'
+import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
@@ -19,7 +20,7 @@ const app = new Hono()
 app.get('/', (c) => {
   return c.json({
     message: 'uniku E2E Test Worker',
-    generators: ['uuid-v4', 'uuid-v7', 'ulid', 'ksuid', 'cuid2', 'nanoid'],
+    generators: ['uuid-v4', 'uuid-v7', 'typeid', 'ulid', 'ksuid', 'cuid2', 'nanoid'],
   })
 })
 
@@ -155,6 +156,96 @@ app.get('/uuid-v7/validate', (c) => {
 app.get('/uuid-v7/monotonic', (c) => {
   try {
     const ids = Array.from({ length: 100 }, () => uuidv7())
+    const sorted = [...ids].sort()
+    const isMonotonic = ids.every((id, i) => id === sorted[i])
+    return c.json({
+      success: true,
+      count: ids.length,
+      isMonotonic,
+      first: ids[0],
+      last: ids[ids.length - 1],
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================================================
+// TypeID Endpoints
+// ============================================================================
+
+app.get('/typeid/generate', (c) => {
+  try {
+    const id = typeid('user')
+    return c.json({ success: true, id })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/typeid/generate-batch', (c) => {
+  try {
+    const count = Number(c.req.query('count') || '1000')
+    const ids = Array.from({ length: count }, () => typeid('user'))
+    return c.json({ success: true, ids, count: ids.length })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/typeid/to-bytes', (c) => {
+  try {
+    const id = typeid('user')
+    const bytes = typeid.toBytes(id)
+    const restored = typeid.fromBytes('user', bytes)
+    return c.json({
+      success: true,
+      original: id,
+      bytes: Array.from(bytes),
+      restored,
+      roundTripMatch: id === restored,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/typeid/timestamp', (c) => {
+  try {
+    const before = Date.now()
+    const id = typeid('user')
+    const after = Date.now()
+    const timestamp = typeid.timestamp(id)
+    return c.json({
+      success: true,
+      id,
+      timestamp,
+      before,
+      after,
+      withinRange: timestamp >= before && timestamp <= after,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/typeid/validate', (c) => {
+  try {
+    const validId = typeid('user')
+    return c.json({
+      success: true,
+      validId,
+      isValidGenerated: typeid.isValid(validId),
+      isValidInvalid: typeid.isValid('not-a-typeid'),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/typeid/monotonic', (c) => {
+  try {
+    const ids = Array.from({ length: 100 }, () => typeid('user'))
     const sorted = [...ids].sort()
     const isMonotonic = ids.every((id, i) => id === sorted[i])
     return c.json({

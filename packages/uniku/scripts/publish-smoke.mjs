@@ -23,6 +23,11 @@ const expectedExports = {
     import: './build/ulid/ulid.mjs',
     default: './build/ulid/ulid.mjs',
   },
+  './typeid': {
+    types: './build/typeid/typeid.d.mts',
+    import: './build/typeid/typeid.mjs',
+    default: './build/typeid/typeid.mjs',
+  },
   './cuid2': {
     types: './build/cuid2/cuid2.d.mts',
     import: './build/cuid2/cuid2.mjs',

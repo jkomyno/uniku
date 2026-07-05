@@ -1,12 +1,14 @@
 import { KSUID as npmKsuid } from '@owpz/ksuid'
 import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
 import { nanoid as npmNanoid } from 'nanoid'
+import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-js'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
 import { bench, describe } from 'vitest'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
+import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
@@ -28,12 +30,14 @@ const testIds = {
   unikuV4: uuidv4(),
   unikuV7: uuidv7(),
   unikuUlid: ulid(),
+  unikuTypeid: typeid('user'),
   unikuNanoid: nanoid(),
   unikuCuid2: cuid2(),
   unikuKsuid: ksuid(),
   npmV4: npmUuidV4(),
   npmV7: npmUuidV7(),
   npmUlid: npmUlid(),
+  npmTypeid: npmTypeid('user').toString(),
   npmNanoid: npmNanoid(),
   npmCuid2: npmCuid2(),
   npmKsuid: npmKsuid.random().toString(),
@@ -86,6 +90,23 @@ describe('Generation', () => {
       'npm',
       () => {
         npmUlid()
+      },
+      benchOptions,
+    )
+  })
+
+  describe('TypeID', () => {
+    bench(
+      'uniku',
+      () => {
+        typeid('user')
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        npmTypeid('user').toString()
       },
       benchOptions,
     )
@@ -193,6 +214,23 @@ describe('Validation', () => {
       'regex',
       () => {
         ULID_REGEX.test(testIds.unikuUlid)
+      },
+      benchOptions,
+    )
+  })
+
+  describe('TypeID', () => {
+    bench(
+      'uniku',
+      () => {
+        typeid.isValid(testIds.npmTypeid)
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        npmTypeidFromString(testIds.unikuTypeid, 'user')
       },
       benchOptions,
     )
