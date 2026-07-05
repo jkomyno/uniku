@@ -1,5 +1,15 @@
 # uniku
 
+## 0.1.0
+
+### Minor Changes
+
+- acdef71: Add `uniku/typeid`, a TypeID generator backed by UUID v7 with prefix validation, UUID/byte conversion helpers, and timestamp extraction.
+
+### Patch Changes
+
+- de11ff7: Speed up `nanoid(size)` for the default alphabet by reusing the pooled Nanoid fast path.
+
 ## 0.0.13
 
 ### Patch Changes
