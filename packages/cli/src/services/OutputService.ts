@@ -5,17 +5,37 @@ import { type CliFailure, errorToJson } from '@/src/domain/errors'
 import type { InspectResult, ValidationResult } from '@/src/domain/types'
 
 export type OutputOptions = {
-  readonly json?: boolean
-  readonly quiet?: boolean
+  readonly json: boolean
 }
 
+/**
+ * A command's primary output: a JSON-serializable value plus a human-readable
+ * text rendering. Text is a list of records, each written on its own line
+ * (a record may itself span multiple lines, e.g. inspect output).
+ */
+export interface Render {
+  readonly json: () => unknown
+  readonly text: () => ReadonlyArray<string>
+}
+
+/**
+ * Renders a primary-output value to the records to write. This is the only
+ * place where output-format branching exists.
+ */
+export function render(value: Render, options: OutputOptions): ReadonlyArray<string> {
+  return options.json ? [JSON.stringify(value.json())] : value.text()
+}
+
+/**
+ * Writes a command's primary output. Commands build one `Render` value and
+ * emit it exactly once — stdout carries only the primary output, errors go
+ * to stderr.
+ */
 export class OutputService extends Context.Service<
   OutputService,
   {
-    readonly writeIds: (ids: readonly string[], options: OutputOptions) => Effect.Effect<void>
-    readonly writeValidation: (results: readonly ValidationResult[], options: OutputOptions) => Effect.Effect<void>
-    readonly writeInspect: (result: InspectResult, options: OutputOptions) => Effect.Effect<void>
-    readonly writeError: (error: CliFailure, options: OutputOptions) => Effect.Effect<void>
+    readonly write: (value: Render, options: OutputOptions) => Effect.Effect<void>
+    readonly writeError: (value: Render, options: OutputOptions) => Effect.Effect<void>
   }
 >()('uniku/cli/OutputService') {
   /**
@@ -24,66 +44,59 @@ export class OutputService extends Context.Service<
   static readonly layer = Layer.succeed(
     OutputService,
     OutputService.of({
-      writeIds(ids, options) {
-        return Effect.sync(() => {
-          if (options.json) {
-            const out = ids.length === 1 ? JSON.stringify(ids[0]) : JSON.stringify(ids)
-            process.stdout.write(`${out}\n`)
-          } else {
-            for (const id of ids) {
-              process.stdout.write(`${id}\n`)
-            }
-          }
-        })
-      },
-
-      writeValidation(results, options) {
-        return Effect.sync(() => {
-          if (options.quiet) return
-
-          if (options.json) {
-            const out = results.length === 1 ? JSON.stringify(results[0]) : JSON.stringify(results)
-            process.stdout.write(`${out}\n`)
-          } else {
-            for (const result of results) {
-              process.stdout.write(`${formatValidationHuman(result)}\n`)
-            }
-          }
-        })
-      },
-
-      writeInspect(result, options) {
-        return Effect.sync(() => {
-          if (options.json) {
-            process.stdout.write(`${JSON.stringify(result)}\n`)
-          } else {
-            process.stdout.write(`${formatInspectHuman(result)}\n`)
-          }
-        })
-      },
-
-      writeError(error, options) {
-        return Effect.sync(() => {
-          process.stderr.write(`${formatError(error, options)}\n`)
-        })
-      },
+      write: (value, options) => Effect.sync(() => writeRecords(process.stdout, render(value, options))),
+      writeError: (value, options) => Effect.sync(() => writeRecords(process.stderr, render(value, options))),
     }),
   )
 }
 
-export function formatValidationHuman(result: ValidationResult): string {
+function writeRecords(sink: NodeJS.WritableStream, records: ReadonlyArray<string>): void {
+  for (const record of records) {
+    sink.write(`${record}\n`)
+  }
+}
+
+// ── Primary-output values ───────────────────────────────────────────
+
+export function idsOutput(ids: readonly string[]): Render {
+  return {
+    json: () => (ids.length === 1 ? ids[0] : ids),
+    text: () => ids,
+  }
+}
+
+export function validationOutput(results: readonly ValidationResult[]): Render {
+  return {
+    json: () => (results.length === 1 ? results[0] : results),
+    text: () => results.map(formatValidationHuman),
+  }
+}
+
+export function inspectOutput(result: InspectResult): Render {
+  return {
+    json: () => result,
+    text: () => [formatInspectHuman(result)],
+  }
+}
+
+export function errorOutput(error: CliFailure): Render {
+  return {
+    json: () => errorToJson(error),
+    text: () => [formatErrorHuman(error)],
+  }
+}
+
+// ── Human renderings ────────────────────────────────────────────────
+
+function formatValidationHuman(result: ValidationResult): string {
   if (result.valid) {
-    const parts = [`valid (${result.type}`]
-    if (result.version != null) {
-      parts.push(` v${result.version}`)
-    }
-    parts.push(')')
-    return parts.join('')
+    const version = result.version != null ? ` v${result.version}` : ''
+    return `valid (${result.type}${version})`
   }
   return `invalid: ${result.error ?? 'malformed identifier'}`
 }
 
-export function formatInspectHuman(result: InspectResult): string {
+function formatInspectHuman(result: InspectResult): string {
   const lines: string[] = []
   const typeLabel = result.version != null ? `${result.type} (v${result.version})` : result.type
   lines.push(`Type:      ${typeLabel}`)
@@ -99,14 +112,6 @@ export function formatInspectHuman(result: InspectResult): string {
   return lines.join('\n')
 }
 
-export function formatError(error: CliFailure, options: OutputOptions): string {
-  if (options.json) {
-    return JSON.stringify(errorToJson(error))
-  }
-
-  let msg = `Error: ${error.message}`
-  if (error.hint) {
-    msg += `\n  ${error.hint}`
-  }
-  return msg
+function formatErrorHuman(error: CliFailure): string {
+  return error.hint ? `Error: ${error.message}\n  ${error.hint}` : `Error: ${error.message}`
 }

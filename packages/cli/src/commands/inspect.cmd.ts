@@ -5,7 +5,7 @@ import { CliError } from '@/src/domain/errors'
 import type { IdType } from '@/src/domain/types'
 import { inspectId } from '@/src/inspectors/inspect'
 import { decodePreprocessedArg } from '@/src/runtime/args'
-import { OutputService } from '@/src/services/OutputService'
+import { inspectOutput, OutputService } from '@/src/services/OutputService'
 
 const idArg = Argument.string('id').pipe(Argument.withDescription('The ID to inspect'))
 
@@ -37,6 +37,16 @@ export const inspectCommand = Command.make(
       })
     }
 
-    yield* output.writeInspect(result, { json })
+    yield* output.write(inspectOutput(result), { json })
   }),
-).pipe(Command.withDescription('Decode and inspect an ID'))
+).pipe(
+  Command.withDescription('Decode and inspect an ID'),
+  Command.withExamples([
+    {
+      command: 'uniku inspect 01J9YR2V5TZB8Q4W6X0E1N7M3S --json',
+      description: 'Decode an ID to structured JSON (type, version, timestamp)',
+    },
+    { command: 'uniku inspect --type uuid 3F2504E0-4F89-41D3-9A0C-0305E82C3301', description: 'Skip auto-detection' },
+    { command: 'uniku inspect -- --tricky-id', description: 'Inspect an ID that starts with a dash' },
+  ]),
+)

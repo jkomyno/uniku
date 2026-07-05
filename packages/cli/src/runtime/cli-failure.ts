@@ -3,7 +3,7 @@ import * as Effect from 'effect/Effect'
 import * as Match from 'effect/Match'
 import type { CliError as CliFrameworkError } from 'effect/unstable/cli'
 import type { CliFailure } from '@/src/domain/errors'
-import { OutputService } from '@/src/services/OutputService'
+import { errorOutput, OutputService } from '@/src/services/OutputService'
 
 const EXIT_CODE_SUCCESS = 0
 const EXIT_CODE_FAILURE = 1
@@ -48,7 +48,7 @@ export const handleCliFailure = Effect.fn('cli.handleCliFailure')(function* (
   if (error._tag === 'CliError' || error._tag === 'ValidationFailedError') {
     // CLI-owned failures are written by us.
     const output = yield* OutputService
-    yield* output.writeError(error, { json: usesJsonOutput(args) })
+    yield* output.writeError(errorOutput(error), { json: usesJsonOutput(args) })
   } else if (error._tag !== 'ShowHelp') {
     // Command.runWith renders ShowHelp (and the parse errors it wraps) itself,
     // but global-flag parse failures (e.g. --log-level bogus) escape unrendered.

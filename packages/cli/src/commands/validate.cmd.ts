@@ -4,7 +4,7 @@ import { Argument, Command, Flag } from 'effect/unstable/cli'
 import { CliError, ValidationFailedError } from '@/src/domain/errors'
 import type { IdType, ValidationResult } from '@/src/domain/types'
 import { decodePreprocessedArg } from '@/src/runtime/args'
-import { OutputService } from '@/src/services/OutputService'
+import { OutputService, validationOutput } from '@/src/services/OutputService'
 import { StdinService } from '@/src/services/StdinService'
 import { validateAs, validateAutoDetect } from '@/src/validators/validate'
 
@@ -60,11 +60,26 @@ export const validateCommand = Command.make(
 
     const results: ValidationResult[] = ids.map((id) => (type ? validateAs(id, type) : validateAutoDetect(id)))
 
-    yield* output.writeValidation(results, { json, quiet })
+    if (!quiet) {
+      yield* output.write(validationOutput(results), { json })
+    }
 
     const hasInvalid = results.some((r) => !r.valid)
     if (hasInvalid) {
       return yield* new ValidationFailedError({ message: 'One or more IDs are invalid' })
     }
   }),
-).pipe(Command.withDescription('Check if an ID is valid'))
+).pipe(
+  Command.withDescription('Check if an ID is valid'),
+  Command.withExamples([
+    {
+      command: 'uniku validate 3F2504E0-4F89-41D3-9A0C-0305E82C3301 --json',
+      description: 'Validate one ID, result as JSON',
+    },
+    {
+      command: 'cat ids.txt | uniku validate --stdin --json',
+      description: 'Validate many IDs (one per line), results as a JSON array',
+    },
+    { command: 'uniku validate --quiet 01J9YR2V5TZB8Q4W6X0E1N7M3S', description: 'Exit code only: 0 valid, 2 invalid' },
+  ]),
+)

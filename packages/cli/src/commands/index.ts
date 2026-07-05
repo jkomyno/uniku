@@ -14,6 +14,12 @@ import { validateCommand } from '@/src/commands/validate.cmd'
 
 export const rootCommand = Command.make('uniku').pipe(
   Command.withDescription('Generate and validate unique identifiers'),
+  Command.withExamples([
+    { command: 'uniku uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array (machine-readable)' },
+    { command: 'uniku ulid', description: 'Generate one ULID' },
+    { command: 'uniku inspect <id> --json', description: 'Decode an ID (type, version, timestamp) as JSON' },
+    { command: 'cat ids.txt | uniku validate --stdin --json', description: 'Validate IDs from stdin, one per line' },
+  ]),
   Command.withSubcommands([
     generateCommand,
     validateCommand,

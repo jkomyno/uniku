@@ -9,7 +9,7 @@ import { generateKsuid } from '@/src/generators/ksuid'
 import { generateNanoid } from '@/src/generators/nanoid'
 import { generateUlid } from '@/src/generators/ulid'
 import { generateUuid } from '@/src/generators/uuid'
-import { OutputService } from '@/src/services/OutputService'
+import { idsOutput, OutputService } from '@/src/services/OutputService'
 
 // ── Common flags ────────────────────────────────────────────────────
 
@@ -48,9 +48,16 @@ const uuidSubcommand = Command.make(
   Effect.fn('cli.generate.uuid')(function* ({ count, json, version, lowercase }) {
     const output = yield* OutputService
     const ids = yield* generateUuid({ count, version, lowercase })
-    yield* output.writeIds(ids, { json })
+    yield* output.write(idsOutput(ids), { json })
   }),
-).pipe(Command.withDescription('Generate UUIDs (v4 or v7)'))
+).pipe(
+  Command.withDescription('Generate UUIDs (v4 or v7)'),
+  Command.withExamples([
+    { command: 'uniku uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array (machine-readable)' },
+    { command: 'uniku uuid -v 7', description: 'Generate a time-sortable UUID v7' },
+    { command: 'uniku uuid', description: 'Generate one random UUID v4' },
+  ]),
+)
 
 // ── ULID subcommand ─────────────────────────────────────────────────
 
@@ -78,9 +85,18 @@ const ulidSubcommand = Command.make(
     const timestampInput = Option.getOrUndefined(timestampOpt)
     const timestamp = timestampInput !== undefined ? yield* parseTimestampMs(timestampInput) : undefined
     const ids = yield* generateUlid({ count, monotonic, timestamp, lowercase })
-    yield* output.writeIds(ids, { json })
+    yield* output.write(idsOutput(ids), { json })
   }),
-).pipe(Command.withDescription('Generate ULIDs'))
+).pipe(
+  Command.withDescription('Generate ULIDs'),
+  Command.withExamples([
+    {
+      command: 'uniku ulid -n 10 --monotonic --json',
+      description: 'Generate 10 strictly ordered ULIDs as a JSON array',
+    },
+    { command: 'uniku ulid --timestamp 1720000000000', description: 'Generate a ULID for a fixed Unix timestamp (ms)' },
+  ]),
+)
 
 // ── Nanoid subcommand ───────────────────────────────────────────────
 
@@ -108,9 +124,15 @@ const nanoidSubcommand = Command.make(
     const output = yield* OutputService
     const alphabet = Option.getOrUndefined(alphabetOpt)
     const ids = yield* generateNanoid({ count, size, alphabet })
-    yield* output.writeIds(ids, { json })
+    yield* output.write(idsOutput(ids), { json })
   }),
-).pipe(Command.withDescription('Generate Nanoids'))
+).pipe(
+  Command.withDescription('Generate Nanoids'),
+  Command.withExamples([
+    { command: 'uniku nanoid -n 5 --json', description: 'Generate 5 Nanoids as a JSON array' },
+    { command: 'uniku nanoid --size 10 --alphabet hex', description: 'Generate a 10-char ID from the hex preset' },
+  ]),
+)
 
 // ── CUID subcommand ─────────────────────────────────────────────────
 
@@ -130,9 +152,15 @@ const cuidSubcommand = Command.make(
   Effect.fn('cli.generate.cuid')(function* ({ count, json, length }) {
     const output = yield* OutputService
     const ids = yield* generateCuid({ count, length })
-    yield* output.writeIds(ids, { json })
+    yield* output.write(idsOutput(ids), { json })
   }),
-).pipe(Command.withDescription('Generate CUIDs (v2)'))
+).pipe(
+  Command.withDescription('Generate CUIDs (v2)'),
+  Command.withExamples([
+    { command: 'uniku cuid -n 5 --json', description: 'Generate 5 CUIDs as a JSON array' },
+    { command: 'uniku cuid --length 10', description: 'Generate a 10-char CUID' },
+  ]),
+)
 
 // ── KSUID subcommand ────────────────────────────────────────────────
 
@@ -153,15 +181,28 @@ const ksuidSubcommand = Command.make(
     const timestampInput = Option.getOrUndefined(timestampOpt)
     const timestamp = timestampInput !== undefined ? yield* parseTimestampSecs(timestampInput) : undefined
     const ids = yield* generateKsuid({ count, timestamp })
-    yield* output.writeIds(ids, { json })
+    yield* output.write(idsOutput(ids), { json })
   }),
-).pipe(Command.withDescription('Generate KSUIDs'))
+).pipe(
+  Command.withDescription('Generate KSUIDs'),
+  Command.withExamples([
+    { command: 'uniku ksuid -n 5 --json', description: 'Generate 5 KSUIDs as a JSON array' },
+    { command: 'uniku ksuid --timestamp 1720000000', description: 'Generate a KSUID for a fixed Unix timestamp (s)' },
+  ]),
+)
 
 // ── Generate parent command ─────────────────────────────────────────
 
 export const generateCommand = Command.make('generate').pipe(
   Command.withDescription('Generate new IDs'),
   Command.withSubcommands([uuidSubcommand, ulidSubcommand, nanoidSubcommand, cuidSubcommand, ksuidSubcommand]),
+  Command.withExamples([
+    { command: 'uniku generate uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array' },
+    {
+      command: 'uniku generate ulid',
+      description: 'Generate one ULID (subcommands also work top-level: `uniku ulid`)',
+    },
+  ]),
 )
 
 // ── Shorthand commands (top-level: `uniku uuid`, `uniku ulid`, etc.) ─

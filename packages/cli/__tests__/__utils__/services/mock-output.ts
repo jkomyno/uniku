@@ -2,15 +2,7 @@ import * as Array from 'effect/Array'
 import * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
 import * as Ref from 'effect/Ref'
-import type { CliFailure } from '@/src/domain/errors'
-import type { InspectResult, ValidationResult } from '@/src/domain/types'
-import {
-  formatError,
-  formatInspectHuman,
-  formatValidationHuman,
-  type OutputOptions,
-  OutputService,
-} from '@/src/services/OutputService'
+import { OutputService, render } from '@/src/services/OutputService'
 
 // =============================================================================
 // Models
@@ -32,47 +24,17 @@ export class MockOutputTag extends Context.Service<MockOutputTag, MockOutputAcce
 // Constructors
 // =============================================================================
 
+/**
+ * Captures the real rendering (one entry per output record) instead of
+ * writing to the process streams.
+ */
 export const make = Effect.gen(function* () {
   const stdoutRef = yield* Ref.make<ReadonlyArray<string>>([])
   const stderrRef = yield* Ref.make<ReadonlyArray<string>>([])
 
   const service = OutputService.of({
-    writeIds(ids: readonly string[], options: OutputOptions) {
-      return Ref.update(stdoutRef, (lines) => {
-        if (options.json) {
-          const out = ids.length === 1 ? JSON.stringify(ids[0]) : JSON.stringify(ids)
-          return Array.append(lines, out)
-        }
-        return Array.appendAll(lines, ids)
-      })
-    },
-
-    writeValidation(results: readonly ValidationResult[], options: OutputOptions) {
-      if (options.quiet) return Effect.void
-      return Ref.update(stdoutRef, (lines) => {
-        if (options.json) {
-          const out = results.length === 1 ? JSON.stringify(results[0]) : JSON.stringify(results)
-          return Array.append(lines, out)
-        }
-        return Array.appendAll(
-          lines,
-          results.map((r) => formatValidationHuman(r)),
-        )
-      })
-    },
-
-    writeInspect(result: InspectResult, options: OutputOptions) {
-      return Ref.update(stdoutRef, (lines) => {
-        if (options.json) {
-          return Array.append(lines, JSON.stringify(result))
-        }
-        return Array.append(lines, formatInspectHuman(result))
-      })
-    },
-
-    writeError(error: CliFailure, options: OutputOptions) {
-      return Ref.update(stderrRef, (lines) => Array.append(lines, formatError(error, options)))
-    },
+    write: (value, options) => Ref.update(stdoutRef, (lines) => Array.appendAll(lines, render(value, options))),
+    writeError: (value, options) => Ref.update(stderrRef, (lines) => Array.appendAll(lines, render(value, options))),
   })
 
   const access: MockOutputAccess = {

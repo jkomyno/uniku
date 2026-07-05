@@ -11,28 +11,19 @@ const ansiPattern = new RegExp(
 
 const stripAnsi = (str: string) => str.replace(ansiPattern, '')
 
+const linesFrom =
+  (source: Effect.Effect<ReadonlyArray<unknown>>) =>
+  (params?: Partial<{ readonly stripAnsi: boolean }>): Effect.Effect<ReadonlyArray<string>> =>
+    Effect.map(source, (lines) => lines.map((line) => (params?.stripAnsi ? stripAnsi(String(line)) : String(line))))
+
 /**
  * Lines written through `Console.log` (help, version, parse errors are
  * rendered by the Effect CLI runner through the Console service).
  * Requires `TestConsole.layer` (part of `TestLive`).
  */
-export const getLines = (
-  params?: Partial<{
-    readonly stripAnsi: boolean
-  }>,
-): Effect.Effect<ReadonlyArray<string>> =>
-  Effect.map(TestConsole.logLines, (lines) =>
-    lines.map((line) => (params?.stripAnsi ? stripAnsi(String(line)) : String(line))),
-  )
+export const getLines = linesFrom(TestConsole.logLines)
 
 /**
  * Lines written through `Console.error`.
  */
-export const getErrorLines = (
-  params?: Partial<{
-    readonly stripAnsi: boolean
-  }>,
-): Effect.Effect<ReadonlyArray<string>> =>
-  Effect.map(TestConsole.errorLines, (lines) =>
-    lines.map((line) => (params?.stripAnsi ? stripAnsi(String(line)) : String(line))),
-  )
+export const getErrorLines = linesFrom(TestConsole.errorLines)
