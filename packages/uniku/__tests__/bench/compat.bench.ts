@@ -129,6 +129,23 @@ describe('Generation', () => {
     )
   })
 
+  describe('NanoID (10)', () => {
+    bench(
+      'uniku',
+      () => {
+        nanoid(10)
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        npmNanoid(10)
+      },
+      benchOptions,
+    )
+  })
+
   describe('CUID2', () => {
     bench(
       'uniku',

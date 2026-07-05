@@ -65,6 +65,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | KSUID     | **1.5× faster** |
 | UUID v7   | **1.1× faster**  |
 | Nanoid    | **~comparable speed** |
+| Nanoid (10 chars) | npm is 1.1× faster |
 | TypeID    | **2.6× faster** |
 | UUID v4   | npm is 1.1× faster |
 
