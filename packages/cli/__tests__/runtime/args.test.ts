@@ -44,4 +44,22 @@ describe('preprocessArgs', () => {
   it('leaves the end-of-options marker alone for commands without literal ID operands', () => {
     expect(preprocessArgs(['uuid', '--', 'some-id'])).toEqual(['uuid', '--', 'some-id'])
   })
+
+  it('finds the ID command behind a value-taking global flag', () => {
+    const processed = preprocessArgs(['--log-level', 'info', 'inspect', '--', '-x'])
+
+    expect(processed.slice(0, 3)).toEqual(['--log-level', 'info', 'inspect'])
+    expect(decodePreprocessedArg(processed[3] ?? '')).toBe('-x')
+  })
+
+  it('finds the ID command behind a global flag in assignment form', () => {
+    const processed = preprocessArgs(['--log-level=info', 'validate', '--', '-x'])
+
+    expect(processed.slice(0, 2)).toEqual(['--log-level=info', 'validate'])
+    expect(decodePreprocessedArg(processed[2] ?? '')).toBe('-x')
+  })
+
+  it('leaves a root-level end-of-options marker alone', () => {
+    expect(preprocessArgs(['--', 'inspect', 'some-id'])).toEqual(['--', 'inspect', 'some-id'])
+  })
 })

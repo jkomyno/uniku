@@ -5,24 +5,23 @@
 export function preprocessArgs(args: readonly string[]): string[] {
   const doubleDash = args.indexOf('--')
 
-  // Replace -V with --version (the built-in version flag only aliases -v),
-  // but never past the end-of-options marker — post-`--` tokens are literal.
-  const result = args.map((arg, index) =>
-    arg === '-V' && (doubleDash === -1 || index < doubleDash) ? '--version' : arg,
-  )
+  // Rewrite -V to --version (the built-in version flag only aliases -v).
+  // Post-`--` tokens are literal, so only the head is rewritten.
+  const head = (doubleDash === -1 ? args : args.slice(0, doubleDash)).map((arg) => (arg === '-V' ? '--version' : arg))
+
+  if (doubleDash === -1) {
+    return head
+  }
 
   // Effect v4's parser attaches operands found after `--` to the parent
   // command instead of the resolved subcommand (internal/parser.ts keeps
   // `trailingOperands` at the level that lexed them and recurses with `[]`).
-  // Encode post-`--` operands for commands whose public contract accepts a
-  // literal positional ID — the prefix stops them from parsing as flags —
-  // then drop the marker so the parser routes them to the selected
-  // subcommand. Commands decode with `decodePreprocessedArg`.
-  if (doubleDash !== -1 && acceptsLiteralIdOperand(result.slice(0, doubleDash))) {
-    return [...result.slice(0, doubleDash), ...result.slice(doubleDash + 1).map(encodeLiteralArg)]
-  }
-
-  return result
+  // For commands whose public contract accepts a literal positional ID,
+  // encode each operand — the prefix stops it from parsing as a flag — and
+  // drop the marker so the parser routes it to the selected subcommand.
+  // Commands decode with `decodePreprocessedArg`.
+  const operands = args.slice(doubleDash + 1)
+  return acceptsLiteralIdOperand(head) ? [...head, ...operands.map(encodeLiteralArg)] : [...head, '--', ...operands]
 }
 
 const literalArgPrefix = '\0uniku-literal:'
