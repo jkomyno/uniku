@@ -1,5 +1,17 @@
 # @uniku/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- 9fbcb4e: Add TypeID generation, validation, and inspection support to the CLI.
+
+### Patch Changes
+
+- Updated dependencies [de11ff7]
+- Updated dependencies [acdef71]
+  - uniku@0.1.0
+
 ## 0.2.0
 
 ### Minor Changes
