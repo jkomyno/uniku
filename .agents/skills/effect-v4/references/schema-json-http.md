@@ -313,7 +313,7 @@ const program = Effect.gen(function* () {
 Retry transport failures, never contract failures: a `SchemaError` is deterministic, so retrying it just burns time.
 
 ```ts
-import { Effect, Schedule, Schema } from 'effect'
+import { Effect, Predicate, Schedule, Schema } from 'effect'
 
 class UpstreamError extends Schema.TaggedErrorClass<UpstreamError>()('UpstreamError', {
   status: Schema.Int,
@@ -325,7 +325,7 @@ const resilient = (id: string) =>
   fetchAndDecode(id).pipe(
     Effect.timeout('3 seconds'), // adds Cause.TimeoutError to the error channel
     Effect.retry({
-      while: (error) => error._tag !== 'SchemaError',
+      while: (error) => !Predicate.isTagged(error, 'SchemaError'),
       schedule: Schedule.exponential(200),
       times: 3,
     }),

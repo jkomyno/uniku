@@ -45,14 +45,26 @@ export const handleCliFailure = Effect.fn('cli.handleCliFailure')(function* (
   error: CliRunFailure,
   args: readonly string[],
 ) {
-  if (error._tag === 'CliError' || error._tag === 'ValidationFailedError') {
+  yield* Match.value(error).pipe(
     // CLI-owned failures are written by us.
-    const output = yield* OutputService
-    yield* output.writeError(errorOutput(error), { json: usesJsonOutput(args) })
-  } else if (error._tag !== 'ShowHelp') {
-    // Command.runWith renders ShowHelp (and the parse errors it wraps) itself,
-    // but global-flag parse failures (e.g. --log-level bogus) escape unrendered.
-    yield* Console.error(`Error: ${error.message}`)
-  }
+    Match.tag('CliError', 'ValidationFailedError', (failure) =>
+      OutputService.use((output) => output.writeError(errorOutput(failure), { json: usesJsonOutput(args) })),
+    ),
+    // Command.runWith renders ShowHelp (and the parse errors it wraps) itself.
+    Match.tag('ShowHelp', () => Effect.void),
+    // Global-flag parse failures (e.g. --log-level bogus) escape Command.runWith
+    // unrendered.
+    Match.tag(
+      'UnrecognizedOption',
+      'DuplicateOption',
+      'MissingOption',
+      'MissingArgument',
+      'InvalidValue',
+      'UnknownSubcommand',
+      'UserError',
+      (failure) => Console.error(`Error: ${failure.message}`),
+    ),
+    Match.exhaustive,
+  )
   process.exitCode = exitCodeFor(error)
 })

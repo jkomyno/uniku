@@ -402,7 +402,7 @@ const ExtractionResult = Schema.Union([
 Model replies arrive as text. `Schema.fromJsonString(schema)` decodes string → JSON → validated type in a single step, failing with `SchemaError` on malformed JSON _or_ schema mismatch.
 
 ```ts
-import { Effect, Schedule, Schema } from 'effect'
+import { Effect, Predicate, Schedule, Schema } from 'effect'
 
 class ModelError extends Schema.TaggedErrorClass<ModelError>()('ModelError', {
   message: Schema.String,
@@ -429,7 +429,7 @@ const analyzeWithRetry = (text: string) =>
     Effect.retry({
       schedule: Schedule.exponential('200 millis'),
       times: 2,
-      while: (error) => error._tag === 'SchemaError',
+      while: Predicate.isTagged('SchemaError'),
     }),
   )
 

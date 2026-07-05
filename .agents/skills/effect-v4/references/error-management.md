@@ -332,7 +332,7 @@ const back = Effect.fromResult(ok)
 `Effect.retry` accepts either a `Schedule` or an options object `{ times, while, until, schedule }`. Use `while` to retry only on specific (transient) errors. Build backoff policies by composing Schedules.
 
 ```ts
-import { Effect, Schedule, Schema } from 'effect'
+import { Effect, Predicate, Schedule, Schema } from 'effect'
 
 class ServerBusyError extends Schema.TaggedErrorClass<ServerBusyError>()('ServerBusyError', {}) {}
 class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()('NotFoundError', {}) {}
@@ -344,7 +344,7 @@ const simple = Effect.retry(callApi, { times: 3 })
 
 // Retry only transient errors; NotFoundError fails immediately
 const selective = Effect.retry(callApi, {
-  while: (error) => error._tag === 'ServerBusyError',
+  while: Predicate.isTagged('ServerBusyError'),
   times: 3,
 })
 
@@ -370,7 +370,7 @@ const withFallback = Effect.retryOrElse(callApi, Schedule.recurs(2), (error) =>
 `Effect.timeout` interrupts the effect and adds `Cause.TimeoutError` to the error channel. Order matters: a timeout inside `retry` limits each attempt; outside, it caps the whole retry loop.
 
 ```ts
-import { Cause, Effect, Schedule, Schema } from 'effect'
+import { Cause, Effect, Predicate, Schedule, Schema } from 'effect'
 
 class ApiError extends Schema.TaggedErrorClass<ApiError>()('ApiError', {}) {}
 
@@ -383,7 +383,7 @@ const resilient = fetchData.pipe(
   Effect.timeout('2 seconds'),
   Effect.retry({
     schedule: Schedule.exponential('100 millis').pipe(Schedule.both(Schedule.recurs(3))),
-    while: (error) => error._tag === 'TimeoutError',
+    while: Predicate.isTagged('TimeoutError'),
   }),
   Effect.catchTag('TimeoutError', () => Effect.succeed('fallback data')),
 )

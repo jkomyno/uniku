@@ -1,5 +1,5 @@
 import { describe, expect, layer } from '@effect/vitest'
-import { assertTrue } from '@effect/vitest/utils'
+import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
 import { CliError as CliFrameworkError } from 'effect/unstable/cli'
 import { exitCodeFor } from '@/src/runtime/cli-failure'
@@ -38,8 +38,7 @@ describe('CLI: uniku root', () => {
       Effect.gen(function* () {
         const error = yield* cli([]).pipe(Effect.flip)
 
-        assertTrue(CliFrameworkError.isCliError(error))
-        assertTrue(error._tag === 'ShowHelp')
+        assertInstanceOf(error, CliFrameworkError.ShowHelp)
         expect(error.errors).toHaveLength(0)
         expect(exitCodeFor(error)).toBe(0)
 
@@ -56,10 +55,9 @@ describe('CLI: uniku root', () => {
       Effect.gen(function* () {
         const error = yield* cli(['nonexistent']).pipe(Effect.flip)
 
-        assertTrue(CliFrameworkError.isCliError(error))
-        assertTrue(error._tag === 'ShowHelp')
+        assertInstanceOf(error, CliFrameworkError.ShowHelp)
         expect(error.errors).toHaveLength(1)
-        expect(error.errors[0]._tag).toBe('UnknownSubcommand')
+        assertInstanceOf(error.errors[0], CliFrameworkError.UnknownSubcommand)
         expect(exitCodeFor(error)).toBe(1)
 
         const lines = yield* TestConsole.getLines({ stripAnsi: true })

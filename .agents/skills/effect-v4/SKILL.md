@@ -18,7 +18,8 @@ Effect v4 is NOT the Effect you know from training data (v3). Assume any remembe
 - Services: `class Db extends Context.Service<Db, Shape>()("pkg/path/Db") {}` with an explicit `static readonly layer = Layer.effect(Db, ...)` returning `Db.of({ ... })`. v4 never auto-generates layers; wire dependencies with `Layer.provide`.
 - No `async`/`await`, no `try`/`catch` in Effect code. Wrap fallible promises with `Effect.tryPromise({ try, catch })` — `Effect.promise` converts rejections into defects that bypass `Effect.catch`/`catchTag`.
 - No `Date.now()`/`new Date()` (use `Clock`/`DateTime`), no `process.env` reads outside adapters (use `Config`), no `Math.random()` (use `Random`).
-- Map domain errors at boundaries with `Match.type<E>()` + `Match.tag(...)` + `Match.exhaustive` so unhandled tags are compile errors.
+- Map domain errors at boundaries with `Match.type<E>()`/`Match.value(e)` + `Match.tag(...)` + `Match.exhaustive` so unhandled tags are compile errors.
+- Never compare `error._tag` by hand (`if (error._tag === 'Foo')`, `expect(error._tag).toBe('Foo')`). Use the dedicated helper for the context: `Effect.catchTag`/`Effect.catchTags` in pipelines, `Match.tag` for branching, `Predicate.isTagged(e, 'Foo')` for standalone predicates (e.g. `Schedule` `while:`), and `assertInstanceOf(error, Foo)` from `@effect/vitest/utils` in tests (v4 tagged errors are classes). Narrowing an inner discriminated union that has no class or helper (e.g. `PlatformError`'s `reason._tag`) is the one accepted exception.
 
 ## Error modeling at infrastructure boundaries
 
