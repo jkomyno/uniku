@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@uniku/cli",
-  "version": "0.0.13",
+  "version": "0.1.0",
   "description": "CLI tool for generating and validating unique identifiers",
   "author": {
     "name": "Alberto Schiabel",
