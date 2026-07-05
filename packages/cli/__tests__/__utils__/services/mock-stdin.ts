@@ -5,7 +5,7 @@ import { StdinService } from '@/src/services/StdinService'
 /**
  * Create a mock StdinService that returns the given lines.
  */
-export const fromLines = (lines: readonly string[]): StdinService['Type'] =>
+export const fromLines = (lines: readonly string[]): StdinService['Service'] =>
   StdinService.of({
     readLines: () => Effect.succeed(lines) as Effect.Effect<readonly string[], CliError>,
   })

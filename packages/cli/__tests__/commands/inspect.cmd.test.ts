@@ -1,4 +1,5 @@
 import { describe, expect, layer } from '@effect/vitest'
+import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
 import { ksuid } from 'uniku/ksuid'
 import { ulid } from 'uniku/ulid'
@@ -8,8 +9,10 @@ import { CliError } from '@/src/domain/errors'
 import { cli, MockOutput, TestLive } from '../__utils__'
 
 describe('CLI: uniku inspect', () => {
+  const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'
+
   layer(TestLive())((it) => {
-    it.scoped('[Given] UUID v7 [Then] shows timestamp and random', () =>
+    it.effect('[Given] UUID v7 [Then] shows timestamp and random', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         const id = uuidv7()
@@ -21,7 +24,7 @@ describe('CLI: uniku inspect', () => {
       }),
     )
 
-    it.scoped('[Given] UUID v4 [Then] shows no-metadata note', () =>
+    it.effect('[Given] UUID v4 [Then] shows no-metadata note', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         const id = uuidv4()
@@ -32,7 +35,7 @@ describe('CLI: uniku inspect', () => {
       }),
     )
 
-    it.scoped('[Given] ULID [Then] shows timestamp', () =>
+    it.effect('[Given] ULID [Then] shows timestamp', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         const id = ulid()
@@ -43,7 +46,7 @@ describe('CLI: uniku inspect', () => {
       }),
     )
 
-    it.scoped('[Given] KSUID [Then] shows timestamp and random', () =>
+    it.effect('[Given] KSUID [Then] shows timestamp and random', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         const id = ksuid()
@@ -54,7 +57,7 @@ describe('CLI: uniku inspect', () => {
       }),
     )
 
-    it.scoped('[Given] --json [Then] outputs JSON result', () =>
+    it.effect('[Given] --json [Then] outputs JSON result', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         const id = uuidv7()
@@ -68,7 +71,7 @@ describe('CLI: uniku inspect', () => {
       }),
     )
 
-    it.scoped('[Given] --type uuid [Then] forces UUID inspection', () =>
+    it.effect('[Given] --type uuid [Then] forces UUID inspection', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         const id = uuidv4()
@@ -78,12 +81,32 @@ describe('CLI: uniku inspect', () => {
       }),
     )
 
-    it.scoped('[Given] unrecognizable ID [Then] returns UNKNOWN_ID_TYPE error', () =>
+    it.effect('[Given] dash-leading nanoid after end-of-options marker [Then] inspects it as an ID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['inspect', '--', dashLeadingNanoid])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('nanoid')
+        expect(output[0]).toContain('no decodable metadata')
+      }),
+    )
+
+    it.effect('[Given] flag-shaped nanoid after end-of-options marker [Then] treats it as an ID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['inspect', '--', '--json'])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('nanoid')
+        expect(output[0]).toContain('no decodable metadata')
+      }),
+    )
+
+    it.effect('[Given] unrecognizable ID [Then] returns UNKNOWN_ID_TYPE error', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         const result = yield* cli(['inspect', '!!!not-an-id!!!']).pipe(Effect.flip)
-        expect(result).toBeInstanceOf(CliError)
-        expect((result as CliError).code).toBe('UNKNOWN_ID_TYPE')
+        assertInstanceOf(result, CliError)
+        expect(result.code).toBe('UNKNOWN_ID_TYPE')
       }),
     )
   })

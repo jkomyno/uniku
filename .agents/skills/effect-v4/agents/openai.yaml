@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Effect v4'
+  short_description: 'Effect v4 patterns for uniku (effect@4.0.0-beta.x)'
+  default_prompt: 'Use the effect-v4 skill for deliberate Effect v4 work, especially migrating the uniku CLI from Effect v3 using repos/effect-smol as source.'

@@ -1,6 +1,7 @@
-import { Command, Options } from '@effect/cli'
+import * as Clock from 'effect/Clock'
 import * as Effect from 'effect/Effect'
 import * as Option from 'effect/Option'
+import { Command, Flag } from 'effect/unstable/cli'
 import { COUNT_DEFAULT, CUID_LENGTH_DEFAULT, NANOID_SIZE_DEFAULT, UUID_VERSION_DEFAULT } from '@/src/domain/constants'
 import { CliError } from '@/src/domain/errors'
 import { generateCuid } from '@/src/generators/cuid'
@@ -8,166 +9,200 @@ import { generateKsuid } from '@/src/generators/ksuid'
 import { generateNanoid } from '@/src/generators/nanoid'
 import { generateUlid } from '@/src/generators/ulid'
 import { generateUuid } from '@/src/generators/uuid'
-import { OutputService } from '@/src/services/OutputService'
+import { idsOutput, OutputService } from '@/src/services/OutputService'
 
-// ── Common options ──────────────────────────────────────────────────
+// ── Common flags ────────────────────────────────────────────────────
 
-const countOption = Options.integer('count').pipe(
-  Options.withAlias('n'),
-  Options.withDescription('Number of IDs to generate'),
-  Options.withDefault(COUNT_DEFAULT),
+const countFlag = Flag.integer('count').pipe(
+  Flag.withAlias('n'),
+  Flag.withDescription('Number of IDs to generate'),
+  Flag.withDefault(COUNT_DEFAULT),
 )
 
-const jsonOption = Options.boolean('json').pipe(Options.withDescription('Output as JSON'), Options.withDefault(false))
+const jsonFlag = Flag.boolean('json').pipe(Flag.withDescription('Output as JSON'), Flag.withDefault(false))
 
 // ── UUID subcommand ─────────────────────────────────────────────────
 
-const uuidVersionOption = Options.choiceWithValue('uuid-version', [
+const uuidVersionFlag = Flag.choiceWithValue('uuid-version', [
   ['4', 4],
   ['7', 7],
 ] as const).pipe(
-  Options.withAlias('v'),
-  Options.withDescription('UUID version: 4, 7'),
-  Options.withDefault(UUID_VERSION_DEFAULT as 4 | 7),
+  Flag.withAlias('v'),
+  Flag.withDescription('UUID version: 4, 7'),
+  Flag.withDefault(UUID_VERSION_DEFAULT as 4 | 7),
 )
 
-const lowercaseOption = Options.boolean('lowercase').pipe(
-  Options.withDescription('Output in lowercase'),
-  Options.withDefault(false),
+const lowercaseFlag = Flag.boolean('lowercase').pipe(
+  Flag.withDescription('Output in lowercase'),
+  Flag.withDefault(false),
 )
 
 const uuidSubcommand = Command.make(
   'uuid',
   {
-    count: countOption,
-    json: jsonOption,
-    version: uuidVersionOption,
-    lowercase: lowercaseOption,
+    count: countFlag,
+    json: jsonFlag,
+    version: uuidVersionFlag,
+    lowercase: lowercaseFlag,
   },
-  ({ count, json, version, lowercase }) =>
-    Effect.gen(function* () {
-      const output = yield* OutputService
-      const ids = yield* generateUuid({ count, version, lowercase })
-      yield* output.writeIds(ids, { json })
-    }),
-).pipe(Command.withDescription('Generate UUIDs (v4 or v7)'))
+  Effect.fn('cli.generate.uuid')(function* ({ count, json, version, lowercase }) {
+    const output = yield* OutputService
+    const ids = yield* generateUuid({ count, version, lowercase })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate UUIDs (v4 or v7)'),
+  Command.withExamples([
+    { command: 'uniku uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array (machine-readable)' },
+    { command: 'uniku uuid -v 7', description: 'Generate a time-sortable UUID v7' },
+    { command: 'uniku uuid', description: 'Generate one random UUID v4' },
+  ]),
+)
 
 // ── ULID subcommand ─────────────────────────────────────────────────
 
-const monotonicOption = Options.boolean('monotonic').pipe(
-  Options.withDescription('Generate monotonically increasing ULIDs'),
-  Options.withDefault(false),
+const monotonicFlag = Flag.boolean('monotonic').pipe(
+  Flag.withDescription('Generate monotonically increasing ULIDs'),
+  Flag.withDefault(false),
 )
 
-const ulidTimestampOption = Options.text('timestamp').pipe(
-  Options.withDescription('Unix timestamp in milliseconds (or "now")'),
-  Options.optional,
+const ulidTimestampFlag = Flag.string('timestamp').pipe(
+  Flag.withDescription('Unix timestamp in milliseconds (or "now")'),
+  Flag.optional,
 )
 
 const ulidSubcommand = Command.make(
   'ulid',
   {
-    count: countOption,
-    json: jsonOption,
-    monotonic: monotonicOption,
-    timestamp: ulidTimestampOption,
-    lowercase: lowercaseOption,
+    count: countFlag,
+    json: jsonFlag,
+    monotonic: monotonicFlag,
+    timestamp: ulidTimestampFlag,
+    lowercase: lowercaseFlag,
   },
-  ({ count, json, monotonic, timestamp: timestampOpt, lowercase }) =>
-    Effect.gen(function* () {
-      const output = yield* OutputService
-      const timestamp = Option.isSome(timestampOpt)
-        ? yield* parseTimestampMs(Option.getOrThrow(timestampOpt))
-        : undefined
-      const ids = yield* generateUlid({ count, monotonic, timestamp, lowercase })
-      yield* output.writeIds(ids, { json })
-    }),
-).pipe(Command.withDescription('Generate ULIDs'))
+  Effect.fn('cli.generate.ulid')(function* ({ count, json, monotonic, timestamp: timestampOpt, lowercase }) {
+    const output = yield* OutputService
+    const timestampInput = Option.getOrUndefined(timestampOpt)
+    const timestamp = timestampInput !== undefined ? yield* parseTimestampMs(timestampInput) : undefined
+    const ids = yield* generateUlid({ count, monotonic, timestamp, lowercase })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate ULIDs'),
+  Command.withExamples([
+    {
+      command: 'uniku ulid -n 10 --monotonic --json',
+      description: 'Generate 10 strictly ordered ULIDs as a JSON array',
+    },
+    { command: 'uniku ulid --timestamp 1720000000000', description: 'Generate a ULID for a fixed Unix timestamp (ms)' },
+  ]),
+)
 
 // ── Nanoid subcommand ───────────────────────────────────────────────
 
-const sizeOption = Options.integer('size').pipe(
-  Options.withAlias('s'),
-  Options.withDescription('Length of ID (1-256)'),
-  Options.withDefault(NANOID_SIZE_DEFAULT),
+const sizeFlag = Flag.integer('size').pipe(
+  Flag.withAlias('s'),
+  Flag.withDescription('Length of ID (1-256)'),
+  Flag.withDefault(NANOID_SIZE_DEFAULT),
 )
 
-const alphabetOption = Options.text('alphabet').pipe(
-  Options.withAlias('a'),
-  Options.withDescription('Custom alphabet or preset: hex, numeric, alpha'),
-  Options.optional,
+const alphabetFlag = Flag.string('alphabet').pipe(
+  Flag.withAlias('a'),
+  Flag.withDescription('Custom alphabet or preset: hex, numeric, alpha'),
+  Flag.optional,
 )
 
 const nanoidSubcommand = Command.make(
   'nanoid',
   {
-    count: countOption,
-    json: jsonOption,
-    size: sizeOption,
-    alphabet: alphabetOption,
+    count: countFlag,
+    json: jsonFlag,
+    size: sizeFlag,
+    alphabet: alphabetFlag,
   },
-  ({ count, json, size, alphabet: alphabetOpt }) =>
-    Effect.gen(function* () {
-      const output = yield* OutputService
-      const alphabet = Option.isSome(alphabetOpt) ? Option.getOrThrow(alphabetOpt) : undefined
-      const ids = yield* generateNanoid({ count, size, alphabet })
-      yield* output.writeIds(ids, { json })
-    }),
-).pipe(Command.withDescription('Generate Nanoids'))
+  Effect.fn('cli.generate.nanoid')(function* ({ count, json, size, alphabet: alphabetOpt }) {
+    const output = yield* OutputService
+    const alphabet = Option.getOrUndefined(alphabetOpt)
+    const ids = yield* generateNanoid({ count, size, alphabet })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate Nanoids'),
+  Command.withExamples([
+    { command: 'uniku nanoid -n 5 --json', description: 'Generate 5 Nanoids as a JSON array' },
+    { command: 'uniku nanoid --size 10 --alphabet hex', description: 'Generate a 10-char ID from the hex preset' },
+  ]),
+)
 
 // ── CUID subcommand ─────────────────────────────────────────────────
 
-const lengthOption = Options.integer('length').pipe(
-  Options.withAlias('l'),
-  Options.withDescription('Length of ID (2-32)'),
-  Options.withDefault(CUID_LENGTH_DEFAULT),
+const lengthFlag = Flag.integer('length').pipe(
+  Flag.withAlias('l'),
+  Flag.withDescription('Length of ID (2-32)'),
+  Flag.withDefault(CUID_LENGTH_DEFAULT),
 )
 
 const cuidSubcommand = Command.make(
   'cuid',
   {
-    count: countOption,
-    json: jsonOption,
-    length: lengthOption,
+    count: countFlag,
+    json: jsonFlag,
+    length: lengthFlag,
   },
-  ({ count, json, length }) =>
-    Effect.gen(function* () {
-      const output = yield* OutputService
-      const ids = yield* generateCuid({ count, length })
-      yield* output.writeIds(ids, { json })
-    }),
-).pipe(Command.withDescription('Generate CUIDs (v2)'))
+  Effect.fn('cli.generate.cuid')(function* ({ count, json, length }) {
+    const output = yield* OutputService
+    const ids = yield* generateCuid({ count, length })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate CUIDs (v2)'),
+  Command.withExamples([
+    { command: 'uniku cuid -n 5 --json', description: 'Generate 5 CUIDs as a JSON array' },
+    { command: 'uniku cuid --length 10', description: 'Generate a 10-char CUID' },
+  ]),
+)
 
 // ── KSUID subcommand ────────────────────────────────────────────────
 
-const ksuidTimestampOption = Options.text('timestamp').pipe(
-  Options.withDescription('Unix timestamp in seconds (or "now")'),
-  Options.optional,
+const ksuidTimestampFlag = Flag.string('timestamp').pipe(
+  Flag.withDescription('Unix timestamp in seconds (or "now")'),
+  Flag.optional,
 )
 
 const ksuidSubcommand = Command.make(
   'ksuid',
   {
-    count: countOption,
-    json: jsonOption,
-    timestamp: ksuidTimestampOption,
+    count: countFlag,
+    json: jsonFlag,
+    timestamp: ksuidTimestampFlag,
   },
-  ({ count, json, timestamp: timestampOpt }) =>
-    Effect.gen(function* () {
-      const output = yield* OutputService
-      const timestamp = Option.isSome(timestampOpt)
-        ? yield* parseTimestampSecs(Option.getOrThrow(timestampOpt))
-        : undefined
-      const ids = yield* generateKsuid({ count, timestamp })
-      yield* output.writeIds(ids, { json })
-    }),
-).pipe(Command.withDescription('Generate KSUIDs'))
+  Effect.fn('cli.generate.ksuid')(function* ({ count, json, timestamp: timestampOpt }) {
+    const output = yield* OutputService
+    const timestampInput = Option.getOrUndefined(timestampOpt)
+    const timestamp = timestampInput !== undefined ? yield* parseTimestampSecs(timestampInput) : undefined
+    const ids = yield* generateKsuid({ count, timestamp })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate KSUIDs'),
+  Command.withExamples([
+    { command: 'uniku ksuid -n 5 --json', description: 'Generate 5 KSUIDs as a JSON array' },
+    { command: 'uniku ksuid --timestamp 1720000000', description: 'Generate a KSUID for a fixed Unix timestamp (s)' },
+  ]),
+)
 
 // ── Generate parent command ─────────────────────────────────────────
 
 export const generateCommand = Command.make('generate').pipe(
   Command.withDescription('Generate new IDs'),
   Command.withSubcommands([uuidSubcommand, ulidSubcommand, nanoidSubcommand, cuidSubcommand, ksuidSubcommand]),
+  Command.withExamples([
+    { command: 'uniku generate uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array' },
+    {
+      command: 'uniku generate ulid',
+      description: 'Generate one ULID (subcommands also work top-level: `uniku ulid`)',
+    },
+  ]),
 )
 
 // ── Shorthand commands (top-level: `uniku uuid`, `uniku ulid`, etc.) ─
@@ -180,17 +215,23 @@ export const ksuidShorthand = ksuidSubcommand
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-const parseTimestampMs = (input: string): Effect.Effect<number, CliError> =>
-  parseTimestamp(input, () => Date.now(), 'Provide a Unix timestamp in milliseconds or "now"')
-
-const parseTimestampSecs = (input: string): Effect.Effect<number, CliError> =>
-  parseTimestamp(input, () => Math.floor(Date.now() / 1000), 'Provide a Unix timestamp in seconds or "now"')
-
-function parseTimestamp(input: string, now: () => number, hint: string): Effect.Effect<number, CliError> {
-  if (input === 'now') return Effect.sync(now)
+const parseTimestamp = Effect.fn('cli.generate.parseTimestamp')(function* (
+  input: string,
+  fromMillis: (millis: number) => number,
+  hint: string,
+) {
+  if (input === 'now') {
+    return fromMillis(yield* Clock.currentTimeMillis)
+  }
   const n = Number(input)
   if (!Number.isFinite(n) || n < 0) {
-    return Effect.fail(new CliError('INVALID_TIMESTAMP', `Invalid timestamp: "${input}"`, hint))
+    return yield* new CliError({ code: 'INVALID_TIMESTAMP', message: `Invalid timestamp: "${input}"`, hint })
   }
-  return Effect.succeed(n)
-}
+  return n
+})
+
+const parseTimestampMs = (input: string): Effect.Effect<number, CliError> =>
+  parseTimestamp(input, (millis) => millis, 'Provide a Unix timestamp in milliseconds or "now"')
+
+const parseTimestampSecs = (input: string): Effect.Effect<number, CliError> =>
+  parseTimestamp(input, (millis) => Math.floor(millis / 1000), 'Provide a Unix timestamp in seconds or "now"')

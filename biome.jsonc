@@ -18,7 +18,10 @@
       "!**/coverage",
       "!**/dist",
       "!**/.turbo",
-      "!public"
+      "!public",
+      // Read-only source clone of effect-smol (git submodule) — never lint.
+      "!repos",
+      "!plans"
     ]
   },
   "overrides": [

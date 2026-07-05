@@ -1,21 +1,22 @@
 import { describe, expect, layer } from '@effect/vitest'
+import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
 import { CliError } from '@/src/domain/errors'
-import { cli, MockConsole, MockOutput, TestLive } from '../__utils__'
+import { cli, MockOutput, TestConsole, TestLive } from '../__utils__'
 
 const expectCliRejects = (args: ReadonlyArray<string>) =>
   Effect.gen(function* () {
     yield* MockOutput.reset
     const didSucceed = yield* cli(args).pipe(
       Effect.as(true),
-      Effect.catchAll(() => Effect.succeed(false)),
+      Effect.catch(() => Effect.succeed(false)),
     )
     expect(didSucceed).toBe(false)
   })
 
 describe('CLI: uniku generate uuid', () => {
   layer(TestLive())((it) => {
-    it.scoped('[Given] generate uuid [Then] generates 1 UUID v4', () =>
+    it.effect('[Given] generate uuid [Then] generates 1 UUID v4', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'uuid'])
@@ -25,7 +26,7 @@ describe('CLI: uniku generate uuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate uuid -n 3 [Then] generates 3 UUIDs', () =>
+    it.effect('[Given] generate uuid -n 3 [Then] generates 3 UUIDs', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'uuid', '-n', '3'])
@@ -34,7 +35,7 @@ describe('CLI: uniku generate uuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate uuid -v 7 [Then] generates UUID v7', () =>
+    it.effect('[Given] generate uuid -v 7 [Then] generates UUID v7', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'uuid', '-v', '7'])
@@ -44,7 +45,7 @@ describe('CLI: uniku generate uuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate uuid --json [Then] outputs JSON string', () =>
+    it.effect('[Given] generate uuid --json [Then] outputs JSON string', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'uuid', '--json'])
@@ -55,7 +56,7 @@ describe('CLI: uniku generate uuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate uuid --json -n 2 [Then] outputs JSON array', () =>
+    it.effect('[Given] generate uuid --json -n 2 [Then] outputs JSON array', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'uuid', '--json', '-n', '2'])
@@ -67,7 +68,7 @@ describe('CLI: uniku generate uuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate uuid --lowercase [Then] output is lowercase', () =>
+    it.effect('[Given] generate uuid --lowercase [Then] output is lowercase', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'uuid', '--lowercase'])
@@ -76,7 +77,7 @@ describe('CLI: uniku generate uuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate uuid -l [Then] rejects the removed lowercase alias', () =>
+    it.effect('[Given] generate uuid -l [Then] rejects the removed lowercase alias', () =>
       expectCliRejects(['generate', 'uuid', '-l']),
     )
   })
@@ -84,7 +85,7 @@ describe('CLI: uniku generate uuid', () => {
 
 describe('CLI: uniku generate ulid', () => {
   layer(TestLive())((it) => {
-    it.scoped('[Given] generate ulid [Then] generates 1 ULID', () =>
+    it.effect('[Given] generate ulid [Then] generates 1 ULID', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'ulid'])
@@ -94,7 +95,7 @@ describe('CLI: uniku generate ulid', () => {
       }),
     )
 
-    it.scoped('[Given] generate ulid --json [Then] outputs JSON', () =>
+    it.effect('[Given] generate ulid --json [Then] outputs JSON', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'ulid', '--json'])
@@ -104,24 +105,18 @@ describe('CLI: uniku generate ulid', () => {
       }),
     )
 
-    it.scoped('[Given] generate ulid -l [Then] rejects the removed lowercase alias', () =>
+    it.effect('[Given] generate ulid -l [Then] rejects the removed lowercase alias', () =>
       expectCliRejects(['generate', 'ulid', '-l']),
     )
 
-    it.scoped('[Given] generate ulid --timestamp abc [Then] fails with a CliError', () =>
+    it.effect('[Given] generate ulid --timestamp abc [Then] fails with a CliError', () =>
       Effect.gen(function* () {
-        const result = yield* cli(['generate', 'ulid', '--timestamp', 'abc']).pipe(Effect.either)
+        const error = yield* cli(['generate', 'ulid', '--timestamp', 'abc']).pipe(Effect.flip)
 
-        expect(result._tag).toBe('Left')
-        if (result._tag === 'Left') {
-          const error = result.left
-          expect(error).toBeInstanceOf(CliError)
-          if (error instanceof CliError) {
-            expect(error.code).toBe('INVALID_TIMESTAMP')
-            expect(error.message).toBe('Invalid timestamp: "abc"')
-            expect(error.hint).toBe('Provide a Unix timestamp in milliseconds or "now"')
-          }
-        }
+        assertInstanceOf(error, CliError)
+        expect(error.code).toBe('INVALID_TIMESTAMP')
+        expect(error.message).toBe('Invalid timestamp: "abc"')
+        expect(error.hint).toBe('Provide a Unix timestamp in milliseconds or "now"')
       }),
     )
   })
@@ -129,7 +124,7 @@ describe('CLI: uniku generate ulid', () => {
 
 describe('CLI: uniku generate nanoid', () => {
   layer(TestLive())((it) => {
-    it.scoped('[Given] generate nanoid [Then] generates 1 nanoid (size=21)', () =>
+    it.effect('[Given] generate nanoid [Then] generates 1 nanoid (size=21)', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'nanoid'])
@@ -139,7 +134,7 @@ describe('CLI: uniku generate nanoid', () => {
       }),
     )
 
-    it.scoped('[Given] generate nanoid --size 10 [Then] generates nanoid of length 10', () =>
+    it.effect('[Given] generate nanoid --size 10 [Then] generates nanoid of length 10', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'nanoid', '--size', '10'])
@@ -148,7 +143,7 @@ describe('CLI: uniku generate nanoid', () => {
       }),
     )
 
-    it.scoped('[Given] generate nanoid --alphabet hex [Then] output is hex chars only', () =>
+    it.effect('[Given] generate nanoid --alphabet hex [Then] output is hex chars only', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'nanoid', '--alphabet', 'hex'])
@@ -161,7 +156,7 @@ describe('CLI: uniku generate nanoid', () => {
 
 describe('CLI: uniku generate cuid', () => {
   layer(TestLive())((it) => {
-    it.scoped('[Given] generate cuid [Then] generates 1 CUID (length=24)', () =>
+    it.effect('[Given] generate cuid [Then] generates 1 CUID (length=24)', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'cuid'])
@@ -171,7 +166,7 @@ describe('CLI: uniku generate cuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate cuid --length 10 [Then] generates CUID of length 10', () =>
+    it.effect('[Given] generate cuid --length 10 [Then] generates CUID of length 10', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'cuid', '--length', '10'])
@@ -180,7 +175,7 @@ describe('CLI: uniku generate cuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate cuid -l 10 [Then] generates CUID of length 10', () =>
+    it.effect('[Given] generate cuid -l 10 [Then] generates CUID of length 10', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'cuid', '-l', '10'])
@@ -193,7 +188,7 @@ describe('CLI: uniku generate cuid', () => {
 
 describe('CLI: uniku generate ksuid', () => {
   layer(TestLive())((it) => {
-    it.scoped('[Given] generate ksuid [Then] generates 1 KSUID', () =>
+    it.effect('[Given] generate ksuid [Then] generates 1 KSUID', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'ksuid'])
@@ -204,7 +199,7 @@ describe('CLI: uniku generate ksuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate ksuid --json [Then] outputs JSON', () =>
+    it.effect('[Given] generate ksuid --json [Then] outputs JSON', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'ksuid', '--json'])
@@ -214,20 +209,14 @@ describe('CLI: uniku generate ksuid', () => {
       }),
     )
 
-    it.scoped('[Given] generate ksuid --timestamp abc [Then] fails with a CliError', () =>
+    it.effect('[Given] generate ksuid --timestamp abc [Then] fails with a CliError', () =>
       Effect.gen(function* () {
-        const result = yield* cli(['generate', 'ksuid', '--timestamp', 'abc']).pipe(Effect.either)
+        const error = yield* cli(['generate', 'ksuid', '--timestamp', 'abc']).pipe(Effect.flip)
 
-        expect(result._tag).toBe('Left')
-        if (result._tag === 'Left') {
-          const error = result.left
-          expect(error).toBeInstanceOf(CliError)
-          if (error instanceof CliError) {
-            expect(error.code).toBe('INVALID_TIMESTAMP')
-            expect(error.message).toBe('Invalid timestamp: "abc"')
-            expect(error.hint).toBe('Provide a Unix timestamp in seconds or "now"')
-          }
-        }
+        assertInstanceOf(error, CliError)
+        expect(error.code).toBe('INVALID_TIMESTAMP')
+        expect(error.message).toBe('Invalid timestamp: "abc"')
+        expect(error.hint).toBe('Provide a Unix timestamp in seconds or "now"')
       }),
     )
   })
@@ -235,7 +224,7 @@ describe('CLI: uniku generate ksuid', () => {
 
 describe('CLI: shorthand commands', () => {
   layer(TestLive())((it) => {
-    it.scoped('[Given] uniku uuid [Then] same as generate uuid', () =>
+    it.effect('[Given] uniku uuid [Then] same as generate uuid', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['uuid'])
@@ -245,7 +234,7 @@ describe('CLI: shorthand commands', () => {
       }),
     )
 
-    it.scoped('[Given] uniku uuid --uuid-version 7 [Then] generates UUID v7', () =>
+    it.effect('[Given] uniku uuid --uuid-version 7 [Then] generates UUID v7', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['uuid', '--uuid-version', '7'])
@@ -255,18 +244,18 @@ describe('CLI: shorthand commands', () => {
       }),
     )
 
-    it.scoped('[Given] uniku uuid --version [Then] prints CLI version', () =>
+    it.effect('[Given] uniku uuid --version [Then] prints CLI version', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['uuid', '--version'])
         const output = yield* MockOutput.getStdout
-        const lines = yield* MockConsole.getLines({ stripAnsi: true })
+        const lines = yield* TestConsole.getLines({ stripAnsi: true })
         expect(output).toHaveLength(0)
         expect(lines.join('\n')).toContain('0.0.0-test')
       }),
     )
 
-    it.scoped('[Given] uniku ulid [Then] same as generate ulid', () =>
+    it.effect('[Given] uniku ulid [Then] same as generate ulid', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['ulid'])
@@ -276,7 +265,7 @@ describe('CLI: shorthand commands', () => {
       }),
     )
 
-    it.scoped('[Given] uniku nanoid [Then] same as generate nanoid', () =>
+    it.effect('[Given] uniku nanoid [Then] same as generate nanoid', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['nanoid'])
@@ -286,7 +275,7 @@ describe('CLI: shorthand commands', () => {
       }),
     )
 
-    it.scoped('[Given] uniku cuid [Then] same as generate cuid', () =>
+    it.effect('[Given] uniku cuid [Then] same as generate cuid', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['cuid'])
@@ -296,7 +285,7 @@ describe('CLI: shorthand commands', () => {
       }),
     )
 
-    it.scoped('[Given] uniku ksuid [Then] same as generate ksuid', () =>
+    it.effect('[Given] uniku ksuid [Then] same as generate ksuid', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['ksuid'])

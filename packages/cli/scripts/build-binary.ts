@@ -7,9 +7,10 @@
  *   bun scripts/build-binary.ts --target=bun-darwin-arm64 --name=uniku-darwin-arm64
  */
 
-import { Command } from '@effect/platform'
-import { BunContext, BunRuntime } from '@effect/platform-bun'
+import * as BunRuntime from '@effect/platform-bun/BunRuntime'
+import * as BunServices from '@effect/platform-bun/BunServices'
 import { Console, Effect } from 'effect'
+import { exec } from './exec'
 
 // ── Platform detection ──────────────────────────────────────────────
 
@@ -52,19 +53,6 @@ function parseArgs(argv: readonly string[]) {
 }
 
 // ── Build steps ─────────────────────────────────────────────────────
-
-const exec = (label: string, cmd: string, ...args: Array<string>) =>
-  Effect.gen(function* () {
-    yield* Console.log(`  ${label}`)
-
-    const command = Command.make(cmd, ...args).pipe(Command.stdout('inherit'), Command.stderr('inherit'))
-
-    const exitCode = yield* Command.exitCode(command)
-
-    if (exitCode !== 0) {
-      return yield* Effect.fail(new Error(`"${cmd} ${args.join(' ')}" exited with code ${exitCode}`))
-    }
-  })
 
 const computeSha256 = (filePath: string) =>
   Effect.gen(function* () {
@@ -122,12 +110,12 @@ const program = Effect.gen(function* () {
 // ── Run ─────────────────────────────────────────────────────────────
 
 program.pipe(
-  Effect.catchAll((err) =>
+  Effect.catch((err) =>
     Effect.sync(() => {
       process.stderr.write(`Build failed: ${err instanceof Error ? err.message : String(err)}\n`)
       process.exitCode = 1
     }),
   ),
-  Effect.provide(BunContext.layer),
+  Effect.provide(BunServices.layer),
   BunRuntime.runMain,
 )

@@ -1,6 +1,5 @@
 export { cli } from './cli'
-export * as MockConsole from './services/mock-console'
 export * as MockOutput from './services/mock-output'
-export * as MockTerminal from './services/mock-terminal'
 export * as MockUpdateCheck from './services/mock-update-check'
+export * as TestConsole from './services/test-console'
 export { TestLive } from './services/test-layer'

@@ -1,14 +1,18 @@
-import * as ValidationError from '@effect/cli/ValidationError'
 import { describe, expect, layer } from '@effect/vitest'
+import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
-import { cli, MockConsole, TestLive } from '../__utils__'
+import { CliError as CliFrameworkError } from 'effect/unstable/cli'
+import { exitCodeFor } from '@/src/runtime/cli-failure'
+import { cli, TestConsole, TestLive } from '../__utils__'
 
+// Each test gets its own layer block so TestConsole starts empty — its
+// captured lines accumulate for the lifetime of a layer.
 describe('CLI: uniku root', () => {
-  layer(TestLive())((it) => {
-    it.scoped('[Given] --help flag [Then] prints help text', () =>
+  layer(TestLive())('--help', (it) => {
+    it.effect('[Given] --help flag [Then] prints help text', () =>
       Effect.gen(function* () {
         yield* cli(['--help'])
-        const lines = yield* MockConsole.getLines()
+        const lines = yield* TestConsole.getLines()
         const output = lines.join('\n')
         expect(output).toContain('uniku')
         expect(output).toContain('generate')
@@ -16,28 +20,50 @@ describe('CLI: uniku root', () => {
         expect(output).toContain('inspect')
       }),
     )
+  })
 
-    it.scoped('[Given] --version flag [Then] prints version', () =>
+  layer(TestLive())('--version', (it) => {
+    it.effect('[Given] --version flag [Then] prints version', () =>
       Effect.gen(function* () {
         yield* cli(['--version'])
-        const lines = yield* MockConsole.getLines()
+        const lines = yield* TestConsole.getLines()
         const output = lines.join('\n')
         expect(output).toContain('0.0.0-test')
       }),
     )
+  })
 
-    it.scoped('[Given] unknown subcommand [Then] returns ValidationError', () =>
+  layer(TestLive())('bare invocation', (it) => {
+    it.effect('[Given] no arguments [Then] shows help and maps to exit 0', () =>
       Effect.gen(function* () {
-        const result = yield* cli(['nonexistent']).pipe(Effect.catchAll((e) => Effect.succeed(e)))
-        expect(ValidationError.isValidationError(result)).toBe(true)
-        if (ValidationError.isValidationError(result)) {
-          expect(result._tag).toBe('CommandMismatch')
-        }
+        const error = yield* cli([]).pipe(Effect.flip)
 
-        const lines = yield* MockConsole.getLines({ stripAnsi: true })
+        assertInstanceOf(error, CliFrameworkError.ShowHelp)
+        expect(error.errors).toHaveLength(0)
+        expect(exitCodeFor(error)).toBe(0)
+
+        const lines = yield* TestConsole.getLines({ stripAnsi: true })
         const output = lines.join('\n')
         expect(output).toContain('USAGE')
-        expect(output).toContain('COMMANDS')
+        expect(output).toContain('SUBCOMMANDS')
+      }),
+    )
+  })
+
+  layer(TestLive())('unknown subcommand', (it) => {
+    it.effect('[Given] unknown subcommand [Then] fails with ShowHelp wrapping UnknownSubcommand', () =>
+      Effect.gen(function* () {
+        const error = yield* cli(['nonexistent']).pipe(Effect.flip)
+
+        assertInstanceOf(error, CliFrameworkError.ShowHelp)
+        expect(error.errors).toHaveLength(1)
+        assertInstanceOf(error.errors[0], CliFrameworkError.UnknownSubcommand)
+        expect(exitCodeFor(error)).toBe(1)
+
+        const lines = yield* TestConsole.getLines({ stripAnsi: true })
+        const output = lines.join('\n')
+        expect(output).toContain('USAGE')
+        expect(output).toContain('SUBCOMMANDS')
         expect(output).toContain('generate')
       }),
     )

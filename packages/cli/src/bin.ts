@@ -1,74 +1,51 @@
 #!/usr/bin/env node
 
-import { BunContext, BunRuntime } from '@effect/platform-bun'
+// Deep imports: the package barrel pulls in modules that import the `bun`
+// builtin, which does not exist when the published bin runs under Node.
+import * as BunRuntime from '@effect/platform-bun/BunRuntime'
+import * as BunServices from '@effect/platform-bun/BunServices'
 import * as Duration from 'effect/Duration'
 import * as Effect from 'effect/Effect'
 import * as Fiber from 'effect/Fiber'
 import * as Layer from 'effect/Layer'
 import * as Option from 'effect/Option'
 import { makeCliRunner } from '@/src/commands'
+import { preprocessArgs } from '@/src/runtime/args'
 import { handleCliFailure } from '@/src/runtime/cli-failure'
-import { OutputService, OutputServiceLive } from '@/src/services/OutputService'
-import { StdinService, StdinServiceLive } from '@/src/services/StdinService'
-import { shouldNotifyUpdate, UpdateCheckService, UpdateCheckServiceLive } from '@/src/services/UpdateCheckService'
+import { OutputService } from '@/src/services/OutputService'
+import { StdinService } from '@/src/services/StdinService'
+import { shouldNotifyUpdate, UpdateCheckService } from '@/src/services/UpdateCheckService'
 import pkg from '../package.json' with { type: 'json' }
 
 // ── CLI runner ──────────────────────────────────────────────────────
 
-const cli = makeCliRunner(pkg.version)
-
-// ── Arg preprocessing ───────────────────────────────────────────────
-
-export function preprocessArgs(argv: readonly string[]): string[] {
-  const args = [...argv]
-
-  // Replace -V with --version (Effect CLI doesn't alias -V by default)
-  for (let i = 2; i < args.length; i++) {
-    if (args[i] === '-V') {
-      args[i] = '--version'
-    }
-  }
-
-  // If no command args beyond the executable path, inject --help
-  // argv is typically: [bun, script.ts, ...userArgs]
-  if (args.length <= 2) {
-    args.push('--help')
-  }
-
-  return args
-}
+const runCli = makeCliRunner(pkg.version)
 
 // ── Service layers ──────────────────────────────────────────────────
 
-const ServicesLayer = Layer.mergeAll(
-  Layer.succeed(OutputService, OutputServiceLive),
-  Layer.succeed(StdinService, StdinServiceLive),
-  Layer.succeed(UpdateCheckService, UpdateCheckServiceLive),
-)
-
-const MainLayer = Layer.mergeAll(ServicesLayer, BunContext.layer)
+const MainLayer = Layer.mergeAll(OutputService.layer, StdinService.layer, UpdateCheckService.layer, BunServices.layer)
 
 // ── Run ─────────────────────────────────────────────────────────────
 
 const program = Effect.gen(function* () {
   const updateCheck = yield* UpdateCheckService
-  const args = preprocessArgs(process.argv)
+  // Drop the executable and script path — Command.runWith takes user args only.
+  const args = preprocessArgs(process.argv.slice(2))
 
   // Fork update check as a background fiber
-  const fiber = yield* Effect.fork(updateCheck.check(pkg.version))
+  const fiber = yield* Effect.forkChild(updateCheck.check(pkg.version), { startImmediately: true })
 
   // Run the main CLI command
-  yield* Effect.suspend(() => cli(args)).pipe(Effect.catchAll((err) => handleCliFailure(err, args)))
+  yield* runCli(args).pipe(Effect.catch((error) => handleCliFailure(error, args)))
 
-  // After main command, join fiber with timeout
-  const result = yield* Fiber.join(fiber).pipe(
-    Effect.timeout(Duration.millis(250)),
-    Effect.catchAll(() => Effect.succeed(Option.none())),
-  )
+  // After the main command, wait briefly for the update check, then interrupt
+  // it — v4's runtime keeps the process alive while fibers are suspended.
+  const result = yield* Fiber.join(fiber).pipe(Effect.timeoutOption(Duration.millis(250)))
+  yield* Fiber.interrupt(fiber)
 
-  // Show notification unless --json is active
-  if (shouldNotifyUpdate(args, result)) {
-    yield* updateCheck.notify(result.value)
+  const update = Option.flatten(result)
+  if (shouldNotifyUpdate(args, update)) {
+    yield* updateCheck.notify(update.value)
   }
 })
 
