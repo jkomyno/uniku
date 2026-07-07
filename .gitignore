@@ -52,3 +52,6 @@ bench-results.json
 
 # OS files
 .DS_Store
+
+# Planning artifacts (local-only, not committed)
+/docs/plans/
