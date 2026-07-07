@@ -8,6 +8,7 @@ import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid, URL_ALPHABET } from 'uniku/nanoid'
 import { objectid } from 'uniku/objectid'
+import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -21,7 +22,7 @@ const app = new Hono()
 app.get('/', (c) => {
   return c.json({
     message: 'uniku E2E Test Worker',
-    generators: ['uuid-v4', 'uuid-v7', 'typeid', 'ulid', 'ksuid', 'objectid', 'cuid2', 'nanoid'],
+    generators: ['uuid-v4', 'uuid-v7', 'typeid', 'ulid', 'ksuid', 'objectid', 'tsid', 'cuid2', 'nanoid'],
   })
 })
 
@@ -525,6 +526,103 @@ app.get('/objectid/validate', (c) => {
 app.get('/objectid/monotonic', (c) => {
   try {
     const ids = Array.from({ length: 100 }, () => objectid())
+    const sorted = [...ids].sort()
+    const isMonotonic = ids.every((id, i) => id === sorted[i])
+    return c.json({
+      success: true,
+      count: ids.length,
+      isMonotonic,
+      first: ids[0],
+      last: ids[ids.length - 1],
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================================================
+// TSID Endpoints
+// ============================================================================
+//
+// TSID's primary type is `bigint` (unlike every other generator in this
+// suite), and Hono's `c.json()` calls `JSON.stringify` internally, which
+// throws `TypeError: Do not know how to serialize a BigInt` on a raw bigint.
+// Every route below MUST convert any bigint to its canonical string form via
+// `tsid.toString(id)` before it reaches `c.json()`.
+
+app.get('/tsid/generate', (c) => {
+  try {
+    const id = tsid()
+    return c.json({ success: true, id: tsid.toString(id) })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/tsid/generate-batch', (c) => {
+  try {
+    const count = Number(c.req.query('count') || '1000')
+    const ids = Array.from({ length: count }, () => tsid.toString(tsid()))
+    return c.json({ success: true, ids, count: ids.length })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/tsid/to-bytes', (c) => {
+  try {
+    const id = tsid()
+    const bytes = tsid.toBytes(id)
+    const restored = tsid.fromBytes(bytes)
+    return c.json({
+      success: true,
+      original: tsid.toString(id),
+      bytes: Array.from(bytes),
+      restored: tsid.toString(restored),
+      roundTripMatch: id === restored,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/tsid/timestamp', (c) => {
+  try {
+    const before = Date.now()
+    const id = tsid()
+    const after = Date.now()
+    const timestamp = tsid.timestamp(id)
+    // TSID has full millisecond resolution (no rounding), unlike ksuid/objectid.
+    return c.json({
+      success: true,
+      id: tsid.toString(id),
+      timestamp,
+      before,
+      after,
+      withinRange: timestamp >= before && timestamp <= after,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/tsid/validate', (c) => {
+  try {
+    const validId = tsid()
+    return c.json({
+      success: true,
+      validId: tsid.toString(validId),
+      isValidGenerated: tsid.isValid(validId),
+      isValidInvalid: tsid.isValid('not-a-tsid'),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/tsid/monotonic', (c) => {
+  try {
+    const ids = Array.from({ length: 100 }, () => tsid.toString(tsid()))
     const sorted = [...ids].sort()
     const isMonotonic = ids.every((id, i) => id === sorted[i])
     return c.json({

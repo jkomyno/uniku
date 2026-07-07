@@ -1,8 +1,8 @@
 # Reference Notes
 
 This directory keeps hand-written implementation notes for the ID formats used by
-uniku. The `ulid.txt`, `cuid2.txt`, `nanoid.txt`, `ksuid.txt`, and `objectid.txt`
-files are local summaries, not canonical specifications.
+uniku. The `ulid.txt`, `cuid2.txt`, `nanoid.txt`, `ksuid.txt`, `objectid.txt`, and
+`tsid.txt` files are local summaries, not canonical specifications.
 
 Canonical UUID references live on the RFC Editor site:
 

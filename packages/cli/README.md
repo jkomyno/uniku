@@ -5,7 +5,7 @@
 
 Command-line tool for generating, validating, and inspecting unique identifiers.
 
-Supports UUID v4/v7, ULID, TypeID, CUID2, Nanoid, KSUID, and MongoDB ObjectID.
+Supports UUID v4/v7, ULID, TypeID, CUID2, Nanoid, KSUID, MongoDB ObjectID, and TSID.
 
 ## Installation
 
@@ -93,6 +93,16 @@ uniku objectid
 # ObjectID for a fixed Unix timestamp (s)
 uniku objectid --timestamp 1720000000
 
+# TSID (64-bit Snowflake-style, time-sorted)
+uniku tsid
+# => 0QXW2CK4XZM2A
+
+# TSID for a fixed Unix timestamp (ms) - note: milliseconds, unlike ObjectID/KSUID's seconds
+uniku tsid --timestamp 1720000000000
+
+# TSID for a fixed node ID
+uniku tsid --node 42 --node-bits 10
+
 # Output as JSON
 uniku uuid --count 3 --json
 ```
@@ -137,7 +147,7 @@ uniku inspect user_01h2xcejqtf2nbrexx3vqjhp41
 uniku inspect --json 018e5e5c-7c8a-7000-8000-000000000000
 ```
 
-For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID), inspect extracts the embedded timestamp. For random-only IDs (UUID v4, CUID2, Nanoid), it reports that no decodable metadata is available.
+For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID, TSID), inspect extracts the embedded timestamp. For random-only IDs (UUID v4, CUID2, Nanoid), it reports that no decodable metadata is available. Timestamp precision varies by generator: UUID v7, ULID, and TSID are millisecond-precision, while KSUID and ObjectID are second-precision.
 
 ## Commands Reference
 
@@ -150,6 +160,7 @@ For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID), inspect extracts 
 | `uniku cuid` | Generate CUIDs (v2) |
 | `uniku ksuid` | Generate KSUIDs |
 | `uniku objectid` | Generate MongoDB ObjectIDs |
+| `uniku tsid` | Generate TSIDs (64-bit Snowflake-style, time-sorted) |
 | `uniku validate <id>` | Check if an ID is valid |
 | `uniku inspect <id>` | Decode and inspect an ID |
 
@@ -177,12 +188,15 @@ For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID), inspect extracts 
 | `cuid` | `--length` | `-l` | Length of ID, 2-32 (default: 24) |
 | `ksuid` | `--timestamp` | | Unix timestamp in seconds or "now" |
 | `objectid` | `--timestamp` | | Unix timestamp in seconds or "now" |
+| `tsid` | `--timestamp` | | Unix timestamp in milliseconds or "now" |
+| `tsid` | `--node` | | Node ID (0 to 2^node-bits - 1) |
+| `tsid` | `--node-bits` | | Number of bits allocated to the node ID, 0-20 (default: 10) |
 
 ### Validate Options
 
 | Option | Description |
 |--------|-------------|
-| `--type` | Expected ID type: uuid, ulid, typeid, nanoid, cuid, ksuid, objectid (auto-detected if omitted) |
+| `--type` | Expected ID type: uuid, ulid, typeid, nanoid, cuid, ksuid, objectid, tsid (auto-detected if omitted) |
 | `--stdin` | Read IDs from stdin (one per line) |
 | `--quiet` | No output, exit code only (0 = valid, 2 = invalid) |
 | `--json` | Output as JSON |
@@ -191,7 +205,7 @@ For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID), inspect extracts 
 
 | Option | Description |
 |--------|-------------|
-| `--type` | ID type: uuid, ulid, typeid, nanoid, cuid, ksuid, objectid (auto-detected if omitted) |
+| `--type` | ID type: uuid, ulid, typeid, nanoid, cuid, ksuid, objectid, tsid (auto-detected if omitted) |
 | `--json` | Output as JSON |
 
 ## Tech Stack

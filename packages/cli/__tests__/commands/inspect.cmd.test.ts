@@ -3,6 +3,7 @@ import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
 import { ksuid } from 'uniku/ksuid'
 import { objectid } from 'uniku/objectid'
+import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -81,6 +82,39 @@ describe('CLI: uniku inspect', () => {
         expect(parsed.timestamp).toBeDefined()
         expect(parsed.timestamp_ms).toBeTypeOf('number')
         expect(parsed.random).toHaveLength(16)
+      }),
+    )
+
+    it.effect('[Given] TSID [Then] shows timestamp and random', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = tsid.toString(tsid())
+        yield* cli(['inspect', id])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('tsid')
+        expect(output[0]).toContain('Timestamp:')
+        expect(output[0]).toContain('Random:')
+      }),
+    )
+
+    it.effect('[Given] --type tsid [Then] skips auto-detection and returns the same result', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = tsid.toString(tsid())
+        yield* cli(['inspect', id, '--type', 'tsid', '--json'])
+        const output = yield* MockOutput.getStdout
+        const parsed = JSON.parse(output[0])
+        expect(parsed.type).toBe('tsid')
+        expect(parsed.timestamp).toBeDefined()
+        expect(parsed.timestamp_ms).toBeTypeOf('number')
+        // Combined node+counter tail: 22 bits, up to 6 hex chars.
+        expect(parsed.random).toMatch(/^[0-9a-f]{1,6}$/)
+
+        // Auto-detection should produce the exact same result.
+        yield* MockOutput.reset
+        yield* cli(['inspect', id, '--json'])
+        const autoOutput = yield* MockOutput.getStdout
+        expect(JSON.parse(autoOutput[0])).toEqual(parsed)
       }),
     )
 

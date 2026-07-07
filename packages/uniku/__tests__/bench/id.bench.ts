@@ -3,6 +3,7 @@ import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
+import { tsid } from '@/src/tsid/tsid'
 import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
@@ -96,6 +97,14 @@ describe('ID Generation', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'tsid',
+    () => {
+      tsid()
+    },
+    benchOptions,
+  )
 })
 
 // === toBytes Benchmarks ===
@@ -107,6 +116,7 @@ describe('ID toBytes', () => {
   const typeidString = typeid('user')
   const ksuidString = ksuid()
   const objectidString = objectid()
+  const tsidId = tsid()
 
   bench(
     'uuidv4.toBytes',
@@ -155,6 +165,14 @@ describe('ID toBytes', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'tsid.toBytes',
+    () => {
+      tsid.toBytes(tsidId)
+    },
+    benchOptions,
+  )
 })
 
 // === fromBytes Benchmarks ===
@@ -166,6 +184,7 @@ describe('ID fromBytes', () => {
   const typeidBytes = typeid.toBytes(typeid('user'))
   const ksuidBytes = ksuid.toBytes(ksuid())
   const objectidBytes = objectid.toBytes(objectid())
+  const tsidBytes = tsid.toBytes(tsid())
 
   bench(
     'uuidv4.fromBytes',
@@ -214,6 +233,14 @@ describe('ID fromBytes', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'tsid.fromBytes',
+    () => {
+      tsid.fromBytes(tsidBytes)
+    },
+    benchOptions,
+  )
 })
 
 // === isValid Benchmarks ===
@@ -226,6 +253,7 @@ describe('ID isValid', () => {
   const cuid2String = cuid2()
   const ksuidString = ksuid()
   const objectidString = objectid()
+  const tsidId = tsid()
 
   bench(
     'uuidv4.isValid',
@@ -288,6 +316,14 @@ describe('ID isValid', () => {
     'objectid.isValid',
     () => {
       objectid.isValid(objectidString)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'tsid.isValid',
+    () => {
+      tsid.isValid(tsidId)
     },
     benchOptions,
   )

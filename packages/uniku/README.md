@@ -24,20 +24,21 @@ console.log(first < second && second < third) // true
 
 ## At a Glance
 
-|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [typeid-js](https://github.com/jetify-com/typeid-js) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) | [bson](https://github.com/mongodb/js-bson) |
-|--------------------|:-----:|:----:|:---------:|:------:|:----:|:-----:|:-----:|:-----:|
-| UUID v4            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
-| UUID v7            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
-| TypeID             |   ✅  |  ❌  |     ✅    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
-| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |   ❌  |
-| ULID               |   ✅  |  ❌  |     ❌    |   ❌   |  ✅  |   ❌  |   ❌  |   ❌  |
-| CUID2              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ✅  |   ❌  |   ❌  |
-| KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |   ❌  |
-| ObjectID           |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ✅  |
-| Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |   ❌  |
-| ESM-only           |   ✅  | ✅¹  |     ❌    |   ✅   |  ❌  |   ✅  |   ❌  |   ❌  |
-| Edge/Workers       |   ✅  |  ✅  |     ✅    |   ✅   |  ⚠️  |   ✅  |  ⚠️  |  ⚠️  |
-| Byte ↔ String      |   ✅  |  ✅  |     ✅    |   -    |  ⚠️²  |   -   |   ✅  |   ✅  |
+|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [typeid-js](https://github.com/jetify-com/typeid-js) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) | [bson](https://github.com/mongodb/js-bson) | [tsid-ts](https://github.com/yubinTW/tsid-ts) |
+|--------------------|:-----:|:----:|:---------:|:------:|:----:|:-----:|:-----:|:-----:|:-----:|
+| UUID v4            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
+| UUID v7            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
+| TypeID             |   ✅  |  ❌  |     ✅    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
+| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
+| ULID               |   ✅  |  ❌  |     ❌    |   ❌   |  ✅  |   ❌  |   ❌  |   ❌  |   ❌  |
+| CUID2              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ✅  |   ❌  |   ❌  |   ❌  |
+| KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |   ❌  |   ❌  |
+| ObjectID           |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ✅  |   ❌  |
+| TSID               |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ✅  |
+| Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |   ❌  |   ❌  |
+| ESM-only           |   ✅  | ✅¹  |     ❌    |   ✅   |  ❌  |   ✅  |   ❌  |   ❌  |   ❌  |
+| Edge/Workers       |   ✅  |  ✅  |     ✅    |   ✅   |  ⚠️  |   ✅  |  ⚠️  |  ⚠️  |  ⚠️  |
+| Byte ↔ String      |   ✅  |  ✅  |     ✅    |   -    |  ⚠️²  |   -   |   ✅  |   ✅  |   ✅  |
 
 > **Notes:**
 > - Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
@@ -65,6 +66,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | CUID2     | **8× faster** |
 | KSUID     | **1.5× faster** |
 | ObjectID  | **1.1× faster** |
+| TSID      | **1.7× faster** |
 | UUID v7   | **1.1× faster**  |
 | Nanoid    | **~comparable speed** |
 | Nanoid (10 chars) | npm is 1.1× faster |
@@ -85,6 +87,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | Distributed systems needing sortable, URL-safe IDs | **ULID** | Millisecond ordering + 80-bit entropy |
 | Very high-volume distributed systems | **KSUID** | Time-ordered with 128-bit entropy |
 | MongoDB `_id` compatibility | **ObjectID** | Drop-in match for MongoDB's native document ID format |
+| Native 64-bit sortable integer ID | **TSID** | Fits a database `BIGINT` primary key, no UUID-sized overhead |
 
 ### Detailed Guide
 
@@ -123,6 +126,12 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 - Counter never resets on a new timestamp (unlike ULID/UUIDv7/KSUID sequences)
 - Best for: MongoDB `_id` fields, systems already speaking the ObjectID wire format
 
+**TSID** — Use when you need a native 64-bit sortable integer ID, e.g. a database `BIGINT` primary key.
+- 64-bit Snowflake-style value, time-ordered with millisecond precision
+- Returns a `bigint` by default (the only uniku generator that isn't string-primary); `toString`/`fromString` convert to/from the 13-character canonical string
+- 42-bit timestamp + 10-bit node + 12-bit per-millisecond counter, with a persistent lazily-random node ID
+- Best for: relational database `BIGINT` primary keys, high-throughput distributed ID generation without central coordination
+
 **Nanoid** — Use for short, URL-friendly identifiers.
 - 21 characters (configurable), 126-bit entropy
 - Customizable alphabet and length
@@ -137,7 +146,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 
 ### Binary Serialization: When to Use `toBytes()`
 
-Formats with binary representations (UUID, ULID, KSUID, ObjectID) support `toBytes()` and `fromBytes()` for efficient storage:
+Formats with binary representations (UUID, ULID, KSUID, ObjectID, TSID) support `toBytes()` and `fromBytes()` for efficient storage:
 
 ```ts
 // Store as BINARY(16) instead of VARCHAR(36)
@@ -158,6 +167,8 @@ const id = uuidv7.fromBytes(row.id)
 - Performance-critical queries on ID columns
 - Storage cost is a concern
 
+**Exception — `tsid`:** `toBytes()`/`fromBytes()` operate on `bigint`, not `string`, since `bigint` is TSID's primary type (see [`tsid`](#tsid-from-unikutsid) in the API Reference below). Every other generator's `toBytes()`/`fromBytes()` operate on its primary `string` type.
+
 **When to keep strings:**
 - Debugging/logging convenience
 - API responses (humans read them)
@@ -170,10 +181,13 @@ const id = uuidv7.fromBytes(row.id)
 | TypeID | prefix + 27 chars | 16 bytes | prefix-dependent |
 | KSUID | 27 chars | 20 bytes | 26% |
 | ObjectID | 24 chars | 12 bytes | 50% |
+| TSID | 13 chars* | 8 bytes | 38% |
 | Nanoid | 21 chars | N/A | - |
 | CUID2 | 24 chars | N/A | - |
 
 > **Note**: Nanoid and CUID2 don't have binary representations because they're string-native formats with no canonical byte encoding.
+>
+> \* TSID's primary type is `bigint`, not a string; the 13-character figure is its canonical `toString()` form, shown here only for a size comparison against the other formats' native strings.
 
 ## Installation
 
@@ -206,6 +220,7 @@ deno install npm:uniku
 | `uniku/nanoid` | ~1.1 KB |
 | `uniku/ksuid` | ~1.3 KB |
 | `uniku/objectid` | ~1.3 KB |
+| `uniku/tsid` | ~1.4 KB |
 
 * The CUID2 entry point imports SHA3-512 from `@noble/hashes`; this table's entry-point size excludes that external dependency.
 
@@ -330,6 +345,28 @@ const str = objectid.fromBytes(bytes)
 
 // Extract timestamp (milliseconds)
 const ts = objectid.timestamp(id)
+```
+
+### TSID (time-ordered, 64-bit integer)
+
+```ts
+import { tsid } from 'uniku/tsid'
+
+// Generate a TSID bigint (the primary type, not a string)
+const id = tsid()
+// => 862301223059968074n
+
+// Convert to/from the canonical 13-character string
+const str = tsid.toString(id)
+// => "0QXW2CK4XZM2A"
+tsid.fromString(str) === id // true
+
+// Extract timestamp (milliseconds, full precision)
+const ts = tsid.timestamp(id)
+
+// Convert to/from 8 bytes
+const bytes = tsid.toBytes(id)
+const restored = tsid.fromBytes(bytes)
 ```
 
 ## Migrating to uniku
@@ -490,6 +527,23 @@ objectid.NIL  // "000000000000000000000000"
 objectid.MAX  // "ffffffffffffffffffffffff"
 ```
 
+### `tsid` (from `uniku/tsid`)
+
+```ts
+tsid(options?: TsidOptions): bigint
+tsid(options: TsidOptions | undefined, buf: Uint8Array, offset?: number): Uint8Array
+tsid.toBytes(id: bigint): Uint8Array
+tsid.fromBytes(bytes: Uint8Array): bigint
+tsid.toString(id: bigint): string
+tsid.fromString(str: string): bigint
+tsid.timestamp(id: bigint, epoch?: number): number
+tsid.isValid(id: unknown): id is bigint
+tsid.NIL  // 0n
+tsid.MAX  // 18446744073709551615n
+```
+
+> Unlike every other generator listed here, `tsid()` returns `bigint` by default, and `toBytes`/`fromBytes`/`timestamp`/`isValid` all operate on that `bigint`. `toString`/`fromString` are the boundary conversions to/from the 13-character canonical Crockford Base32 string.
+
 ## Documentation
 
 For advanced usage, examples, and contributing guidelines, see the [full documentation on GitHub](https://github.com/jkomyno/uniku).
@@ -505,6 +559,7 @@ Third-party libraries that inspired this project:
 - [@owpz/ksuid](https://github.com/owpz/ksuid): K-Sortable Unique Identifier
 - [bson](https://github.com/mongodb/js-bson): official MongoDB BSON library, including the ObjectId implementation
 - [nanoid](https://github.com/ai/nanoid): tiny, URL-friendly unique string ID generator
+- [tsid-ts](https://github.com/yubinTW/tsid-ts): TypeScript implementation of TSID, a Snowflake-style 64-bit Time-Sorted Unique Identifier
 
 Other:
 

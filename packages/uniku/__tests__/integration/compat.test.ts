@@ -2,12 +2,14 @@ import { KSUID as npmKsuid } from '@owpz/ksuid'
 import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
 import { ObjectId as npmObjectId } from 'bson'
 import { nanoid as npmNanoid } from 'nanoid'
+import { TSID as npmTsid } from 'tsid-ts'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
+import { tsid } from '@/src/tsid/tsid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
@@ -187,6 +189,48 @@ describe('Cross-Validation: ObjectID', () => {
     const npmTimestamp = new npmObjectId(unikuId).getTimestamp().getTime()
 
     // Both should be exactly equal since we're using exact second
+    expect(unikuTimestamp).toBe(npmTimestamp)
+  })
+})
+
+describe('Cross-Validation: TSID', () => {
+  it('uniku IDs are parseable by npm', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => tsid())
+    for (const id of ids) {
+      const str = tsid.toString(id)
+      const parsed = npmTsid.fromString(str)
+      expect(parsed.toBigInt()).toBe(id)
+    }
+  })
+
+  it('npm IDs pass uniku validation', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => npmTsid.create())
+    for (const npmId of ids) {
+      const str = npmId.toString()
+      const id = tsid.fromString(str)
+      expect(id).toBe(npmId.toBigInt())
+    }
+  })
+
+  it('byte layout matches between implementations', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => tsid())
+    for (const id of ids) {
+      const unikuBytes = Array.from(tsid.toBytes(id))
+      const npmBytes = Array.from(npmTsid.fromString(tsid.toString(id)).toBytes())
+      expect(unikuBytes).toEqual(npmBytes)
+    }
+  })
+
+  it('timestamp extraction matches between implementations', () => {
+    // Use a fixed timestamp for reproducibility (in milliseconds)
+    const msecs = Date.now()
+    const unikuId = tsid({ msecs })
+    const unikuTimestamp = tsid.timestamp(unikuId)
+
+    const npmTimestamp = npmTsid.fromString(tsid.toString(unikuId)).timestamp
+
+    // Both should be exactly equal since both share the same default epoch
+    expect(unikuTimestamp).toBe(msecs)
     expect(unikuTimestamp).toBe(npmTimestamp)
   })
 })

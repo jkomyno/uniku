@@ -2,6 +2,7 @@ import { KSUID as npmKsuid } from '@owpz/ksuid'
 import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
 import { ObjectId as NpmObjectId } from 'bson'
 import { nanoid as npmNanoid } from 'nanoid'
+import { TSID as npmTsid } from 'tsid-ts'
 import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-js'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
@@ -10,6 +11,7 @@ import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
+import { tsid } from '@/src/tsid/tsid'
 import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
@@ -37,6 +39,7 @@ const testIds = {
   unikuCuid2: cuid2(),
   unikuKsuid: ksuid(),
   unikuObjectid: objectid(),
+  unikuTsid: tsid.toString(tsid()),
   npmV4: npmUuidV4(),
   npmV7: npmUuidV7(),
   npmUlid: npmUlid(),
@@ -45,6 +48,7 @@ const testIds = {
   npmCuid2: npmCuid2(),
   npmKsuid: npmKsuid.random().toString(),
   npmObjectid: new NpmObjectId().toHexString(),
+  npmTsid: npmTsid.create().toString(),
 }
 
 describe('Generation', () => {
@@ -203,6 +207,23 @@ describe('Generation', () => {
       benchOptions,
     )
   })
+
+  describe('TSID', () => {
+    bench(
+      'uniku',
+      () => {
+        tsid()
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        npmTsid.create()
+      },
+      benchOptions,
+    )
+  })
 })
 
 describe('Validation', () => {
@@ -342,6 +363,36 @@ describe('Validation', () => {
       'npm',
       () => {
         NpmObjectId.isValid(testIds.unikuObjectid)
+      },
+      benchOptions,
+    )
+  })
+
+  describe('TSID', () => {
+    // Note: tsid.isValid operates on a bigint (a near-trivial range check), not a
+    // string-format check, so validating a string goes through fromString first -
+    // mirroring the CLI's validateTsid pattern (fromString + try/catch instead of
+    // isValid directly). tsid-ts also has no cheap boolean isValid: TSID.fromString
+    // is the parse-and-discard equivalent, throwing on malformed input.
+    bench(
+      'uniku',
+      () => {
+        try {
+          tsid.isValid(tsid.fromString(testIds.npmTsid))
+        } catch {
+          // invalid
+        }
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        try {
+          npmTsid.fromString(testIds.unikuTsid)
+        } catch {
+          // invalid
+        }
       },
       benchOptions,
     )
