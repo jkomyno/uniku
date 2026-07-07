@@ -24,19 +24,19 @@ console.log(first < second && second < third) // true
 
 ## At a Glance
 
-|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) |
-|--------------------|:-----:|:----:|:------:|:----:|:-----:|:-----:|
-| UUID v4            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
-| UUID v7            |   ✅  |  ✅  |   ❌   |  ❌  |   ❌  |   ❌  |
-| TypeID             |   ✅  |  ❌  |   ❌   |  ❌  |   ❌  |   ❌  |
-| ULID               |   ✅  |  ❌  |   ❌   |  ✅  |   ❌  |   ❌  |
-| CUID2              |   ✅  |  ❌  |   ❌   |  ❌  |   ✅  |   ❌  |
-| Nanoid             |   ✅  |  ❌  |   ✅   |  ❌  |   ❌  |   ❌  |
-| KSUID              |   ✅  |  ❌  |   ❌   |  ❌  |   ❌  |   ✅  |
-| Tree-shakeable     |   ✅  |  ✅  |   ✅   |  ✅  |   ✅  |   ❌  |
-| ESM-only           |   ✅  | ✅¹  |   ✅   |  ❌  |   ✅  |   ❌  |
-| Edge/Workers       |   ✅  |  ✅  |   ✅   |  ⚠️  |   ✅  |  ⚠️  |
-| Byte ↔ String      |   ✅  |  ✅  |   -   |  ⚠️²  |   -  |   ✅  |
+|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [typeid-js](https://github.com/jetify-com/typeid-js) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) |
+|--------------------|:-----:|:----:|:---------:|:------:|:----:|:-----:|:-----:|
+| UUID v4            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |
+| UUID v7            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |
+| TypeID             |   ✅  |  ❌  |     ✅    |   ❌   |  ❌  |   ❌  |   ❌  |
+| ULID               |   ✅  |  ❌  |     ❌    |   ❌   |  ✅  |   ❌  |   ❌  |
+| CUID2              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ✅  |   ❌  |
+| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |
+| KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |
+| Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |
+| ESM-only           |   ✅  | ✅¹  |     ❌    |   ✅   |  ❌  |   ✅  |   ❌  |
+| Edge/Workers       |   ✅  |  ✅  |     ✅    |   ✅   |  ⚠️  |   ✅  |  ⚠️  |
+| Byte ↔ String      |   ✅  |  ✅  |     ✅    |   -    |  ⚠️²  |   -   |   ✅  |
 
 > **Notes:**
 > - Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
@@ -447,7 +447,7 @@ Third-party libraries that inspired this project:
 
 - [uuid](https://github.com/uuidjs/uuid): the most popular UUID library for JavaScript
 - [ulid](https://github.com/ulid/javascript): the reference ULID implementation for JavaScript
-- [TypeID](https://github.com/jetify-com/typeid): type-safe UUID v7 extension with readable prefixes
+- [TypeID-JS](https://github.com/jetify-com/typeid-js): official JavaScript implementation of TypeID
 - [@paralleldrive/cuid2](https://github.com/paralleldrive/cuid2): secure, collision-resistant IDs
 - [@owpz/ksuid](https://github.com/owpz/ksuid): K-Sortable Unique Identifier
 - [nanoid](https://github.com/ai/nanoid): tiny, URL-friendly unique string ID generator
