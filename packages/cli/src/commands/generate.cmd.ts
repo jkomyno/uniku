@@ -8,6 +8,7 @@ import { generateCuid } from '@/src/generators/cuid'
 import { generateKsuid } from '@/src/generators/ksuid'
 import { generateNanoid } from '@/src/generators/nanoid'
 import { generateObjectid } from '@/src/generators/objectid'
+import { generateTsid } from '@/src/generators/tsid'
 import { generateTypeid } from '@/src/generators/typeid'
 import { generateUlid } from '@/src/generators/ulid'
 import { generateUuid } from '@/src/generators/uuid'
@@ -254,6 +255,63 @@ const objectidSubcommand = Command.make(
   ]),
 )
 
+// ── TSID subcommand ─────────────────────────────────────────────────
+
+const tsidTimestampFlag = Flag.string('timestamp').pipe(
+  Flag.withDescription('Unix timestamp in milliseconds (or "now")'),
+  Flag.optional,
+)
+
+// KTD9: no existing precedent in this file pairs `Flag.integer` with
+// `Flag.optional` (every `Flag.integer` pairs with `Flag.withDefault`) - so
+// `--node`/`--node-bits` follow the verified `Flag.string` + inline-parse
+// idiom used for every timestamp flag instead of risking an unverified
+// combinator on the pinned Effect v4 beta.
+const tsidNodeFlag = Flag.string('node').pipe(Flag.withDescription('Node ID (0 to 2^node-bits - 1)'), Flag.optional)
+
+const tsidNodeBitsFlag = Flag.string('node-bits').pipe(
+  Flag.withDescription('Number of bits allocated to the node ID (0-20, default 10)'),
+  Flag.optional,
+)
+
+const tsidSubcommand = Command.make(
+  'tsid',
+  {
+    count: countFlag,
+    json: jsonFlag,
+    timestamp: tsidTimestampFlag,
+    node: tsidNodeFlag,
+    nodeBits: tsidNodeBitsFlag,
+  },
+  Effect.fn('cli.generate.tsid')(function* ({
+    count,
+    json,
+    timestamp: timestampOpt,
+    node: nodeOpt,
+    nodeBits: nodeBitsOpt,
+  }) {
+    const output = yield* OutputService
+    const timestampInput = Option.getOrUndefined(timestampOpt)
+    const timestamp = timestampInput !== undefined ? yield* parseTimestampMs(timestampInput) : undefined
+    const nodeInput = Option.getOrUndefined(nodeOpt)
+    const node = nodeInput !== undefined ? yield* parseNode(nodeInput) : undefined
+    const nodeBitsInput = Option.getOrUndefined(nodeBitsOpt)
+    const nodeBits = nodeBitsInput !== undefined ? yield* parseNodeBits(nodeBitsInput) : undefined
+    const ids = yield* generateTsid({ count, timestamp, node, nodeBits })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate TSIDs (64-bit Snowflake-style, time-sorted)'),
+  Command.withExamples([
+    { command: 'uniku tsid -n 5 --json', description: 'Generate 5 TSIDs as a JSON array' },
+    {
+      command: 'uniku tsid --timestamp 1720000000000',
+      description: 'Generate a TSID for a fixed Unix timestamp (ms)',
+    },
+    { command: 'uniku tsid --node 42 --node-bits 10', description: 'Generate a TSID for a fixed node ID' },
+  ]),
+)
+
 // ── Generate parent command ─────────────────────────────────────────
 
 export const generateCommand = Command.make('generate').pipe(
@@ -266,6 +324,7 @@ export const generateCommand = Command.make('generate').pipe(
     cuidSubcommand,
     ksuidSubcommand,
     objectidSubcommand,
+    tsidSubcommand,
   ]),
   Command.withExamples([
     { command: 'uniku generate uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array' },
@@ -286,6 +345,7 @@ export const nanoidShorthand = nanoidSubcommand
 export const cuidShorthand = cuidSubcommand
 export const ksuidShorthand = ksuidSubcommand
 export const objectidShorthand = objectidSubcommand
+export const tsidShorthand = tsidSubcommand
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -309,3 +369,22 @@ const parseTimestampMs = (input: string): Effect.Effect<number, CliError> =>
 
 const parseTimestampSecs = (input: string): Effect.Effect<number, CliError> =>
   parseTimestamp(input, (millis) => Math.floor(millis / 1000), 'Provide a Unix timestamp in seconds or "now"')
+
+const parseNonNegativeInt = Effect.fn('cli.generate.parseNonNegativeInt')(function* (
+  input: string,
+  code: string,
+  label: string,
+  hint: string,
+) {
+  const n = Number(input)
+  if (!Number.isInteger(n) || n < 0) {
+    return yield* new CliError({ code, message: `Invalid ${label}: "${input}"`, hint })
+  }
+  return n
+})
+
+const parseNode = (input: string): Effect.Effect<number, CliError> =>
+  parseNonNegativeInt(input, 'INVALID_NODE', 'node', 'Provide a non-negative integer for --node')
+
+const parseNodeBits = (input: string): Effect.Effect<number, CliError> =>
+  parseNonNegativeInt(input, 'INVALID_NODE_BITS', 'node-bits', 'Provide a non-negative integer (0-20) for --node-bits')

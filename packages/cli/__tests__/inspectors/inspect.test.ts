@@ -2,6 +2,7 @@ import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
 import { objectid } from 'uniku/objectid'
+import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -74,6 +75,21 @@ describe('inspectId', () => {
     expect(result!.random).toHaveLength(16)
   })
 
+  it('inspects TSID with timestamp within a sane range and a random tail', () => {
+    const id = tsid.toString(tsid())
+    const result = inspectId(id, 'tsid')
+    expect(result).not.toBeNull()
+    expect(result!.type).toBe('tsid')
+    expect(result!.timestamp).toBeDefined()
+    expect(result!.timestamp_ms).toBeTypeOf('number')
+    // Sane range: after the TSID custom epoch (2020-01-01) and not absurdly in the future.
+    expect(result!.timestamp_ms!).toBeGreaterThan(1_577_836_800_000)
+    expect(result!.timestamp_ms!).toBeLessThan(Date.now() + 60_000)
+    // Combined node+counter tail: 22 bits, up to 6 hex chars.
+    expect(result!.random).toBeDefined()
+    expect(result!.random!).toMatch(/^[0-9a-f]{1,6}$/)
+  })
+
   it('inspects CUID with no-metadata note', () => {
     const id = cuid2()
     const result = inspectId(id, 'cuid')
@@ -111,6 +127,20 @@ describe('inspectId', () => {
     const result = inspectId(id)
     expect(result).not.toBeNull()
     expect(result!.type).toBe('objectid')
+  })
+
+  it('auto-detects TSID when type is not provided', () => {
+    const id = tsid.toString(tsid())
+    const result = inspectId(id)
+    expect(result).not.toBeNull()
+    expect(result!.type).toBe('tsid')
+  })
+
+  it('inspects an invalid TSID string with a note instead of throwing', () => {
+    const result = inspectId('not-a-valid-tsid', 'tsid')
+    expect(result).not.toBeNull()
+    expect(result!.type).toBe('tsid')
+    expect(result!.note).toContain('Unrecognized TSID format')
   })
 
   it('returns null for unrecognizable ID', () => {

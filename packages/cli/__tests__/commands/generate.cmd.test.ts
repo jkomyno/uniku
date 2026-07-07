@@ -1,6 +1,7 @@
 import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
+import { tsid } from 'uniku/tsid'
 import { CliError } from '@/src/domain/errors'
 import { cli, MockOutput, TestConsole, TestLive } from '../__utils__'
 
@@ -307,6 +308,77 @@ describe('CLI: uniku generate objectid', () => {
   })
 })
 
+describe('CLI: uniku generate tsid', () => {
+  layer(TestLive())((it) => {
+    it.effect('[Given] generate tsid [Then] generates 1 TSID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'tsid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(output[0].length).toBe(13)
+        expect(output[0]).toMatch(/^[0-9A-Fa-f][0-9A-HJKMNP-TV-Z]{12}$/i)
+      }),
+    )
+
+    it.effect('[Given] generate tsid --json [Then] outputs JSON', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'tsid', '--json'])
+        const output = yield* MockOutput.getStdout
+        const parsed = JSON.parse(output[0])
+        expect(typeof parsed).toBe('string')
+      }),
+    )
+
+    it.effect('[Given] generate tsid --timestamp <ms> [Then] embeds the given timestamp', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const msecs = 1_720_000_000_000
+        yield* cli(['generate', 'tsid', '--timestamp', String(msecs)])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        const value = tsid.fromString(output[0])
+        expect(tsid.timestamp(value)).toBe(msecs)
+      }),
+    )
+
+    it.effect('[Given] generate tsid --timestamp abc [Then] fails with a CliError', () =>
+      Effect.gen(function* () {
+        const error = yield* cli(['generate', 'tsid', '--timestamp', 'abc']).pipe(Effect.flip)
+
+        assertInstanceOf(error, CliError)
+        expect(error.code).toBe('INVALID_TIMESTAMP')
+        expect(error.message).toBe('Invalid timestamp: "abc"')
+        expect(error.hint).toBe('Provide a Unix timestamp in milliseconds or "now"')
+      }),
+    )
+
+    it.effect('[Given] generate tsid --node 42 --node-bits 10 [Then] embeds the given node', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'tsid', '--node', '42', '--node-bits', '10'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        const value = tsid.fromString(output[0])
+        const counterBits = 22 - 10
+        const nodeMask = (1 << 10) - 1
+        const decodedNode = Number((value >> BigInt(counterBits)) & BigInt(nodeMask))
+        expect(decodedNode).toBe(42)
+      }),
+    )
+
+    it.effect('[Given] generate tsid --node-bits 25 [Then] fails with a CliError (out of [0, 20] range)', () =>
+      Effect.gen(function* () {
+        const error = yield* cli(['generate', 'tsid', '--node-bits', '25']).pipe(Effect.flip)
+
+        assertInstanceOf(error, CliError)
+        expect(error.code).toBe('TSID_NODE_BITS_OUT_OF_RANGE')
+      }),
+    )
+  })
+})
+
 describe('CLI: shorthand commands', () => {
   layer(TestLive())((it) => {
     it.effect('[Given] uniku uuid [Then] same as generate uuid', () =>
@@ -397,6 +469,17 @@ describe('CLI: shorthand commands', () => {
         const output = yield* MockOutput.getStdout
         expect(output).toHaveLength(1)
         expect(output[0].length).toBe(24)
+      }),
+    )
+
+    it.effect('[Given] uniku tsid [Then] same as generate tsid', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['tsid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(output[0].length).toBe(13)
+        expect(output[0]).toMatch(/^[0-9A-Fa-f][0-9A-HJKMNP-TV-Z]{12}$/i)
       }),
     )
   })

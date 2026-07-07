@@ -1,5 +1,6 @@
 import { ksuid } from 'uniku/ksuid'
 import { objectid } from 'uniku/objectid'
+import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -30,6 +31,8 @@ export function inspectId(id: string, type?: IdType): InspectResult | null {
       return inspectCuid(id)
     case 'nanoid':
       return inspectNanoid(id)
+    case 'tsid':
+      return inspectTsid(id)
   }
 }
 
@@ -149,5 +152,33 @@ function inspectNanoid(id: string): InspectResult {
     id,
     type: 'nanoid',
     note: 'This ID type contains no decodable metadata.',
+  }
+}
+
+function inspectTsid(id: string): InspectResult {
+  let value: bigint
+  try {
+    value = tsid.fromString(id)
+  } catch {
+    return {
+      id,
+      type: 'tsid',
+      note: 'Unrecognized TSID format.',
+    }
+  }
+
+  const ms = tsid.timestamp(value)
+  // Combined node + counter tail: low 22 bits of the packed bigint. The
+  // node/counter split isn't self-describing without knowing the nodeBits
+  // used at generation time (see KTD6), so the combined tail is exposed
+  // as-is rather than decomposed - matching objectid's inspector for its
+  // own `random` field.
+  const random = (value & 0x3fffffn).toString(16)
+  return {
+    id,
+    type: 'tsid',
+    timestamp: new Date(ms).toISOString(),
+    timestamp_ms: ms,
+    random,
   }
 }

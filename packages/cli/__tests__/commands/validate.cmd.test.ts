@@ -2,6 +2,7 @@ import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
 import { objectid } from 'uniku/objectid'
+import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -11,6 +12,12 @@ import { cli, MockOutput, TestLive } from '../__utils__'
 
 describe('CLI: uniku validate', () => {
   const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'
+  // Fixed, deliberately constructed TSID-shaped string (not generated): leading
+  // char is a lowercase hex letter ("a", within the valid 0-9A-F leading-char
+  // range), remaining 12 chars are all in [0-9a-z]. This also satisfies CUID2's
+  // default `/^[a-z][0-9a-z]+$/` regex at length 13 - a genuine collision that
+  // validateAutoDetect's ordering fix (TSID before CUID2/Nanoid) must resolve.
+  const collisionTsid = `a${'0'.repeat(11)}c`
 
   layer(TestLive())((it) => {
     it.effect('[Given] valid UUID v4 [Then] outputs valid', () =>
@@ -133,6 +140,55 @@ describe('CLI: uniku validate', () => {
           yield* cli(['validate', id, '--type', 'cuid'])
           const asCuid = yield* MockOutput.getStdout
           expect(asCuid).toEqual(['valid (cuid)'])
+        }),
+    )
+
+    it.effect('[Given] TSID [Then] auto-detects and validates as TSID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = tsid.toString(tsid())
+        yield* cli(['validate', id])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (tsid)'])
+      }),
+    )
+
+    it.effect('[Given] --type tsid and valid TSID [Then] validates as TSID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = tsid.toString(tsid())
+        yield* cli(['validate', id, '--type', 'tsid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (tsid)'])
+      }),
+    )
+
+    it.effect(
+      '[Given] a lowercase-leading-hex-letter TSID string [Then] auto-detects as tsid, not cuid/nanoid (ordering fix)',
+      () =>
+        Effect.gen(function* () {
+          // Fixed known value (not generated) to guarantee the leading char is a
+          // hex letter - see `collisionTsid`'s doc comment above.
+          yield* MockOutput.reset
+          yield* cli(['validate', collisionTsid])
+          const output = yield* MockOutput.getStdout
+          expect(output).toEqual(['valid (tsid)'])
+        }),
+    )
+
+    it.effect(
+      '[Given] --type tsid and --type nanoid on the same collision ID [Then] both explicit paths validate correctly',
+      () =>
+        Effect.gen(function* () {
+          yield* MockOutput.reset
+          yield* cli(['validate', collisionTsid, '--type', 'tsid'])
+          const asTsid = yield* MockOutput.getStdout
+          expect(asTsid).toEqual(['valid (tsid)'])
+
+          yield* MockOutput.reset
+          yield* cli(['validate', collisionTsid, '--type', 'nanoid'])
+          const asNanoid = yield* MockOutput.getStdout
+          expect(asNanoid).toEqual(['valid (nanoid)'])
         }),
     )
 
