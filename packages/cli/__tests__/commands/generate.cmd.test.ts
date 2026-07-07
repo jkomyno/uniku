@@ -258,6 +258,55 @@ describe('CLI: uniku generate ksuid', () => {
   })
 })
 
+describe('CLI: uniku generate objectid', () => {
+  layer(TestLive())((it) => {
+    it.effect('[Given] generate objectid [Then] generates 1 ObjectID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'objectid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(output[0].length).toBe(24)
+        expect(output[0]).toMatch(/^[0-9a-f]+$/)
+      }),
+    )
+
+    it.effect('[Given] generate objectid --json [Then] outputs JSON', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'objectid', '--json'])
+        const output = yield* MockOutput.getStdout
+        const parsed = JSON.parse(output[0])
+        expect(typeof parsed).toBe('string')
+      }),
+    )
+
+    it.effect('[Given] generate objectid --timestamp <secs> [Then] embeds the given timestamp', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const secs = 1_720_000_000
+        yield* cli(['generate', 'objectid', '--timestamp', String(secs)])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        // Timestamp is the first 8 hex chars, big-endian seconds.
+        const expectedPrefix = secs.toString(16).padStart(8, '0')
+        expect(output[0].slice(0, 8)).toBe(expectedPrefix)
+      }),
+    )
+
+    it.effect('[Given] generate objectid --timestamp abc [Then] fails with a CliError', () =>
+      Effect.gen(function* () {
+        const error = yield* cli(['generate', 'objectid', '--timestamp', 'abc']).pipe(Effect.flip)
+
+        assertInstanceOf(error, CliError)
+        expect(error.code).toBe('INVALID_TIMESTAMP')
+        expect(error.message).toBe('Invalid timestamp: "abc"')
+        expect(error.hint).toBe('Provide a Unix timestamp in seconds or "now"')
+      }),
+    )
+  })
+})
+
 describe('CLI: shorthand commands', () => {
   layer(TestLive())((it) => {
     it.effect('[Given] uniku uuid [Then] same as generate uuid', () =>
@@ -338,6 +387,16 @@ describe('CLI: shorthand commands', () => {
         const output = yield* MockOutput.getStdout
         expect(output).toHaveLength(1)
         expect(output[0].length).toBe(27)
+      }),
+    )
+
+    it.effect('[Given] uniku objectid [Then] same as generate objectid', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['objectid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(output[0].length).toBe(24)
       }),
     )
   })

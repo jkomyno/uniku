@@ -10,7 +10,7 @@ import { validateAs, validateAutoDetect } from '@/src/validators/validate'
 
 const idArg = Argument.string('id').pipe(Argument.withDescription('The ID to validate'), Argument.optional)
 
-const typeFlag = Flag.choice('type', ['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid'] as const).pipe(
+const typeFlag = Flag.choice('type', ['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid', 'objectid'] as const).pipe(
   Flag.withDescription('Expected ID type (auto-detected if omitted)'),
   Flag.optional,
 )

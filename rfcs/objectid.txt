@@ -1,0 +1,428 @@
+# ObjectID Specification
+
+MongoDB ObjectID.
+
+Reference: https://github.com/mongodb/specifications/blob/master/source/bson-objectid/objectid.md
+
+## Abstract
+
+ObjectID is MongoDB's 96-bit (12-byte) identifier, combining a 32-bit
+Unix timestamp (second resolution) with a 40-bit per-process random value
+and a 24-bit always-incrementing counter. ObjectIDs are encoded as
+24-character lowercase hexadecimal strings and are time-ordered (to
+second granularity), making them a drop-in match for MongoDB's own
+`_id` field format.
+
+## Key Properties
+
+- 96-bit total size (12 bytes)
+- Time-sortable with second precision
+- 24-character lowercase hex encoding
+- No Base32/Base62 waste: every 24-character hex string is a
+  structurally valid ObjectID
+- Counter always increments (never resets on timestamp change), unlike
+  ULID/UUIDv7's per-timestamp sequence counters
+- Case-insensitive parsing; generation always emits lowercase
+
+## Use Cases
+
+- Drop-in compatibility with MongoDB's native `_id` field
+- Time-ordered identifiers with second-level precision
+- Systems that already depend on the MongoDB/bson ObjectID wire format
+- Cross-language interoperability with existing MongoDB drivers/tools
+
+## Binary Format
+
+```
++------------------+---------------------------+------------------+
+|  Timestamp (4B)  |       Random (5B)         |  Counter (3B)    |
++------------------+---------------------------+------------------+
+|    Big-endian    |     Per-process           |   Big-endian     |
+|     uint32       |     random value           |   24-bit,        |
+|  (secs epoch)    |                            |   always         |
+|                   |                            |   incrementing   |
++------------------+---------------------------+------------------+
+
+Total: 12 bytes (96 bits)
+
+Byte offsets: 0-3 = timestamp, 4-8 = random, 9-11 = counter
+```
+
+### Components
+
+**Timestamp**
+- 4 bytes (32-bit unsigned integer)
+- Big-endian
+- Unix time in seconds
+- Range: 0 to 0xFFFFFFFF
+
+**Random**
+- 5 bytes (40 bits)
+- Per-process random value
+- Lazily generated once per process/module lifetime on the first
+  no-option call, then reused for every subsequent no-option call
+- When `random` is passed via options, it bypasses persistent state
+  entirely and is sourced fresh for that call
+
+**Counter**
+- 3 bytes (24-bit unsigned integer)
+- Big-endian
+- Always increments by 1, independent of the timestamp (never resets
+  when the timestamp changes, unlike ULID/UUIDv7 sequence counters)
+- Wraps from 0xFFFFFF back to 0
+- Initial value is itself randomized (not zero) to reduce cross-process
+  collision risk, then increments deterministically from there
+
+### Binary Layout and Byte Order
+
+Each component is encoded Most Significant Byte first (network byte
+order):
+
+```
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    32_bit_uint_secs_time                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|              40_bit_random_value (bytes 4-8)                |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         24_bit_counter (bytes 9-11)          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+## String Encoding
+
+### Canonical Representation
+
+```
+tttttttt rrrrrrrrrr cccccc
+
+where
+t is Timestamp (8 hex characters, 4 bytes)
+r is Random (10 hex characters, 5 bytes)
+c is Counter (6 hex characters, 3 bytes)
+```
+
+### Encoding Alphabet
+
+Lowercase hexadecimal:
+```
+0123456789abcdef
+```
+
+Decoding is case-insensitive (`0-9a-fA-F`); encoding always produces
+lowercase output. Unlike ULID's Crockford Base32 or KSUID's Base62,
+plain hex wastes no encoding space: every 24-character string drawn
+from `[0-9a-f]` (case-insensitively) is a structurally valid ObjectID.
+There is no analogous "first character must be in range" overflow
+constraint.
+
+### Bounds
+
+- Minimum ObjectID: `000000000000000000000000`
+- Maximum ObjectID: `ffffffffffffffffffffffff`
+
+## API Design
+
+### Type Definitions
+
+```typescript
+type ObjectIdOptions = {
+  /**
+   * 5 bytes of random data to use for the ObjectID's random field.
+   */
+  random?: Uint8Array
+  /**
+   * Timestamp in seconds since Unix epoch.
+   * Defaults to Math.floor(Date.now() / 1000).
+   */
+  secs?: number
+  /**
+   * 24-bit counter value (0 to 0xFFFFFF).
+   */
+  counter?: number
+}
+
+type ObjectId = {
+  (): string
+  <TBuf extends Uint8Array = Uint8Array>(options: ObjectIdOptions | undefined, buf: TBuf, offset?: number): TBuf
+  (options?: ObjectIdOptions, buf?: undefined, offset?: number): string
+  toBytes(id: string): Uint8Array
+  fromBytes(bytes: Uint8Array): string
+  timestamp(id: string): number
+  isValid(id: unknown): id is string
+  /** The nil ObjectID (all zeros) */
+  NIL: string
+  /** The max ObjectID (all 0xff) */
+  MAX: string
+}
+```
+
+### Function Signatures
+
+```
+objectid() -> string
+```
+Generate a new ObjectID with the current timestamp, the process's
+persistent random value, and the next value of the persistent counter.
+
+```
+objectid(options) -> string
+```
+Generate ObjectID with optional custom timestamp (secs), random bytes
+(random), and/or counter value. Any field supplied via options bypasses
+persistent module state entirely for that field.
+
+```
+objectid(options, buf, offset) -> buf
+```
+Write 12-byte ObjectID to provided buffer at offset.
+Throws `BufferError` if buffer too small.
+
+```
+objectid.toBytes(id) -> Uint8Array
+```
+Convert 24-character hex string to 12-byte Uint8Array.
+Case-insensitive. Throws `ParseError` on invalid input.
+
+```
+objectid.fromBytes(bytes) -> string
+```
+Convert 12-byte Uint8Array to 24-character hex string.
+Always produces lowercase output.
+
+```
+objectid.timestamp(id) -> number
+```
+Extract Unix timestamp in milliseconds from ObjectID string.
+Note: Returns milliseconds for API consistency with ulid/uuidv7/ksuid,
+though ObjectID only has second precision (the result always ends in
+`000`).
+
+```
+objectid.isValid(id) -> boolean
+```
+Validate ObjectID format. Case-insensitive.
+Returns true if: string, length 24, matches `/^[0-9a-f]{24}$/i`.
+
+### Constants
+
+```
+objectid.NIL = "000000000000000000000000"
+objectid.MAX = "ffffffffffffffffffffffff"
+```
+
+Unlike ULID/KSUID, `MAX` does not need to be computed against an
+alphabet's encoding ceiling: because every hex string of the right
+length is valid, `MAX` is simply 24 repetitions of `f`.
+
+## Implementation Notes
+
+### Process State Model
+
+Module-level state holds the per-process random value and the
+always-incrementing counter:
+
+```typescript
+type ObjectIdState = {
+  random: Uint8Array | undefined
+  counter: number | undefined
+}
+```
+
+Algorithm for a no-option call:
+1. Lazily initialize `state.random` on first use: allocate a 5-byte
+   buffer and copy (not alias) 5 bytes from the shared random pool
+   into it. `state.random` is an owned copy, not a live view into the
+   shared pool, so it is unaffected by other generators exhausting or
+   refilling that pool.
+2. Lazily initialize `state.counter` on first use to a *randomized*
+   starting value (not zero), to reduce collision risk across
+   independently-started processes.
+3. Read the current timestamp in seconds.
+4. Increment `state.counter` by 1 (mod 0x1000000), independent of
+   whether the timestamp changed since the last call.
+5. Encode timestamp + `state.random` + the incremented counter.
+
+This differs from ULID/UUIDv7's monotonic sequence counters, which
+reset when the timestamp advances. ObjectID's counter climbs forever
+and never resets — that is intentional anti-collision behavior, not a
+sequence number tied to a particular timestamp.
+
+### Options Bypass State Entirely
+
+Passing any of `random` (must be `>= 5` bytes), `secs` (`[0,
+0xFFFFFFFF]`), or `counter` (`[0, 0xFFFFFF]`) sources *every* field
+fresh — from the given value, or from an independent default — and
+never reads from or writes to persistent state:
+
+```typescript
+secs = optSecs ?? Math.floor(Date.now() / 1000)
+random = optRandom ?? rng().subarray(0, RANDOM_BYTES)
+counter = optCounter ?? randomUint32() & MAX_COUNTER
+```
+
+This is what makes options-based generation fully deterministic when
+all three fields are supplied, and it is why passing options never
+advances or perturbs the module's persistent counter/random state.
+Out-of-range values throw `InvalidInputError`.
+
+### Persistence Across Warm Starts
+
+Module state persists across warm serverless/edge starts. This is
+intentional: a counter that keeps climbing across warm starts (rather
+than resetting) is exactly the anti-collision behavior the ObjectID
+spec intends, unlike cases elsewhere in this library where stale
+cross-invocation state would be a bug. In environments like Cloudflare
+Workers where `Date.now()` is frozen for the duration of a request, all
+ObjectIDs generated within a single request share the same timestamp,
+so monotonic ordering relies entirely on the ever-incrementing counter.
+
+### Self-Contained Hex Codec
+
+`src/objectid/hex.ts` implements its own encode/decode tables rather
+than sharing the `uuid` folder's hex helper. This follows the
+`ksuid/base62.ts` precedent of per-generator codec modules, keeping
+each entry point independently tree-shakeable.
+
+### Timestamp Resolution vs. Return Units
+
+`timestamp()` returns milliseconds (`secs * 1000`) for API consistency
+with ulid/uuidv7/ksuid, even though ObjectID's native resolution is one
+second (the returned value always ends in `000`).
+
+### No Legacy Layout
+
+Older (pre-2022) ObjectID implementations embedded a 3-byte machine
+identifier and a 2-byte process ID in place of part of the random
+field. This library implements only the current unified spec (4-byte
+timestamp + 5-byte random + 3-byte counter) and does not implement or
+expose the legacy machine-id/PID sub-fields.
+
+## Validation Rules
+
+```typescript
+const OBJECTID_REGEX = /^[0-9a-f]{24}$/i
+
+function isValid(id: unknown): id is string {
+  return typeof id === 'string' && OBJECTID_REGEX.test(id)
+}
+```
+
+**Case Handling:**
+- Generation: Always produces lowercase output (matching MongoDB driver
+  output)
+- Validation (isValid): Case-insensitive
+- Parsing (toBytes): Case-insensitive
+
+This matches MongoDB's own `bson` package (`ObjectId.isValid()`) and
+this repo's existing convention (ulid, ksuid) of accepting mixed-case
+input for parsing, even though generation is always lowercase.
+
+Note: unlike ULID (which restricts the first character to prevent
+timestamp overflow) or KSUID (whose Base62 alphabet naturally fits all
+160-bit values in 27 characters), ObjectID needs no overflow check at
+all: any 24-character string drawn from `[0-9a-f]` case-insensitively
+is a structurally valid ObjectID.
+
+## Security Considerations
+
+- Uses `crypto.getRandomValues()` (via the shared random pool) to seed
+  the per-process random value and the counter's starting value
+- Only 40 bits of random entropy per process (not per ID) — far less
+  than ULID (80 bits), UUIDv4 (122 bits), or KSUID (128 bits)
+- The counter is sequential and predictable once the random field is
+  known, making ObjectIDs guessable in relative generation order
+- Timestamp is visible in the output (first 8 hex characters)
+- Not suitable as a cryptographic token or secret
+- Do not use ObjectIDs as security capabilities (identifiers whose
+  possession grants access) — this is a well-known pitfall of MongoDB
+  ObjectIDs historically used as public-facing resource identifiers
+
+## Comparison with Other Formats
+
+| Feature          | ObjectID  | ULID      | UUIDv4    | UUIDv7    | KSUID     | Nanoid   |
+|------------------|-----------|-----------|-----------|-----------|-----------|----------|
+| Size (bits)      | 96        | 128       | 128       | 128       | 160       | Variable |
+| String length    | 24        | 26        | 36        | 36        | 27        | 21 (default) |
+| Time-sortable    | Yes       | Yes       | No        | Yes       | Yes       | No       |
+| Time resolution  | 1 second  | 1 ms      | N/A       | 1 ms      | 1 second  | N/A      |
+| Random entropy   | 40 bits (per-process) | 80 bits | 122 bits | 62 bits | 128 bits | 126 bits |
+| URL-safe         | Yes       | Yes       | No        | No        | Yes       | Yes      |
+| RFC Standard     | No        | No        | Yes       | Yes       | No        | No       |
+| Coordination     | No        | No        | No        | No        | No        | No       |
+
+When to choose ObjectID:
+- Need drop-in compatibility with MongoDB's native `_id` field
+- Second-level time precision is sufficient
+- Want a fixed-width hex identifier with no encoding-space waste
+- No RFC compliance requirement
+
+## Test Vectors
+
+### Example 1: Zero Values (Epoch Start)
+- **Timestamp**: 0 (1970-01-01T00:00:00Z)
+- **Random**: 5 bytes of 0x00
+- **Counter**: 0
+- **Binary**: `0x00000000 0000000000 000000` (12 bytes)
+- **String**: `000000000000000000000000`
+
+### Example 2: Known Deterministic Output (hand-computed test vector)
+```typescript
+const random = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05])
+const id = objectid({ secs: 1_700_000_000, random, counter: 0x010203 })
+// id === '6553f1000102030405010203'
+```
+- **Timestamp**: 1,700,000,000 -> big-endian hex `6553f100`
+- **Random**: `[1, 2, 3, 4, 5]` -> hex `0102030405`
+- **Counter**: `0x010203` -> hex `010203`
+- **String**: `6553f100` + `0102030405` + `010203` = `6553f1000102030405010203`
+
+### Example 3: Maximum Valid ObjectID
+- **Timestamp**: 4294967295 (0xFFFFFFFF)
+- **Random**: 5 bytes of 0xFF
+- **Counter**: 0xFFFFFF
+- **Binary**: `0xFFFFFFFF FFFFFFFFFF FFFFFF` (12 bytes)
+- **String**: `ffffffffffffffffffffffff`
+
+### Example 4: Invalid Inputs
+| Input | Reason Invalid |
+|-------|----------------|
+| `""` | Empty string |
+| `"a".repeat(23)` | Wrong length (23 chars, need 24) |
+| `"a".repeat(25)` | Wrong length (25 chars, need 24) |
+| `"g".repeat(24)` | Contains invalid char (g is not hex) |
+| `"a".repeat(23) + "-"` | Contains invalid char (hyphen) |
+
+### Example 5: Round-Trip Verification
+```typescript
+const id = objectid({ secs: 1_700_000_000, random: new Uint8Array([9, 8, 7, 6, 5]), counter: 42 })
+const bytes = objectid.toBytes(id)
+const restored = objectid.fromBytes(bytes)
+// restored === id
+```
+
+### Example 6: Timestamp Extraction
+```typescript
+const secs = 1_702_387_456
+const id = objectid({ secs, random: new Uint8Array(5), counter: 0 })
+objectid.timestamp(id) === secs * 1000 // Returns milliseconds
+```
+
+## Prior Art
+
+- [MongoDB ObjectID Specification](https://github.com/mongodb/specifications/blob/master/source/bson-objectid/objectid.md) —
+  the specification this implementation follows
+- [MongoDB BSON Types: ObjectId](https://www.mongodb.com/docs/manual/reference/bson-types/#objectid) —
+  MongoDB's own documentation of the ObjectID BSON type
+- [zandaqo/objectid64](https://github.com/zandaqo/objectid64) — prior
+  art for a compact/Base64 re-encoding of ObjectID strings. A compact
+  encoding is explicitly **deferred and not implemented** in this
+  library; `uniku/objectid` only produces and parses the canonical
+  24-character hex representation.
+
+## References
+
+- [MongoDB ObjectID Specification](https://github.com/mongodb/specifications/blob/master/source/bson-objectid/objectid.md)
+- [MongoDB BSON Types Documentation](https://www.mongodb.com/docs/manual/reference/bson-types/#objectid)
+- [zandaqo/objectid64](https://github.com/zandaqo/objectid64)

@@ -7,6 +7,7 @@ import { CliError } from '@/src/domain/errors'
 import { generateCuid } from '@/src/generators/cuid'
 import { generateKsuid } from '@/src/generators/ksuid'
 import { generateNanoid } from '@/src/generators/nanoid'
+import { generateObjectid } from '@/src/generators/objectid'
 import { generateTypeid } from '@/src/generators/typeid'
 import { generateUlid } from '@/src/generators/ulid'
 import { generateUuid } from '@/src/generators/uuid'
@@ -221,6 +222,38 @@ const ksuidSubcommand = Command.make(
   ]),
 )
 
+// ── ObjectID subcommand ─────────────────────────────────────────────
+
+const objectidTimestampFlag = Flag.string('timestamp').pipe(
+  Flag.withDescription('Unix timestamp in seconds (or "now")'),
+  Flag.optional,
+)
+
+const objectidSubcommand = Command.make(
+  'objectid',
+  {
+    count: countFlag,
+    json: jsonFlag,
+    timestamp: objectidTimestampFlag,
+  },
+  Effect.fn('cli.generate.objectid')(function* ({ count, json, timestamp: timestampOpt }) {
+    const output = yield* OutputService
+    const timestampInput = Option.getOrUndefined(timestampOpt)
+    const timestamp = timestampInput !== undefined ? yield* parseTimestampSecs(timestampInput) : undefined
+    const ids = yield* generateObjectid({ count, timestamp })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate MongoDB ObjectIDs'),
+  Command.withExamples([
+    { command: 'uniku objectid -n 5 --json', description: 'Generate 5 ObjectIDs as a JSON array' },
+    {
+      command: 'uniku objectid --timestamp 1720000000',
+      description: 'Generate an ObjectID for a fixed Unix timestamp (s)',
+    },
+  ]),
+)
+
 // ── Generate parent command ─────────────────────────────────────────
 
 export const generateCommand = Command.make('generate').pipe(
@@ -232,6 +265,7 @@ export const generateCommand = Command.make('generate').pipe(
     nanoidSubcommand,
     cuidSubcommand,
     ksuidSubcommand,
+    objectidSubcommand,
   ]),
   Command.withExamples([
     { command: 'uniku generate uuid -n 5 --json', description: 'Generate 5 UUIDs as a JSON array' },
@@ -251,6 +285,7 @@ export const typeidShorthand = typeidSubcommand
 export const nanoidShorthand = nanoidSubcommand
 export const cuidShorthand = cuidSubcommand
 export const ksuidShorthand = ksuidSubcommand
+export const objectidShorthand = objectidSubcommand
 
 // ── Helpers ─────────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ import { inspectOutput, OutputService } from '@/src/services/OutputService'
 
 const idArg = Argument.string('id').pipe(Argument.withDescription('The ID to inspect'))
 
-const typeFlag = Flag.choice('type', ['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid'] as const).pipe(
+const typeFlag = Flag.choice('type', ['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid', 'objectid'] as const).pipe(
   Flag.withDescription('ID type (auto-detected if omitted)'),
   Flag.optional,
 )

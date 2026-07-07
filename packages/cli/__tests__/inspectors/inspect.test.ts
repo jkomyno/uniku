@@ -1,6 +1,7 @@
 import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
+import { objectid } from 'uniku/objectid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -62,6 +63,17 @@ describe('inspectId', () => {
     expect(result!.random).toBeDefined()
   })
 
+  it('inspects ObjectID with timestamp and random tail', () => {
+    const id = objectid()
+    const result = inspectId(id, 'objectid')
+    expect(result).not.toBeNull()
+    expect(result!.type).toBe('objectid')
+    expect(result!.timestamp).toBeDefined()
+    expect(result!.timestamp_ms).toBeTypeOf('number')
+    // random+counter tail: 8 bytes = 16 hex chars
+    expect(result!.random).toHaveLength(16)
+  })
+
   it('inspects CUID with no-metadata note', () => {
     const id = cuid2()
     const result = inspectId(id, 'cuid')
@@ -92,6 +104,13 @@ describe('inspectId', () => {
     expect(result).not.toBeNull()
     expect(result!.type).toBe('typeid')
     expect(result!.version).toBe(7)
+  })
+
+  it('auto-detects ObjectID when type is not provided', () => {
+    const id = objectid()
+    const result = inspectId(id)
+    expect(result).not.toBeNull()
+    expect(result!.type).toBe('objectid')
   })
 
   it('returns null for unrecognizable ID', () => {

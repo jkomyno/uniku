@@ -7,6 +7,7 @@ import { Hono } from 'hono'
 import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid, URL_ALPHABET } from 'uniku/nanoid'
+import { objectid } from 'uniku/objectid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -20,7 +21,7 @@ const app = new Hono()
 app.get('/', (c) => {
   return c.json({
     message: 'uniku E2E Test Worker',
-    generators: ['uuid-v4', 'uuid-v7', 'typeid', 'ulid', 'ksuid', 'cuid2', 'nanoid'],
+    generators: ['uuid-v4', 'uuid-v7', 'typeid', 'ulid', 'ksuid', 'objectid', 'cuid2', 'nanoid'],
   })
 })
 
@@ -430,6 +431,100 @@ app.get('/ksuid/validate', (c) => {
 app.get('/ksuid/monotonic', (c) => {
   try {
     const ids = Array.from({ length: 100 }, () => ksuid())
+    const sorted = [...ids].sort()
+    const isMonotonic = ids.every((id, i) => id === sorted[i])
+    return c.json({
+      success: true,
+      count: ids.length,
+      isMonotonic,
+      first: ids[0],
+      last: ids[ids.length - 1],
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================================================
+// ObjectID Endpoints
+// ============================================================================
+
+app.get('/objectid/generate', (c) => {
+  try {
+    const id = objectid()
+    return c.json({ success: true, id })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/objectid/generate-batch', (c) => {
+  try {
+    const count = Number(c.req.query('count') || '1000')
+    const ids = Array.from({ length: count }, () => objectid())
+    return c.json({ success: true, ids, count: ids.length })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/objectid/to-bytes', (c) => {
+  try {
+    const id = objectid()
+    const bytes = objectid.toBytes(id)
+    const restored = objectid.fromBytes(bytes)
+    return c.json({
+      success: true,
+      original: id,
+      bytes: Array.from(bytes),
+      restored,
+      roundTripMatch: id === restored,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/objectid/timestamp', (c) => {
+  try {
+    const before = Date.now()
+    const id = objectid()
+    const after = Date.now()
+    const timestamp = objectid.timestamp(id)
+    // ObjectID has second precision, so timestamp should be within 1 second of generation time
+    const beforeSec = Math.floor(before / 1000) * 1000
+    const afterSec = Math.ceil(after / 1000) * 1000
+    return c.json({
+      success: true,
+      id,
+      timestamp,
+      before,
+      after,
+      withinRange: timestamp >= beforeSec && timestamp <= afterSec,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/objectid/validate', (c) => {
+  try {
+    const validId = objectid()
+    return c.json({
+      success: true,
+      validId,
+      isValidGenerated: objectid.isValid(validId),
+      isValidKnownGood: objectid.isValid('507f1f77bcf86cd799439011'),
+      isValidInvalid: objectid.isValid('not-an-objectid'),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/objectid/monotonic', (c) => {
+  try {
+    const ids = Array.from({ length: 100 }, () => objectid())
     const sorted = [...ids].sort()
     const isMonotonic = ids.every((id, i) => id === sorted[i])
     return c.json({

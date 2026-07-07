@@ -60,6 +60,7 @@ const ENTRYPOINTS = [
   { name: 'uniku/cuid2', src: 'src/cuid2/cuid2.ts' },
   { name: 'uniku/nanoid', src: 'src/nanoid/nanoid.ts' },
   { name: 'uniku/ksuid', src: 'src/ksuid/ksuid.ts' },
+  { name: 'uniku/objectid', src: 'src/objectid/objectid.ts' },
 ] as const
 
 type EntryPoint = (typeof ENTRYPOINTS)[number]

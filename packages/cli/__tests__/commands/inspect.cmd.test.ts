@@ -2,6 +2,7 @@ import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
 import { ksuid } from 'uniku/ksuid'
+import { objectid } from 'uniku/objectid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -55,6 +56,31 @@ describe('CLI: uniku inspect', () => {
         const output = yield* MockOutput.getStdout
         expect(output[0]).toContain('ksuid')
         expect(output[0]).toContain('Timestamp:')
+      }),
+    )
+
+    it.effect('[Given] ObjectID [Then] shows timestamp and random', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = objectid()
+        yield* cli(['inspect', id])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('objectid')
+        expect(output[0]).toContain('Timestamp:')
+      }),
+    )
+
+    it.effect('[Given] --type objectid [Then] skips auto-detection and returns the same result', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = objectid()
+        yield* cli(['inspect', id, '--type', 'objectid', '--json'])
+        const output = yield* MockOutput.getStdout
+        const parsed = JSON.parse(output[0])
+        expect(parsed.type).toBe('objectid')
+        expect(parsed.timestamp).toBeDefined()
+        expect(parsed.timestamp_ms).toBeTypeOf('number')
+        expect(parsed.random).toHaveLength(16)
       }),
     )
 
