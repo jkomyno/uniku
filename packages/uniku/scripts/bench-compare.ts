@@ -45,9 +45,17 @@ function isMissingFileError(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
 
+// Shared percent + RME string computation for both the markdown and ANSI
+// formatters below; only the per-status decoration differs between them.
+function formatChangeParts(row: ComparisonRow): { percent: string; rme: string } {
+  return {
+    percent: (row.change * 100).toFixed(1),
+    rme: row.combinedRme > 0 ? ` (+/-${(row.combinedRme * 100).toFixed(1)}% RME)` : '',
+  }
+}
+
 function formatChangeMarkdown(row: ComparisonRow): string {
-  const percent = (row.change * 100).toFixed(1)
-  const rme = row.combinedRme > 0 ? ` (+/-${(row.combinedRme * 100).toFixed(1)}% RME)` : ''
+  const { percent, rme } = formatChangeParts(row)
   switch (row.status) {
     case 'regression':
       return `🔴 ${percent}%${rme}`
@@ -63,8 +71,7 @@ function formatChangeMarkdown(row: ComparisonRow): string {
 }
 
 function formatChangeAnsi(row: ComparisonRow): string {
-  const percent = (row.change * 100).toFixed(1)
-  const rme = row.combinedRme > 0 ? ` (+/-${(row.combinedRme * 100).toFixed(1)}% RME)` : ''
+  const { percent, rme } = formatChangeParts(row)
   switch (row.status) {
     case 'regression':
       return `\x1b[31m${percent}%${rme}\x1b[0m` // Red
