@@ -1,0 +1,521 @@
+# TSID Specification
+
+Time-Sorted Unique Identifier (Snowflake-style 64-bit ID).
+
+Reference: https://github.com/f4b6a3/tsid-creator
+
+## Abstract
+
+TSID (Time-Sorted Unique Identifier) is a 64-bit Snowflake-style identifier
+that combines a 42-bit millisecond timestamp (relative to a custom epoch,
+default 2020-01-01T00:00:00.000Z) with a combined 22-bit node+counter tail
+(default split: 10-bit node, 12-bit counter). TSIDs are encoded as either
+8 big-endian bytes or a 13-character Crockford Base32 canonical string, and
+sort both numerically and lexicographically by creation time. Unlike every
+other uniku generator, `tsid()` returns a `bigint` by default rather than a
+`string` - its entire value proposition is native numeric storage (e.g. a
+database BIGINT primary key), the specific niche of "small enough to be a
+native 64-bit integer column, time-sortable, no central coordination" that
+none of ULID/KSUID (128-/160-bit) or ObjectID (96-bit, MongoDB-specific)
+serve directly.
+
+## Key Properties
+
+- 64-bit total size (half of ULID/UUID's 128 bits)
+- Native BIGINT-compatible: fits a signed/unsigned 64-bit integer column
+- Time-sortable with millisecond precision
+- Crockford Base32 encoding (13 characters) as an optional string form
+- Excludes ambiguous characters (I, L, O, U)
+- Configurable node ID width (`nodeBits`, 0-20) and custom epoch
+- Monotonic ordering within same millisecond (via counter increment)
+- Case-insensitive string parsing
+- Primary type is `bigint`, not `string` (see API Design)
+
+## Use Cases
+
+- Database primary keys requiring a native 64-bit integer column
+  (e.g. Postgres/MySQL `BIGINT`), where ULID/UUID's 128 bits would not fit
+- Distributed systems needing coordination-free ID generation with a
+  compact wire size
+- Sharded systems that assign a stable per-shard/per-instance `node` ID
+- Log correlation and event ordering where a numeric, sortable ID is
+  preferred over a string
+
+## Binary Format
+
+```
+ 000003D090      07B1C8
+
+|----------|    |----------------|
+ Timestamp          Node + Counter
+   42bits             22bits
+```
+
+### Components
+
+**Timestamp**
+- 42-bit integer
+- Milliseconds since a custom epoch (default `1577836800000`,
+  2020-01-01T00:00:00.000Z)
+- Won't run out of space until roughly the year 2149 (2^42 ms after the
+  default epoch)
+
+**Node**
+- Default 10 bits (configurable via `nodeBits`, 0-20)
+- Identifies the generating process/machine/shard
+- Lazily initialized to a random value on first no-option call, then
+  persisted for the module's lifetime
+
+**Counter**
+- Default 12 bits (`22 - nodeBits`)
+- Per-millisecond sequence value
+- Resets to a fresh random value on a new millisecond, increments by 1
+  within the same millisecond
+
+### Binary Layout and Byte Order
+
+The 64-bit value is encoded as 8 octets, Most Significant Byte first
+(network byte order):
+
+```
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      42_bit_uint_time (high bits)              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  ...time (low bits)  |   10_bit_node   |   12_bit_counter      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+Packing formula (matches `tsid-ts`'s internal representation, confirmed via
+cross-validation testing):
+
+```
+packed = (BigInt(msecs - epoch) << 22n)
+       | (BigInt(node) << BigInt(22 - nodeBits))
+       | BigInt(counter)
+```
+
+The result is masked to 64 bits implicitly, since the timestamp field is
+bounded to 42 bits and the node+counter tail to 22 bits.
+
+## String Encoding
+
+### Canonical Representation
+
+```
+ttttttttttttt
+
+where the 13 characters jointly encode the full 64-bit value:
+bits 64-63..22 (right-aligned across the string) = Timestamp
+bits 21-0 = Node + Counter
+```
+
+Unlike ULID (10 timestamp characters + 16 random characters cleanly split
+on a character boundary), TSID's fields do not align to 5-bit character
+boundaries, so the 13-character string is a straight Base32 encoding of the
+full 64-bit integer rather than a per-field concatenation.
+
+### Encoding Alphabet
+
+Crockford's Base32 (excludes I, L, O, U to avoid confusion and abuse):
+```
+0123456789ABCDEFGHJKMNPQRSTVWXYZ
+```
+
+Character positions:
+- '0'-'9' = values 0-9
+- 'A'-'H' = values 10-17
+- 'J'-'K' = values 18-19
+- 'M'-'N' = values 20-21
+- 'P'-'T' = values 22-26
+- 'V'-'Z' = values 27-31
+
+### Leading Character Range: Why 0-9/A-F, Not the Full Alphabet
+
+A 13-character Crockford Base32 string carries `13 * 5 = 65` bits of
+capacity, but a TSID value is only 64 bits. That leaves exactly 1 bit of
+headroom on the leading character: it is always encoded/decoded as
+`(value >> 60) & 0x1f`, and since `value` never exceeds 64 bits, that
+5-bit group's most significant bit is always 0. The leading character
+therefore only carries 4 significant real bits, i.e. values 0-15 -
+the alphabet's first 16 symbols, `0-9` and `A-F` (case-insensitive `a-f`
+also decodes).
+
+This is the same overflow-prevention technique ULID uses for its own
+leading `[0-7]` restriction, just with a different amount of headroom:
+ULID's 26-character string carries `26 * 5 = 130` bits for a 128-bit
+value, leaving 2 headroom bits and therefore `2^(5-2) = 8` valid leading
+values (`0-7`). TSID's 13-character string carries 65 bits for a 64-bit
+value, leaving 1 headroom bit and therefore `2^(5-1) = 16` valid leading
+values (`0-9`, `A-F`). Both are instances of the general rule: headroom
+bits `h` on the leading character restrict it to `2^(5-h)` alphabet
+symbols.
+
+Note: a prior draft of this project's planning documents incorrectly
+claimed the leading character was restricted to `0`/`1` (an arithmetic
+error - it treated the leading character as having 4 headroom bits, as if
+`13 * 5 - 64 = 1` had been miscomputed as 4). The implementation in
+`src/tsid/crockford64.ts` and this document use the corrected math above:
+1 headroom bit, 16 valid leading values, `0-9A-F`.
+
+### Bounds
+
+- Minimum TSID: `0000000000000` (bigint `0n`)
+- Maximum TSID: `FZZZZZZZZZZZZ` (bigint `2^64 - 1`)
+
+## API Design
+
+### Type Definitions
+
+```typescript
+type TsidOptions = {
+  msecs?: number     // Unix timestamp in milliseconds; defaults to Date.now()
+  epoch?: number      // Custom epoch in ms since Unix epoch; defaults to 1577836800000
+  node?: number       // Node ID (0 to 2^nodeBits - 1); defaults to a lazily-initialized persistent random value
+  nodeBits?: number   // Bits allocated to node ID (0-20); remaining (22 - nodeBits) go to counter; defaults to 10
+  counter?: number    // Per-millisecond counter (0 to 2^(22 - nodeBits) - 1); defaults to persistent state
+}
+
+type Tsid = {
+  (): bigint
+  <TBuf extends Uint8Array = Uint8Array>(
+    options: TsidOptions | undefined,
+    buf: TBuf,
+    offset?: number
+  ): TBuf
+  (options?: TsidOptions, buf?: undefined, offset?: number): bigint
+  toBytes(id: bigint): Uint8Array
+  fromBytes(bytes: Uint8Array): bigint
+  toString(id: bigint): string
+  fromString(str: string): bigint
+  timestamp(id: bigint, epoch?: number): number
+  isValid(id: unknown): id is bigint
+  NIL: bigint
+  MAX: bigint
+}
+```
+
+### Function Signatures
+
+```
+tsid() -> bigint
+```
+Generate a new TSID as a `bigint` using the current timestamp, the
+module's persistent node ID, and the per-millisecond counter. Maintains
+monotonic ordering within the same millisecond.
+
+```
+tsid(options) -> bigint
+```
+Generate a TSID with any combination of custom `msecs`, `epoch`, `node`,
+`nodeBits`, and/or `counter`. Passing any of these bypasses all persistent
+module state and produces a fully deterministic value.
+
+```
+tsid(options, buf, offset) -> buf
+```
+Write 8 big-endian bytes of the packed TSID value to the provided buffer
+at offset. Throws `BufferError` if buffer too small.
+
+```
+tsid.toBytes(id) -> Uint8Array
+```
+Convert a TSID `bigint` to 8 big-endian bytes.
+
+```
+tsid.fromBytes(bytes) -> bigint
+```
+Convert 8 big-endian bytes to a TSID `bigint`. Throws `BufferError` if the
+input is not exactly 8 bytes.
+
+```
+tsid.toString(id) -> string
+```
+Convert a TSID `bigint` to its 13-character canonical Crockford Base32
+string. This is a boundary conversion that does not exist on other uniku
+generators, since their primary type already is the string (see KTD1 in
+Implementation Notes).
+
+```
+tsid.fromString(str) -> bigint
+```
+Convert a 13-character canonical Crockford Base32 string to a TSID
+`bigint`. Case-insensitive. Throws `ParseError` on invalid length, invalid
+character, or a leading character outside `0-9A-F`.
+
+```
+tsid.timestamp(id, epoch?) -> number
+```
+Extract the Unix timestamp in milliseconds from a TSID `bigint`. Accepts
+an optional `epoch` (defaults to the standard TSID epoch) because the
+epoch is not self-describing in the packed value - callers who generated
+with a custom `epoch` must pass the same value back to decode correctly.
+
+```
+tsid.isValid(id) -> boolean
+```
+Validate that `id` is a `bigint` in range `[0n, 2^64 - 1]`. Note this
+operates on the `bigint`, not a string - see Validation Rules.
+
+### Constants
+
+```
+tsid.NIL = 0n
+tsid.MAX = 2n ** 64n - 1n
+```
+
+## Implementation Notes
+
+### KTD1: BigInt Is the Primary Type
+
+Every other uniku generator returns a `string` by default and operates
+`toBytes`/`fromBytes`/`timestamp`/`isValid` on that string. `tsid()`
+returns `bigint` by default instead, so `toBytes`/`fromBytes`/`timestamp`/
+`isValid` all operate on `bigint` - and `toString`/`fromString` are added
+as the boundary conversions to/from the 13-character canonical string, a
+pair that has no counterpart on any other generator because their primary
+type already is the string. This is a deliberate design decision
+reflecting that TSID's whole reason to exist is native numeric storage
+(e.g. a database `BIGINT` primary key), not a string-first identifier
+that happens to have a byte encoding.
+
+### Process State Model
+
+Module-level state holds the lazily-initialized persistent node ID and
+the per-millisecond-reset counter:
+
+```typescript
+type TsidState = {
+  node: number | undefined
+  msecs: number
+  counter: number
+}
+```
+
+Algorithm for a no-option call:
+1. Lazily initialize `state.node` on first use to a random value within
+   the default 10-bit range. It persists for the module's lifetime
+   (including across warm serverless/edge starts).
+2. Read the current timestamp in milliseconds (`Date.now()`).
+3. If `now > state.msecs` (a new millisecond): set `state.msecs = now`
+   and reseed `state.counter` to a fresh random value within the default
+   12-bit range.
+4. Otherwise (same millisecond as the last call): increment
+   `state.counter` by 1.
+5. If the incremented counter exceeds the 12-bit range (4096 values),
+   treat it as **clock drift ahead**: advance `state.msecs` by 1
+   (ahead of real wall-clock time) and reset `state.counter` to 0. This
+   is not an error condition - it matches the documented strategy of the
+   reference Java (`tsid-creator`) and TypeScript (`tsid-ts`)
+   implementations, and reflects that a 12-bit counter (4096 IDs/ms/node)
+   is a realistic throughput ceiling, unlike e.g. ULID's 80-bit random
+   field which effectively never overflows.
+6. Pack `state.msecs - TSID_EPOCH`, `state.node`, and `state.counter`
+   into the 64-bit value.
+
+Passing any of `msecs`, `epoch`, `node`, `nodeBits`, or `counter` via
+options bypasses this state entirely: every field is sourced fresh from
+the given value or an independent random default, computing a fully
+deterministic packed value that never reads from or writes to `state`.
+
+Note: in environments like Cloudflare Workers, where `Date.now()` is
+frozen for the duration of a request, all TSIDs generated within a single
+request share the same timestamp; monotonic ordering then relies entirely
+on the counter (and its clock-drift-ahead overflow above).
+
+### Configurable Node/Counter Split
+
+`nodeBits` (0-20, default 10) determines how the combined 22-bit tail
+splits between node and counter (`counterBits = 22 - nodeBits`). Setting
+`nodeBits = 0` dedicates the entire 22-bit tail to the counter (no node
+identity); setting it to the maximum of 20 leaves only 2 counter bits.
+`node`, `counter`, and `nodeBits` are each validated against their
+derived ranges independently; out-of-range values throw
+`InvalidInputError`.
+
+### Epoch Is Not Self-Describing
+
+A packed TSID value only encodes "milliseconds since *some* epoch" -
+decoding requires knowing which epoch produced it. `timestamp(id, epoch?)`
+defaults to the standard epoch (`1577836800000`) but accepts an explicit
+override for IDs generated with a custom `epoch`, mirroring the
+generation side symmetrically.
+
+### No Decomposed Node/Counter Accessors
+
+Because `nodeBits` is configurable and not self-describing in the packed
+value either, decoding the node and counter subfields separately would
+require knowing the `nodeBits` used at generation time - a value the
+packed TSID itself doesn't carry. Rather than risk a `node(id, nodeBits?)`
+/ `counter(id, nodeBits?)` pair silently producing wrong answers when
+called with the wrong `nodeBits`, this library exposes only the combined
+22-bit node+counter tail (obtainable by masking the low 22 bits of
+`toBytes`'s output), matching this library's `objectid` precedent of not
+decomposing its own random payload further than `toBytes` already does.
+
+### Self-Contained BigInt Codec
+
+`src/tsid/crockford64.ts` implements its own encode/decode tables and
+operates directly on the `bigint` value, rather than routing through an
+intermediate `Uint8Array` the way `ulid/crockford.ts` does. This follows
+the per-generator codec module precedent already set by
+`ksuid/base62.ts` and `objectid/hex.ts`, keeping each entry point
+independently tree-shakeable.
+
+## Validation Rules
+
+```typescript
+function isValid(id: unknown): id is bigint {
+  return typeof id === 'bigint' && id >= 0n && id <= (2n ** 64n - 1n)
+}
+```
+
+`isValid` is a range check on the `bigint`, not a string-format check -
+unlike every other uniku generator, whose `isValid` validates a string's
+length/alphabet/leading-character constraints. To validate a *string*,
+decode it first: `tsid.fromString(str)` throws `ParseError` on invalid
+length (must be 13), an invalid alphabet character, or a leading
+character outside `0-9A-F` (see Bounds and String Encoding above).
+
+**Case Handling:**
+- Generation (`toString`): always produces uppercase output
+- Parsing (`fromString`): case-insensitive
+
+## Security Considerations
+
+- The default node ID is drawn from `crypto.getRandomValues()`-backed
+  randomness (via the shared random pool) but is only 10 bits by default
+  (1024 possible values) and is reused for the module's entire lifetime -
+  it is not refreshed per ID
+- The counter is sequential/near-sequential within a millisecond, making
+  same-millisecond TSIDs from a known node trivially guessable in
+  relative generation order
+- Timestamp is visible in every TSID (recoverable via `timestamp()`)
+- This is the same node-ID-predictability trade-off that Twitter and
+  Discord snowflakes make: a compact, sortable, mostly-sequential ID in
+  exchange for giving up unpredictability
+- **Not suitable** when unpredictability or enumeration-resistance is a
+  requirement - contrast with `cuid2` (unguessable by design) or `ksuid`
+  (128 bits of cryptographic randomness per ID)
+- Do not use TSIDs as security capabilities (identifiers whose possession
+  grants access)
+
+## Comparison with Other Formats
+
+| Feature          | TSID      | ULID      | UUIDv4    | UUIDv7    | KSUID     | ObjectID  |
+|------------------|-----------|-----------|-----------|-----------|-----------|-----------|
+| Size (bits)      | 64        | 128       | 128       | 128       | 160       | 96        |
+| Primary type     | bigint    | string    | string    | string    | string    | string    |
+| String length    | 13        | 26        | 36        | 36        | 27        | 24        |
+| Time-sortable    | Yes       | Yes       | No        | Yes       | Yes       | Yes       |
+| Time resolution  | 1 ms      | 1 ms      | N/A       | 1 ms      | 1 second  | 1 second  |
+| Random entropy   | N/A (node+counter, not random per ID) | 80 bits | 122 bits | 62 bits | 128 bits | 40 bits (per-process) |
+| URL-safe         | Yes       | Yes       | No        | No        | Yes       | Yes       |
+| RFC Standard     | No        | No        | Yes       | Yes       | No        | No        |
+| Coordination     | No        | No        | No        | No        | No        | No        |
+| Native BIGINT fit | Yes      | No        | No        | No        | No        | No        |
+
+When to choose TSID:
+- Need the ID to fit a native 64-bit integer column (e.g. Postgres/MySQL
+  `BIGINT`), not just a 128-bit UUID/ULID
+- Want time-ordering with millisecond precision at half of ULID's size
+- Have a stable per-process/per-shard identity to assign as `node`
+- Numeric sort order and compact index size matter more than
+  unpredictability (contrast with cuid2/ksuid for that requirement)
+
+## Test Vectors
+
+### Example 1: Zero Values (NIL)
+- **Timestamp diff**: 0
+- **Node**: 0
+- **Counter**: 0
+- **Packed (bigint)**: `0n`
+- **Bytes**: `0x0000000000000000` (8 bytes)
+- **String**: `0000000000000`
+
+### Example 2: Maximum Valid TSID (MAX)
+- **Packed (bigint)**: `2n ** 64n - 1n` = `18446744073709551615n`
+- **Bytes**: `0xFFFFFFFFFFFFFFFF` (8 bytes)
+- **String**: `FZZZZZZZZZZZZ`
+
+### Example 3: Known Deterministic Output (hand-computed test vector)
+
+Inputs:
+```typescript
+const epoch = 1577836800000       // default epoch, 2020-01-01T00:00:00.000Z
+const msecs = epoch + 1_000_000   // 1577837800000 (2020-01-01T00:16:40.000Z)
+const nodeBits = 10               // default
+const node = 123
+const counter = 456
+```
+
+Packing (`packed = (BigInt(msecs - epoch) << 22n) | (BigInt(node) << 12n) | BigInt(counter)`):
+- `msecs - epoch` = `1,000,000`
+- `1,000,000 << 22` = `4,194,304,000,000`
+- `123 << 12` = `503,808`
+- `counter` = `456`
+- **Packed (bigint)**: `4,194,304,000,000 + 503,808 + 456` = `4194304504264n`
+- **Packed (hex)**: `0x000003D09007B1C8`
+- **Bytes (big-endian)**: `0x00 0x00 0x03 0xD0 0x90 0x07 0xB1 0xC8`
+- **String** (13-char Crockford Base32 of `4194304504264n`): `00003T280FCE8`
+
+Verification:
+- Node+counter tail: `packed & 0x3FFFFF` = `504264` = `(123 << 12) | 456`. Correct.
+- Decoding: `tsid.timestamp(4194304504264n)` = `1577836800000 + (4194304504264n >> 22n)`
+  = `1577836800000 + 1000000` = `1577837800000`. Correct.
+- Round-trip: `tsid.fromString("00003T280FCE8") === 4194304504264n`,
+  `tsid.fromBytes(tsid.toBytes(4194304504264n)) === 4194304504264n`.
+
+```typescript
+const id = tsid({ msecs, node, counter, nodeBits })
+// id === 4194304504264n
+tsid.toString(id) === '00003T280FCE8' // true
+tsid.timestamp(id) === 1577837800000  // true
+```
+
+### Example 4: Invalid Inputs
+| Input | Reason Invalid |
+|-------|----------------|
+| `""` | Wrong length (0 chars, need 13) |
+| `"0"` | Wrong length (1 char, need 13) |
+| `"GZZZZZZZZZZZZ"` | Leading char `G` exceeds the 0-9/A-F range (would overflow 64 bits) |
+| `"0000000000I00"` | Contains invalid char (`I`) |
+| `-1n` | `isValid` fails: negative bigint |
+| `2n ** 64n` | `isValid` fails: exceeds `MAX` |
+
+### Example 5: Round-Trip Verification
+```typescript
+const id = tsid({ msecs: 1577837800000, node: 123, counter: 456, nodeBits: 10 })
+const str = tsid.toString(id)
+const restored = tsid.fromString(str)
+// restored === id
+
+const bytes = tsid.toBytes(id)
+const fromBytesRestored = tsid.fromBytes(bytes)
+// fromBytesRestored === id
+```
+
+### Example 6: Timestamp Extraction with Custom Epoch
+```typescript
+const epoch = 1600000000000 // custom epoch
+const id = tsid({ epoch, msecs: 1600000000000 + 5000 })
+tsid.timestamp(id, epoch) === 1600000005000 // true; must pass the same epoch back
+```
+
+## Prior Art
+
+- [f4b6a3/tsid-creator](https://github.com/f4b6a3/tsid-creator) - the
+  canonical Java reference implementation this format follows
+- [yubinTW/tsid-ts](https://github.com/yubinTW/tsid-ts) - the TypeScript
+  port of `tsid-creator`, published to npm as `tsid-ts`, used for this
+  library's cross-validation tests
+- Twitter Snowflake and Discord Snowflake - the original 64-bit
+  timestamp+node+counter ID designs TSID generalizes with a
+  configurable node/counter split and a Base32 canonical string form
+
+## References
+
+- [f4b6a3/tsid-creator](https://github.com/f4b6a3/tsid-creator)
+- [yubinTW/tsid-ts](https://github.com/yubinTW/tsid-ts)
+- [Crockford Base32](https://www.crockford.com/base32.html)

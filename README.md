@@ -24,20 +24,21 @@ console.log(first < second && second < third) // true
 
 ## At a Glance
 
-|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [typeid-js](https://github.com/jetify-com/typeid-js) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) | [bson](https://github.com/mongodb/js-bson) |
-|--------------------|:-----:|:----:|:---------:|:------:|:----:|:-----:|:-----:|:-----:|
-| UUID v4            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
-| UUID v7            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
-| TypeID             |   ✅  |  ❌  |     ✅    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
-| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |   ❌  |
-| ULID               |   ✅  |  ❌  |     ❌    |   ❌   |  ✅  |   ❌  |   ❌  |   ❌  |
-| CUID2              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ✅  |   ❌  |   ❌  |
-| KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |   ❌  |
-| ObjectID           |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ✅  |
-| Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |   ❌  |
-| ESM-only           |   ✅  | ✅¹  |     ❌    |   ✅   |  ❌  |   ✅  |   ❌  |   ❌  |
-| Edge/Workers       |   ✅  |  ✅  |     ✅    |   ✅   |  ⚠️  |   ✅  |  ⚠️  |  ⚠️  |
-| Byte ↔ String      |   ✅  |  ✅  |     ✅    |   -    |  ⚠️²  |   -   |   ✅  |   ✅  |
+|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [typeid-js](https://github.com/jetify-com/typeid-js) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) | [bson](https://github.com/mongodb/js-bson) | [tsid-ts](https://github.com/yubinTW/tsid-ts) |
+|--------------------|:-----:|:----:|:---------:|:------:|:----:|:-----:|:-----:|:-----:|:-----:|
+| UUID v4            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
+| UUID v7            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
+| TypeID             |   ✅  |  ❌  |     ✅    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
+| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
+| ULID               |   ✅  |  ❌  |     ❌    |   ❌   |  ✅  |   ❌  |   ❌  |   ❌  |   ❌  |
+| CUID2              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ✅  |   ❌  |   ❌  |   ❌  |
+| KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |   ❌  |   ❌  |
+| ObjectID           |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ✅  |   ❌  |
+| TSID               |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ✅  |
+| Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |   ❌  |   ❌  |
+| ESM-only           |   ✅  | ✅¹  |     ❌    |   ✅   |  ❌  |   ✅  |   ❌  |   ❌  |   ❌  |
+| Edge/Workers       |   ✅  |  ✅  |     ✅    |   ✅   |  ⚠️  |   ✅  |  ⚠️  |  ⚠️  |  ⚠️  |
+| Byte ↔ String      |   ✅  |  ✅  |     ✅    |   -    |  ⚠️²  |   -   |   ✅  |   ✅  |   ✅  |
 
 > **Notes:**
 > - Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
@@ -76,6 +77,7 @@ Benchmarks comparing `uniku` string ID generation with equivalent npm packages:
 | CUID2     | **8× faster** |
 | KSUID     | **1.5× faster** |
 | ObjectID  | **1.1× faster** |
+| TSID      | **1.7× faster** |
 | UUID v7   | **1.1× faster**  |
 | Nanoid    | **~comparable speed** |
 | Nanoid (10 chars) | npm is 1.1× faster |
@@ -94,6 +96,7 @@ Benchmarks comparing `uniku` string ID generation with equivalent npm packages:
 | Distributed systems needing sortable, URL-safe IDs | **ULID** | Millisecond ordering + 80-bit entropy |
 | Very high-volume distributed systems | **KSUID** | Time-ordered with 128-bit entropy |
 | MongoDB `_id` compatibility | **ObjectID** | Drop-in match for MongoDB's native document ID format |
+| Native 64-bit sortable integer ID | **TSID** | Fits a database `BIGINT` primary key, no UUID-sized overhead |
 
 ## Installation
 
@@ -128,6 +131,7 @@ Only import what you use — each entry point is independently tree-shakeable:
 | `uniku/nanoid` | ~1.1 KB |
 | `uniku/ksuid` | ~1.3 KB |
 | `uniku/objectid` | ~1.3 KB |
+| `uniku/tsid` | ~1.4 KB |
 
 * The CUID2 entry point imports SHA3-512 from `@noble/hashes`; this table's entry-point size excludes that external dependency.
 
@@ -338,6 +342,35 @@ const ts = objectid.timestamp(id)
 // Validate
 objectid.isValid(id)
 // => true
+```
+
+### TSID (time-ordered, 64-bit integer)
+
+TSID is a Snowflake-style 64-bit identifier combining a millisecond timestamp, a node ID, and a per-millisecond counter. Unlike every other uniku generator, `tsid()` returns a `bigint` by default — not a string — since TSID's whole value proposition is native numeric storage (e.g. a database `BIGINT` primary key). `toString`/`fromString` are the boundary conversions to/from the 13-character canonical string:
+
+```ts
+import { tsid } from 'uniku/tsid'
+
+// Generate a TSID bigint (the primary type, not a string)
+const id = tsid()
+// => 862301223059968074n
+
+// Convert to/from the 13-character canonical Crockford Base32 string
+const str = tsid.toString(id)
+// => "0QXW2CK4XZM2A"
+tsid.fromString(str) === id // true
+
+// Extract timestamp (milliseconds, full precision)
+const ts = tsid.timestamp(id)
+// => 1783425432359
+
+// Validate (operates on bigint, not string)
+tsid.isValid(id)
+// => true
+
+// Convert to/from 8 bytes
+const bytes = tsid.toBytes(id)
+const restored = tsid.fromBytes(bytes)
 ```
 
 ## Migrating to uniku
@@ -581,6 +614,31 @@ objectid.MAX  // "ffffffffffffffffffffffff"
 
 > **Note:** ObjectID uses `secs` (seconds), like KSUID, reflecting its native second-precision timestamp. Unlike ULID/UUIDv7/KSUID's sequence counters (which reset when the timestamp advances), ObjectID's `counter` always increments and is independent of the timestamp — it never resets.
 
+### `tsid` (from `uniku/tsid`)
+
+```ts
+tsid(options?: TsidOptions): bigint
+tsid(options: TsidOptions | undefined, buf: Uint8Array, offset?: number): Uint8Array
+
+tsid.toBytes(id: bigint): Uint8Array
+tsid.fromBytes(bytes: Uint8Array): bigint
+tsid.toString(id: bigint): string
+tsid.fromString(str: string): bigint
+tsid.timestamp(id: bigint, epoch?: number): number
+tsid.isValid(id: unknown): id is bigint
+tsid.NIL  // 0n
+tsid.MAX  // 18446744073709551615n
+```
+
+**Options:**
+- `msecs?: number` — Timestamp in milliseconds (defaults to `Date.now()`)
+- `epoch?: number` — Custom epoch in milliseconds (defaults to `1577836800000`, i.e. 2020-01-01T00:00:00.000Z)
+- `node?: number` — Node ID (defaults to a lazily-initialized, persistent random value)
+- `nodeBits?: number` — Bits allocated to the node ID (0-20, default 10; `counterBits = 22 - nodeBits`)
+- `counter?: number` — Per-millisecond counter (defaults to a fresh random value on a new millisecond, or the previous value incremented by 1 within the same millisecond)
+
+> **Note:** Unlike every other uniku generator, `tsid()` returns a `bigint` by default, not a `string` — TSID's whole value proposition is native numeric storage (e.g. a database `BIGINT` primary key). `toBytes`/`fromBytes`/`timestamp`/`isValid` all operate on that `bigint`, and `toString`/`fromString` are the boundary conversions to/from the 13-character canonical Crockford Base32 string (leading character range `0-9A-Fa-f`).
+
 ## CLI
 
 Generate, validate, and inspect IDs from the command line with [`@uniku/cli`](./packages/cli):
@@ -619,6 +677,7 @@ Third-party libraries that inspired this project:
 - [@owpz/ksuid](https://github.com/owpz/ksuid): K-Sortable Unique Identifier
 - [bson](https://github.com/mongodb/js-bson): official MongoDB BSON library, including the ObjectId implementation
 - [nanoid](https://github.com/ai/nanoid): tiny, URL-friendly unique string ID generator
+- [tsid-ts](https://github.com/yubinTW/tsid-ts): TypeScript implementation of TSID, a Snowflake-style 64-bit Time-Sorted Unique Identifier
 
 Other:
 

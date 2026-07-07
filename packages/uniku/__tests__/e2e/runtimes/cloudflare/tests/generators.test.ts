@@ -11,6 +11,7 @@ const generators = [
   { name: 'ulid', pattern: /^[0-9A-HJKMNP-TV-Z]{26}$/ },
   { name: 'ksuid', pattern: /^[0-9A-Za-z]{27}$/ },
   { name: 'objectid', pattern: /^[0-9a-f]{24}$/i },
+  { name: 'tsid', pattern: /^[0-9A-Fa-f][0-9A-HJKMNP-TV-Z]{12}$/i },
   { name: 'cuid2', pattern: /^[a-z][a-z0-9]+$/ },
   { name: 'nanoid', pattern: /^[A-Za-z0-9_-]+$/ },
 ] as const
@@ -22,8 +23,14 @@ const generatorsWithBytes = [
   { name: 'ulid', byteLength: 16 },
   { name: 'ksuid', byteLength: 20 },
   { name: 'objectid', byteLength: 12 },
+  { name: 'tsid', byteLength: 8 },
 ] as const
-const generatorsWithTimestamp = ['uuid-v7', 'typeid', 'ulid', 'objectid'] as const
+// uuid-v7/ulid/typeid/objectid/tsid all have monotonic ordering guarantees, so
+// they share the timestamp-extraction and monotonic-ordering checks below.
+// ksuid is deliberately excluded from both: uniku's ksuid has no monotonic
+// guarantee, unlike tsid's counter+node design which specifically exists to
+// guarantee monotonic ordering per node.
+const generatorsWithTimestamp = ['uuid-v7', 'typeid', 'ulid', 'objectid', 'tsid'] as const
 
 describe('ID generators on Cloudflare Workers', () => {
   // =========================================================================
@@ -90,7 +97,7 @@ describe('ID generators on Cloudflare Workers', () => {
   })
 
   // =========================================================================
-  // Timestamp & monotonic tests (uuid-v7, ulid only)
+  // Timestamp & monotonic tests (generatorsWithTimestamp only)
   // =========================================================================
 
   describe('timestamp extraction', () => {
@@ -162,6 +169,56 @@ describe('ID generators on Cloudflare Workers', () => {
       expect(body.success).toBe(true)
       expect(body.urlAlphabet).toBe('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-')
       expect(body.length).toBe(64)
+    })
+  })
+
+  // =========================================================================
+  // TSID-specific regression tests
+  //
+  // TSID's primary type is `bigint`, unlike every other generator in this
+  // suite. Hono's `c.json()` calls `JSON.stringify` internally, which throws
+  // `TypeError: Do not know how to serialize a BigInt` on a raw bigint. These
+  // tests guard against that failure mode reaching the worker's routes.
+  // =========================================================================
+
+  describe('tsid bigint JSON serialization safety', () => {
+    it('generate route returns valid JSON with a string id (no raw bigint)', async () => {
+      const response = await SELF.fetch('http://localhost/tsid/generate')
+      expect(response.status).toBe(200)
+
+      const body = (await response.json()) as { success: boolean; id: string }
+      expect(body.success).toBe(true)
+      expect(typeof body.id).toBe('string')
+      expect(body.id).toMatch(/^[0-9A-Fa-f][0-9A-HJKMNP-TV-Z]{12}$/i)
+    })
+
+    it('generate-batch route returns valid JSON with string ids (no raw bigint)', async () => {
+      const response = await SELF.fetch('http://localhost/tsid/generate-batch')
+      expect(response.status).toBe(200)
+
+      const body = (await response.json()) as { success: boolean; ids: string[]; count: number }
+      expect(body.success).toBe(true)
+      expect(body.count).toBe(1000)
+      expect(body.ids.every((id) => typeof id === 'string')).toBe(true)
+      expect(body.ids.every((id) => /^[0-9A-Fa-f][0-9A-HJKMNP-TV-Z]{12}$/i.test(id))).toBe(true)
+    })
+  })
+
+  describe('tsid sequential generation', () => {
+    it('produces monotonically increasing canonical strings across 100 sequential requests', async () => {
+      const ids: string[] = []
+      for (let i = 0; i < 100; i += 1) {
+        const response = await SELF.fetch('http://localhost/tsid/generate')
+        expect(response.status).toBe(200)
+
+        const body = (await response.json()) as { success: boolean; id: string }
+        expect(body.success).toBe(true)
+        ids.push(body.id)
+      }
+
+      const sorted = [...ids].sort()
+      expect(ids).toEqual(sorted)
+      expect(new Set(ids).size).toBe(ids.length)
     })
   })
 })
