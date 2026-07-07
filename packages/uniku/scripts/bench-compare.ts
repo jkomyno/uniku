@@ -6,6 +6,13 @@
  * Outputs a markdown comparison table and exits with error if an RME-significant
  * regression exceeds the configured threshold.
  *
+ * Resilience rules (see `bench-results.ts`):
+ *   - Only uniku's own benchmarks can gate. Third-party `npm`/`regex` reference
+ *     rows are reported (`ℹ️ … (ref)`) but never counted as a regression, since
+ *     their run-to-run variance is outside our control.
+ *   - A change must clear ~2x its combined RME (not 1x) to count as a real
+ *     regression/improvement, absorbing shared-runner measurement noise.
+ *
  * Usage:
  *   pnpm bench:compare           # Compare against baseline from gh-benchmarks branch
  *   bun scripts/bench-compare.ts baseline.json bench-results.json
@@ -61,6 +68,9 @@ function formatChangeMarkdown(row: ComparisonRow): string {
       return `🟢 +${percent}%${rme}`
     case 'neutral':
       return `⚪ ${row.change >= 0 ? '+' : ''}${percent}%${rme}`
+    case 'reference':
+      // Third-party competitor: informational only, never a uniku regression.
+      return `ℹ️ ${row.change >= 0 ? '+' : ''}${percent}%${rme} (ref)`
     case 'new':
       return '🆕 new'
     case 'removed':
@@ -77,6 +87,9 @@ function formatChangeAnsi(row: ComparisonRow): string {
       return `\x1b[32m+${percent}%${rme}\x1b[0m` // Green
     case 'neutral':
       return `\x1b[33m${row.change >= 0 ? '+' : ''}${percent}%${rme}\x1b[0m` // Yellow
+    case 'reference':
+      // Third-party competitor: informational only, never a uniku regression.
+      return `\x1b[90m${row.change >= 0 ? '+' : ''}${percent}%${rme} (ref)\x1b[0m` // Gray
     case 'new':
       return '\x1b[36mnew\x1b[0m' // Cyan
     case 'removed':
