@@ -126,7 +126,7 @@ async function calculateWithTsdown(entry: EntryPoint): Promise<BundleSize> {
   // Get the output file content
   const jsChunk = bundle.chunks.find((chunk) => chunk.type === 'chunk' && chunk.fileName.endsWith('.mjs'))
 
-  if (!jsChunk || jsChunk.type !== 'chunk') {
+  if (jsChunk?.type !== 'chunk') {
     throw new Error(`No JS chunk found for ${entry.name}`)
   }
 
