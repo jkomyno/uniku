@@ -1,5 +1,15 @@
 # uniku
 
+## 0.2.0
+
+### Minor Changes
+
+- d624956: Add `uniku/objectid`, a spec-compliant MongoDB ObjectID generator: 12-byte time-ordered IDs encoded as 24-character lowercase hex, with buffer-mode support, `toBytes`/`fromBytes` conversion, and millisecond timestamp extraction. Cross-validated against MongoDB's own `bson` package.
+
+### Patch Changes
+
+- 6937984: Document TypeID-JS in the README comparison tables.
+
 ## 0.1.0
 
 ### Minor Changes
