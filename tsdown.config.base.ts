@@ -20,6 +20,10 @@ export const baseConfig = {
   minify: true,
   target: 'ES2023',
 
+  // Pinned explicitly: tsdown 0.21 changed this default from 'ci-only' to false.
+  // Keep failing CI builds on warnings, as this repo did before the bump.
+  failOnWarn: 'ci-only',
+
   onSuccess() {
     console.info('Build succeeded!')
   },

@@ -45,7 +45,7 @@
     "lint-staged": "^16.2.7",
     "publint": "^0.3.16",
     "rimraf": "^6.1.2",
-    "tsdown": "^0.18.4",
+    "tsdown": "^0.22.3",
     "tsx": "^4.21.0",
     "turbo": "^2.8.0",
     "typescript": "catalog:",

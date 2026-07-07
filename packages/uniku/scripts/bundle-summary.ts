@@ -110,7 +110,8 @@ async function calculateWithTsdown(entry: EntryPoint): Promise<BundleSize> {
       format: 'es',
       dts: false,
       clean: true,
-      external: ['@noble/hashes', '@noble/hashes/*'],
+      // tsdown 0.21 moved `external` under the `deps` namespace.
+      deps: { neverBundle: ['@noble/hashes', '@noble/hashes/*'] },
       report: false, // We'll compute sizes ourselves
       config: false, // Don't load tsdown.config.ts
     }),
