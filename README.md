@@ -29,9 +29,9 @@ console.log(first < second && second < third) // true
 | UUID v4            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
 | UUID v7            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
 | TypeID             |   ✅  |  ❌  |     ✅    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
+| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |   ❌  |
 | ULID               |   ✅  |  ❌  |     ❌    |   ❌   |  ✅  |   ❌  |   ❌  |   ❌  |
 | CUID2              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ✅  |   ❌  |   ❌  |
-| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |   ❌  |
 | KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |   ❌  |
 | ObjectID           |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ✅  |
 | Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |   ❌  |
