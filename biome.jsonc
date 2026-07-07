@@ -21,7 +21,9 @@
       "!public",
       // Read-only source clone of effect-smol (git submodule) — never lint.
       "!repos",
-      "!plans"
+      "!plans",
+      // Local, gitignored Claude Code settings — not part of the repo sources.
+      "!**/.claude"
     ]
   },
   "overrides": [
