@@ -1,6 +1,7 @@
 import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
+import { objectid } from 'uniku/objectid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -20,6 +21,8 @@ export function validateAs(id: string, type: IdType): ValidationResult {
       return validateTypeid(id)
     case 'ksuid':
       return validateKsuid(id)
+    case 'objectid':
+      return validateObjectid(id)
     case 'cuid':
       return validateCuid(id)
     case 'nanoid':
@@ -29,7 +32,14 @@ export function validateAs(id: string, type: IdType): ValidationResult {
 
 /**
  * Auto-detect ID type and validate.
- * Detection order: UUID > TypeID > ULID > KSUID > CUID > Nanoid.
+ * Detection order: UUID > TypeID > ULID > KSUID > ObjectID > CUID > Nanoid.
+ *
+ * ObjectID must be checked before CUID: CUID2's default validation regex
+ * (`/^[a-z][0-9a-z]+$/`, default length 24) accepts any 24-character string
+ * over 0-9a-z that starts with a letter. ObjectID's alphabet (0-9a-f) is a
+ * strict subset of that at the same default length, so any ObjectID whose
+ * first hex digit is a-f (~37.5% of generated IDs) would also satisfy
+ * cuid2.isValid() if checked first.
  */
 export function validateAutoDetect(id: string): ValidationResult {
   // 1. UUID (36 chars, 8-4-4-4-12 format with hyphens)
@@ -55,12 +65,17 @@ export function validateAutoDetect(id: string): ValidationResult {
     return { id, valid: true, type: 'ksuid' }
   }
 
-  // 5. CUID (starts with letter, Base36)
+  // 5. ObjectID (24 chars, hex) - must precede CUID2, see doc comment above
+  if (objectid.isValid(id)) {
+    return { id, valid: true, type: 'objectid' }
+  }
+
+  // 6. CUID (starts with letter, Base36)
   if (cuid2.isValid(id)) {
     return { id, valid: true, type: 'cuid' }
   }
 
-  // 6. Nanoid (fallback: URL-safe A-Za-z0-9_- and length 1-256)
+  // 7. Nanoid (fallback: URL-safe A-Za-z0-9_- and length 1-256)
   if (nanoid.isValid(id)) {
     return { id, valid: true, type: 'nanoid' }
   }
@@ -97,6 +112,13 @@ function validateKsuid(id: string): ValidationResult {
     return { id, valid: true, type: 'ksuid' }
   }
   return { id, valid: false, type: 'ksuid', error: 'invalid KSUID format' }
+}
+
+function validateObjectid(id: string): ValidationResult {
+  if (objectid.isValid(id)) {
+    return { id, valid: true, type: 'objectid' }
+  }
+  return { id, valid: false, type: 'objectid', error: 'invalid ObjectID format' }
 }
 
 function validateCuid(id: string): ValidationResult {

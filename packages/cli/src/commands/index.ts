@@ -4,6 +4,7 @@ import {
   generateCommand,
   ksuidShorthand,
   nanoidShorthand,
+  objectidShorthand,
   typeidShorthand,
   ulidShorthand,
   uuidShorthand,
@@ -33,6 +34,7 @@ export const rootCommand = Command.make('uniku').pipe(
     nanoidShorthand,
     cuidShorthand,
     ksuidShorthand,
+    objectidShorthand,
   ]),
 )
 

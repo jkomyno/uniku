@@ -1,4 +1,5 @@
 import { ksuid } from 'uniku/ksuid'
+import { objectid } from 'uniku/objectid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -23,6 +24,8 @@ export function inspectId(id: string, type?: IdType): InspectResult | null {
       return inspectTypeid(id)
     case 'ksuid':
       return inspectKsuid(id)
+    case 'objectid':
+      return inspectObjectid(id)
     case 'cuid':
       return inspectCuid(id)
     case 'nanoid':
@@ -113,6 +116,20 @@ function inspectKsuid(id: string): InspectResult {
   return {
     id,
     type: 'ksuid',
+    timestamp: new Date(ms).toISOString(),
+    timestamp_ms: ms,
+    random,
+  }
+}
+
+function inspectObjectid(id: string): InspectResult {
+  const ms = objectid.timestamp(id)
+  const bytes = objectid.toBytes(id)
+  // Random + counter tail: last 8 bytes (bytes 4-11)
+  const random = Buffer.from(bytes.slice(4)).toString('hex')
+  return {
+    id,
+    type: 'objectid',
     timestamp: new Date(ms).toISOString(),
     timestamp_ms: ms,
     random,

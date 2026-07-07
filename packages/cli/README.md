@@ -5,7 +5,7 @@
 
 Command-line tool for generating, validating, and inspecting unique identifiers.
 
-Supports UUID v4/v7, ULID, TypeID, CUID2, Nanoid, and KSUID.
+Supports UUID v4/v7, ULID, TypeID, CUID2, Nanoid, KSUID, and MongoDB ObjectID.
 
 ## Installation
 
@@ -86,6 +86,13 @@ uniku cuid --length 16
 # KSUID
 uniku ksuid
 
+# MongoDB ObjectID
+uniku objectid
+# => 66e1a8d3f1c2b3a4d5e6f7a8
+
+# ObjectID for a fixed Unix timestamp (s)
+uniku objectid --timestamp 1720000000
+
 # Output as JSON
 uniku uuid --count 3 --json
 ```
@@ -130,7 +137,7 @@ uniku inspect user_01h2xcejqtf2nbrexx3vqjhp41
 uniku inspect --json 018e5e5c-7c8a-7000-8000-000000000000
 ```
 
-For time-ordered IDs (UUID v7, ULID, TypeID, KSUID), inspect extracts the embedded timestamp. For random-only IDs (UUID v4, CUID2, Nanoid), it reports that no decodable metadata is available.
+For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID), inspect extracts the embedded timestamp. For random-only IDs (UUID v4, CUID2, Nanoid), it reports that no decodable metadata is available.
 
 ## Commands Reference
 
@@ -142,6 +149,7 @@ For time-ordered IDs (UUID v7, ULID, TypeID, KSUID), inspect extracts the embedd
 | `uniku nanoid` | Generate Nanoids |
 | `uniku cuid` | Generate CUIDs (v2) |
 | `uniku ksuid` | Generate KSUIDs |
+| `uniku objectid` | Generate MongoDB ObjectIDs |
 | `uniku validate <id>` | Check if an ID is valid |
 | `uniku inspect <id>` | Decode and inspect an ID |
 
@@ -168,12 +176,13 @@ For time-ordered IDs (UUID v7, ULID, TypeID, KSUID), inspect extracts the embedd
 | `nanoid` | `--alphabet` | `-a` | Custom alphabet or preset: hex, numeric, alpha |
 | `cuid` | `--length` | `-l` | Length of ID, 2-32 (default: 24) |
 | `ksuid` | `--timestamp` | | Unix timestamp in seconds or "now" |
+| `objectid` | `--timestamp` | | Unix timestamp in seconds or "now" |
 
 ### Validate Options
 
 | Option | Description |
 |--------|-------------|
-| `--type` | Expected ID type: uuid, ulid, typeid, nanoid, cuid, ksuid (auto-detected if omitted) |
+| `--type` | Expected ID type: uuid, ulid, typeid, nanoid, cuid, ksuid, objectid (auto-detected if omitted) |
 | `--stdin` | Read IDs from stdin (one per line) |
 | `--quiet` | No output, exit code only (0 = valid, 2 = invalid) |
 | `--json` | Output as JSON |
@@ -182,7 +191,7 @@ For time-ordered IDs (UUID v7, ULID, TypeID, KSUID), inspect extracts the embedd
 
 | Option | Description |
 |--------|-------------|
-| `--type` | ID type: uuid, ulid, typeid, nanoid, cuid, ksuid (auto-detected if omitted) |
+| `--type` | ID type: uuid, ulid, typeid, nanoid, cuid, ksuid, objectid (auto-detected if omitted) |
 | `--json` | Output as JSON |
 
 ## Tech Stack

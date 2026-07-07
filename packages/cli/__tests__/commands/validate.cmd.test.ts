@@ -1,6 +1,7 @@
 import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
+import { objectid } from 'uniku/objectid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
@@ -81,6 +82,58 @@ describe('CLI: uniku validate', () => {
         const result = yield* cli(['validate', id, '--type', 'uuid']).pipe(Effect.flip)
         assertInstanceOf(result, ValidationFailedError)
       }),
+    )
+
+    it.effect('[Given] ObjectID [Then] auto-detects and validates as ObjectID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = objectid()
+        yield* cli(['validate', id])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (objectid)'])
+      }),
+    )
+
+    it.effect('[Given] --type objectid and valid ObjectID [Then] validates as ObjectID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = objectid()
+        yield* cli(['validate', id, '--type', 'objectid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (objectid)'])
+      }),
+    )
+
+    it.effect(
+      '[Given] an ObjectID hex string starting with a-f [Then] auto-detects as objectid, not cuid (KTD6/R9)',
+      () =>
+        Effect.gen(function* () {
+          // Fixed known value (not generated) to guarantee the first char is in a-f -
+          // this is the exact collision CUID2's default regex would otherwise accept.
+          const id = 'aabbccddeeff001122334455'
+          yield* MockOutput.reset
+          yield* cli(['validate', id])
+          const output = yield* MockOutput.getStdout
+          expect(output).toEqual(['valid (objectid)'])
+        }),
+    )
+
+    it.effect(
+      '[Given] --type objectid and --type cuid on the same collision ID [Then] both explicit paths validate correctly',
+      () =>
+        Effect.gen(function* () {
+          const id = 'aabbccddeeff001122334455'
+
+          yield* MockOutput.reset
+          yield* cli(['validate', id, '--type', 'objectid'])
+          const asObjectid = yield* MockOutput.getStdout
+          expect(asObjectid).toEqual(['valid (objectid)'])
+
+          yield* MockOutput.reset
+          yield* cli(['validate', id, '--type', 'cuid'])
+          const asCuid = yield* MockOutput.getStdout
+          expect(asCuid).toEqual(['valid (cuid)'])
+        }),
     )
 
     it.effect('[Given] --json [Then] outputs JSON validation result', () =>

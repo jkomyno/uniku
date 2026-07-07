@@ -1,7 +1,7 @@
 /**
  * Supported ID types.
  */
-export type IdType = 'uuid' | 'ulid' | 'typeid' | 'nanoid' | 'cuid' | 'ksuid'
+export type IdType = 'uuid' | 'ulid' | 'typeid' | 'nanoid' | 'cuid' | 'ksuid' | 'objectid'
 
 /**
  * Result of validating a single ID.
