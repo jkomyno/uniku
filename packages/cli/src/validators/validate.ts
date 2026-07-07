@@ -1,4 +1,4 @@
-import { cuid2 } from 'uniku/cuid2'
+import { cuidv2 } from 'uniku/cuid/v2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
 import { objectid } from 'uniku/objectid'
@@ -42,7 +42,7 @@ export function validateAs(id: string, type: IdType): ValidationResult {
  * over 0-9a-z that starts with a letter. ObjectID's alphabet (0-9a-f) is a
  * strict subset of that at the same default length, so any ObjectID whose
  * first hex digit is a-f (~37.5% of generated IDs) would also satisfy
- * cuid2.isValid() if checked first.
+ * cuidv2.isValid() if checked first.
  *
  * TSID must also be checked before CUID2 (and before Nanoid's catch-all),
  * for the same reason: CUID2's `isValid` only checks length in [2, 32] with
@@ -89,7 +89,7 @@ export function validateAutoDetect(id: string): ValidationResult {
   }
 
   // 7. CUID (starts with letter, Base36)
-  if (cuid2.isValid(id)) {
+  if (cuidv2.isValid(id)) {
     return { id, valid: true, type: 'cuid' }
   }
 
@@ -140,7 +140,7 @@ function validateObjectid(id: string): ValidationResult {
 }
 
 function validateCuid(id: string): ValidationResult {
-  if (cuid2.isValid(id)) {
+  if (cuidv2.isValid(id)) {
     return { id, valid: true, type: 'cuid' }
   }
   return { id, valid: false, type: 'cuid', error: 'invalid CUID format' }

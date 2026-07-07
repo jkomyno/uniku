@@ -74,6 +74,11 @@
         "import": "./build/cuid2/cuid2.mjs",
         "default": "./build/cuid2/cuid2.mjs"
       },
+      "./cuid/v2": {
+        "types": "./build/cuid/v2.d.mts",
+        "import": "./build/cuid/v2.mjs",
+        "default": "./build/cuid/v2.mjs"
+      },
       "./nanoid": {
         "types": "./build/nanoid/nanoid.d.mts",
         "import": "./build/nanoid/nanoid.mjs",
@@ -157,6 +162,14 @@
         "default": "./build/cuid2/cuid2.mjs"
       },
       "default": "./build/cuid2/cuid2.mjs"
+    },
+    "./cuid/v2": {
+      "types": "./build/cuid/v2.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/cuid/v2.ts",
+        "default": "./build/cuid/v2.mjs"
+      },
+      "default": "./build/cuid/v2.mjs"
     },
     "./nanoid": {
       "types": "./build/nanoid/nanoid.d.mts",

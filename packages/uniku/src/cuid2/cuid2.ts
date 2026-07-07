@@ -203,6 +203,10 @@ function isValid(id: unknown): id is string {
  *   console.log(maybeId.length) // TypeScript knows maybeId is string
  * }
  * ```
+ *
+ * @deprecated Use `cuidv2` from `uniku/cuid/v2` instead. This entry point keeps
+ * working unchanged, but `uniku/cuid/v2` is the canonical versioned subpath
+ * (mirroring `uniku/uuid/v4` / `uniku/uuid/v7`).
  */
 export const cuid2: Cuid2 = Object.assign(cuid2Fn, {
   isValid,

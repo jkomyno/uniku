@@ -1,5 +1,5 @@
 import * as Effect from 'effect/Effect'
-import { cuid2 } from 'uniku/cuid2'
+import { cuidv2 } from 'uniku/cuid/v2'
 import { UniqueIdError } from 'uniku/errors'
 import { CliError, fromUnikuError } from '@/src/domain/errors'
 
@@ -13,7 +13,7 @@ export function generateCuid(options: CuidGenerateOptions): Effect.Effect<string
     try: () => {
       const ids: string[] = []
       for (let i = 0; i < options.count; i++) {
-        ids.push(cuid2({ length: options.length }))
+        ids.push(cuidv2({ length: options.length }))
       }
       return ids
     },
