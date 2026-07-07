@@ -1,5 +1,17 @@
 # @uniku/cli
 
+## 0.4.0
+
+### Minor Changes
+
+- 4260e04: Add MongoDB ObjectID generation, validation, and inspection support to the CLI, including a `--timestamp` flag for `generate objectid` and a `uniku objectid` shorthand. Fixes auto-detection so ObjectIDs starting with a hex letter (`a`-`f`) are no longer misclassified as CUID2.
+
+### Patch Changes
+
+- Updated dependencies [6937984]
+- Updated dependencies [d624956]
+  - uniku@0.2.0
+
 ## 0.3.0
 
 ### Minor Changes
