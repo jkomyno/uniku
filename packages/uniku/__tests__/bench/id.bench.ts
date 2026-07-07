@@ -2,6 +2,7 @@ import { bench, describe } from 'vitest'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
+import { objectid } from '@/src/objectid/objectid'
 import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
@@ -87,6 +88,14 @@ describe('ID Generation', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'objectid',
+    () => {
+      objectid()
+    },
+    benchOptions,
+  )
 })
 
 // === toBytes Benchmarks ===
@@ -97,6 +106,7 @@ describe('ID toBytes', () => {
   const ulidString = ulid()
   const typeidString = typeid('user')
   const ksuidString = ksuid()
+  const objectidString = objectid()
 
   bench(
     'uuidv4.toBytes',
@@ -137,6 +147,14 @@ describe('ID toBytes', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'objectid.toBytes',
+    () => {
+      objectid.toBytes(objectidString)
+    },
+    benchOptions,
+  )
 })
 
 // === fromBytes Benchmarks ===
@@ -147,6 +165,7 @@ describe('ID fromBytes', () => {
   const ulidBytes = ulid.toBytes(ulid())
   const typeidBytes = typeid.toBytes(typeid('user'))
   const ksuidBytes = ksuid.toBytes(ksuid())
+  const objectidBytes = objectid.toBytes(objectid())
 
   bench(
     'uuidv4.fromBytes',
@@ -187,6 +206,14 @@ describe('ID fromBytes', () => {
     },
     benchOptions,
   )
+
+  bench(
+    'objectid.fromBytes',
+    () => {
+      objectid.fromBytes(objectidBytes)
+    },
+    benchOptions,
+  )
 })
 
 // === isValid Benchmarks ===
@@ -198,6 +225,7 @@ describe('ID isValid', () => {
   const typeidString = typeid('user')
   const cuid2String = cuid2()
   const ksuidString = ksuid()
+  const objectidString = objectid()
 
   bench(
     'uuidv4.isValid',
@@ -252,6 +280,14 @@ describe('ID isValid', () => {
     'ksuid.isValid',
     () => {
       ksuid.isValid(ksuidString)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'objectid.isValid',
+    () => {
+      objectid.isValid(objectidString)
     },
     benchOptions,
   )

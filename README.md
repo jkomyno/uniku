@@ -24,19 +24,20 @@ console.log(first < second && second < third) // true
 
 ## At a Glance
 
-|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [typeid-js](https://github.com/jetify-com/typeid-js) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) |
-|--------------------|:-----:|:----:|:---------:|:------:|:----:|:-----:|:-----:|
-| UUID v4            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |
-| UUID v7            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |
-| TypeID             |   ✅  |  ❌  |     ✅    |   ❌   |  ❌  |   ❌  |   ❌  |
-| ULID               |   ✅  |  ❌  |     ❌    |   ❌   |  ✅  |   ❌  |   ❌  |
-| CUID2              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ✅  |   ❌  |
-| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |
-| KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |
-| Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |
-| ESM-only           |   ✅  | ✅¹  |     ❌    |   ✅   |  ❌  |   ✅  |   ❌  |
-| Edge/Workers       |   ✅  |  ✅  |     ✅    |   ✅   |  ⚠️  |   ✅  |  ⚠️  |
-| Byte ↔ String      |   ✅  |  ✅  |     ✅    |   -    |  ⚠️²  |   -   |   ✅  |
+|                    | uniku | [uuid](https://github.com/uuidjs/uuid) | [typeid-js](https://github.com/jetify-com/typeid-js) | [nanoid](https://github.com/ai/nanoid) | [ulid](https://github.com/ulid/javascript) | [cuid2](https://github.com/paralleldrive/cuid2) | [ksuid](https://github.com/owpz/ksuid) | [bson](https://github.com/mongodb/js-bson) |
+|--------------------|:-----:|:----:|:---------:|:------:|:----:|:-----:|:-----:|:-----:|
+| UUID v4            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
+| UUID v7            |   ✅  |  ✅  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
+| TypeID             |   ✅  |  ❌  |     ✅    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |
+| ULID               |   ✅  |  ❌  |     ❌    |   ❌   |  ✅  |   ❌  |   ❌  |   ❌  |
+| CUID2              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ✅  |   ❌  |   ❌  |
+| Nanoid             |   ✅  |  ❌  |     ❌    |   ✅   |  ❌  |   ❌  |   ❌  |   ❌  |
+| KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |   ❌  |
+| ObjectID           |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ✅  |
+| Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |   ❌  |
+| ESM-only           |   ✅  | ✅¹  |     ❌    |   ✅   |  ❌  |   ✅  |   ❌  |   ❌  |
+| Edge/Workers       |   ✅  |  ✅  |     ✅    |   ✅   |  ⚠️  |   ✅  |  ⚠️  |  ⚠️  |
+| Byte ↔ String      |   ✅  |  ✅  |     ✅    |   -    |  ⚠️²  |   -   |   ✅  |   ✅  |
 
 > **Notes:**
 > - Byte ↔ String conversion doesn't make sense for nanoid and cuid2, since they are string-native formats with no canonical binary representation.
@@ -74,6 +75,7 @@ Benchmarks comparing `uniku` string ID generation with equivalent npm packages:
 | ULID      | **85× faster** |
 | CUID2     | **8× faster** |
 | KSUID     | **1.5× faster** |
+| ObjectID  | **1.1× faster** |
 | UUID v7   | **1.1× faster**  |
 | Nanoid    | **~comparable speed** |
 | Nanoid (10 chars) | npm is 1.1× faster |
@@ -91,6 +93,7 @@ Benchmarks comparing `uniku` string ID generation with equivalent npm packages:
 | Maximum compatibility | **UUID v4** | Universal standard |
 | Distributed systems needing sortable, URL-safe IDs | **ULID** | Millisecond ordering + 80-bit entropy |
 | Very high-volume distributed systems | **KSUID** | Time-ordered with 128-bit entropy |
+| MongoDB `_id` compatibility | **ObjectID** | Drop-in match for MongoDB's native document ID format |
 
 ## Installation
 
@@ -124,6 +127,7 @@ Only import what you use — each entry point is independently tree-shakeable:
 | `uniku/cuid2` | ~1007 B* |
 | `uniku/nanoid` | ~1.1 KB |
 | `uniku/ksuid` | ~1.3 KB |
+| `uniku/objectid` | ~1.3 KB |
 
 * The CUID2 entry point imports SHA3-512 from `@noble/hashes`; this table's entry-point size excludes that external dependency.
 
@@ -310,6 +314,32 @@ ksuid.isValid(id)
 // => true
 ```
 
+### ObjectID (time-ordered, MongoDB-compatible)
+
+ObjectID is MongoDB's 24-character hex identifier, combining a second-precision timestamp with a per-process random value and an always-incrementing counter:
+
+```ts
+import { objectid } from 'uniku/objectid'
+
+// Generate an ObjectID string
+const id = objectid()
+// => "667c3f2a1e2b3c4d5e6f7081"
+
+// Convert to bytes
+const bytes = objectid.toBytes(id)
+
+// Convert back to string
+const str = objectid.fromBytes(bytes)
+
+// Extract timestamp (returns milliseconds for API consistency)
+const ts = objectid.timestamp(id)
+// => 1702387456000
+
+// Validate
+objectid.isValid(id)
+// => true
+```
+
 ## Migrating to uniku
 
 ### From `uuid`
@@ -375,6 +405,31 @@ API is identical — drop-in replacement.
 - uniku uses standard `Uint8Array` instead of Node.js `Buffer`
 - uniku's `timestamp()` returns milliseconds (for API consistency with ulid/uuidv7)
 - uniku doesn't include `Sequence`, `CompressedSet`, or sorting utilities
+
+### From `bson`
+
+```diff
+- import { ObjectId } from 'bson'
++ import { objectid } from 'uniku/objectid'
+
+- const id = new ObjectId().toHexString()
++ const id = objectid()
+
+- const bytes = new ObjectId().id
++ const bytes = objectid(undefined, new Uint8Array(12))
+
+- const valid = ObjectId.isValid(str)
++ const valid = objectid.isValid(str)
+
+- const timestamp = new ObjectId(str).getTimestamp().getTime()
++ const timestamp = objectid.timestamp(str)
+```
+
+**Key differences:**
+- uniku uses a functional API (`objectid()`) vs class-based API (`new ObjectId()`)
+- uniku uses standard `Uint8Array` instead of bson's internal byte representation
+- uniku's `timestamp()` returns milliseconds directly, not a `Date` object (for API consistency with ulid/uuidv7/ksuid)
+- uniku only implements the ObjectID identifier format, not bson's other BSON type integrations
 
 ## API
 
@@ -505,6 +560,27 @@ ksuid.MAX  // "aWgEPTl1tmebfsQzFP4bxwgy80V"
 
 > **Note:** KSUID uses `secs` (seconds) while UUID v7 and ULID use `msecs` (milliseconds). This reflects KSUID's native second-precision timestamps.
 
+### `objectid` (from `uniku/objectid`)
+
+```ts
+objectid(options?: ObjectIdOptions): string
+objectid(options: ObjectIdOptions | undefined, buf: Uint8Array, offset?: number): Uint8Array
+
+objectid.toBytes(id: string): Uint8Array
+objectid.fromBytes(bytes: Uint8Array): string
+objectid.timestamp(id: string): number
+objectid.isValid(id: unknown): id is string
+objectid.NIL  // "000000000000000000000000"
+objectid.MAX  // "ffffffffffffffffffffffff"
+```
+
+**Options:**
+- `secs?: number` — Timestamp in seconds since Unix epoch (defaults to `Math.floor(Date.now() / 1000)`)
+- `random?: Uint8Array` — 5 bytes of random data for the per-process random field
+- `counter?: number` — 24-bit counter value (0 to 0xFFFFFF)
+
+> **Note:** ObjectID uses `secs` (seconds), like KSUID, reflecting its native second-precision timestamp. Unlike ULID/UUIDv7/KSUID's sequence counters (which reset when the timestamp advances), ObjectID's `counter` always increments and is independent of the timestamp — it never resets.
+
 ## CLI
 
 Generate, validate, and inspect IDs from the command line with [`@uniku/cli`](./packages/cli):
@@ -541,6 +617,7 @@ Third-party libraries that inspired this project:
 - [TypeID-JS](https://github.com/jetify-com/typeid-js): official JavaScript implementation of TypeID
 - [@paralleldrive/cuid2](https://github.com/paralleldrive/cuid2): secure, collision-resistant IDs
 - [@owpz/ksuid](https://github.com/owpz/ksuid): K-Sortable Unique Identifier
+- [bson](https://github.com/mongodb/js-bson): official MongoDB BSON library, including the ObjectId implementation
 - [nanoid](https://github.com/ai/nanoid): tiny, URL-friendly unique string ID generator
 
 Other:

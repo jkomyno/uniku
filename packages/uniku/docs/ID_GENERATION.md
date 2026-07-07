@@ -40,6 +40,22 @@ For time-ordered IDs (uuidv7, ulid, ksuid):
 - When same millisecond: increment sequence or random portion
 - When new millisecond: reset with fresh random
 
+### Always-Incrementing Counter Variant (objectid)
+
+`objectid` documents a second state-machine shape, distinct from the reset-on-new-timestamp
+pattern above:
+
+- Maintain module-level state for a per-process random value and a counter, tracked
+  independently of the timestamp
+- On every no-option call: read the current timestamp fresh, then increment the counter —
+  regardless of whether the timestamp changed since the last call
+- The counter never resets when the timestamp advances; it climbs monotonically for the
+  lifetime of the module (including across serverless warm starts) and only wraps when it
+  overflows its bit width
+- This is intentional anti-collision behavior mandated by the MongoDB ObjectID spec, not a
+  bug: unlike ulid/uuidv7's per-timestamp sequence, objectid's counter is not "reset with
+  fresh random" on a new timestamp
+
 ## Random Byte Handling
 
 - Use `globalThis.crypto.getRandomValues()` for portability

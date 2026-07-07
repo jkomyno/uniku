@@ -1,5 +1,6 @@
 import { KSUID as npmKsuid } from '@owpz/ksuid'
 import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
+import { ObjectId as NpmObjectId } from 'bson'
 import { nanoid as npmNanoid } from 'nanoid'
 import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-js'
 import { ulid as npmUlid } from 'ulid'
@@ -8,6 +9,7 @@ import { bench, describe } from 'vitest'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
+import { objectid } from '@/src/objectid/objectid'
 import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
@@ -34,6 +36,7 @@ const testIds = {
   unikuNanoid: nanoid(),
   unikuCuid2: cuid2(),
   unikuKsuid: ksuid(),
+  unikuObjectid: objectid(),
   npmV4: npmUuidV4(),
   npmV7: npmUuidV7(),
   npmUlid: npmUlid(),
@@ -41,6 +44,7 @@ const testIds = {
   npmNanoid: npmNanoid(),
   npmCuid2: npmCuid2(),
   npmKsuid: npmKsuid.random().toString(),
+  npmObjectid: new NpmObjectId().toHexString(),
 }
 
 describe('Generation', () => {
@@ -182,6 +186,23 @@ describe('Generation', () => {
       benchOptions,
     )
   })
+
+  describe('ObjectID', () => {
+    bench(
+      'uniku',
+      () => {
+        objectid()
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        new NpmObjectId().toHexString()
+      },
+      benchOptions,
+    )
+  })
 })
 
 describe('Validation', () => {
@@ -304,6 +325,23 @@ describe('Validation', () => {
       () => {
         // @owpz/ksuid uses parseOrNil + isNil for validation (Base62 decode + object creation)
         npmKsuid.parseOrNil(testIds.unikuKsuid).isNil()
+      },
+      benchOptions,
+    )
+  })
+
+  describe('ObjectID', () => {
+    bench(
+      'uniku',
+      () => {
+        objectid.isValid(testIds.npmObjectid)
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        NpmObjectId.isValid(testIds.unikuObjectid)
       },
       benchOptions,
     )

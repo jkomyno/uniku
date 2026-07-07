@@ -1,11 +1,13 @@
 import { KSUID as npmKsuid } from '@owpz/ksuid'
 import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
+import { ObjectId as npmObjectId } from 'bson'
 import { nanoid as npmNanoid } from 'nanoid'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
+import { objectid } from '@/src/objectid/objectid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
@@ -142,6 +144,47 @@ describe('Cross-Validation: KSUID', () => {
     const parsed = npmKsuid.parse(unikuId)
     // npm returns seconds since KSUID epoch, convert to Unix ms
     const npmTimestamp = (parsed.timestamp + KSUID_EPOCH) * 1000
+
+    // Both should be exactly equal since we're using exact second
+    expect(unikuTimestamp).toBe(npmTimestamp)
+  })
+})
+
+describe('Cross-Validation: ObjectID', () => {
+  it('uniku IDs are parseable by npm', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => objectid())
+    const invalid = ids.filter((id) => !npmObjectId.isValid(id))
+    expect(invalid).toHaveLength(0)
+  })
+
+  it('npm IDs pass uniku validation', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => new npmObjectId().toHexString())
+    const invalid = ids.filter((id) => !objectid.isValid(id))
+    expect(invalid).toHaveLength(0)
+  })
+
+  it('uniku IDs round-trip through npm', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => objectid())
+    for (const id of ids) {
+      expect(new npmObjectId(id).toHexString()).toBe(id)
+    }
+  })
+
+  it('npm IDs round-trip through uniku', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, () => new npmObjectId().toHexString())
+    for (const id of ids) {
+      const bytes = objectid.toBytes(id)
+      expect(objectid.fromBytes(bytes)).toBe(id)
+    }
+  })
+
+  it('timestamp extraction matches between implementations', () => {
+    // Use a fixed timestamp for reproducibility (in seconds)
+    const secs = Math.floor(Date.now() / 1000)
+    const unikuId = objectid({ secs })
+    const unikuTimestamp = objectid.timestamp(unikuId)
+
+    const npmTimestamp = new npmObjectId(unikuId).getTimestamp().getTime()
 
     // Both should be exactly equal since we're using exact second
     expect(unikuTimestamp).toBe(npmTimestamp)

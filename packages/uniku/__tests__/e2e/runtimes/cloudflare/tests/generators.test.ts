@@ -10,6 +10,7 @@ const generators = [
   { name: 'typeid', pattern: /^user_[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/ },
   { name: 'ulid', pattern: /^[0-9A-HJKMNP-TV-Z]{26}$/ },
   { name: 'ksuid', pattern: /^[0-9A-Za-z]{27}$/ },
+  { name: 'objectid', pattern: /^[0-9a-f]{24}$/i },
   { name: 'cuid2', pattern: /^[a-z][a-z0-9]+$/ },
   { name: 'nanoid', pattern: /^[A-Za-z0-9_-]+$/ },
 ] as const
@@ -20,8 +21,9 @@ const generatorsWithBytes = [
   { name: 'typeid', byteLength: 16 },
   { name: 'ulid', byteLength: 16 },
   { name: 'ksuid', byteLength: 20 },
+  { name: 'objectid', byteLength: 12 },
 ] as const
-const generatorsWithTimestamp = ['uuid-v7', 'typeid', 'ulid'] as const
+const generatorsWithTimestamp = ['uuid-v7', 'typeid', 'ulid', 'objectid'] as const
 
 describe('ID generators on Cloudflare Workers', () => {
   // =========================================================================
