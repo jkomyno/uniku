@@ -127,11 +127,13 @@ Only import what you use — each entry point is independently tree-shakeable:
 | `uniku/uuid/v7` | ~1.4 KB |
 | `uniku/ulid` | ~1.8 KB |
 | `uniku/typeid` | ~1.6 KB |
+| `uniku/cuid/v2` | ~992 B* |
 | `uniku/cuid2` | ~1007 B* |
 | `uniku/nanoid` | ~1.1 KB |
 | `uniku/ksuid` | ~1.3 KB |
 | `uniku/objectid` | ~1.3 KB |
 | `uniku/tsid` | ~1.4 KB |
+| `uniku/generators` | ~98 B |
 
 * The CUID2 entry point imports SHA3-512 from `@noble/hashes`; this table's entry-point size excludes that external dependency.
 
@@ -251,22 +253,26 @@ const canonical = typeid('')
 CUID2 generates secure, collision-resistant identifiers using SHA3-512 hashing. Unlike time-ordered IDs, CUID2 prevents enumeration attacks:
 
 ```ts
-import { cuid2 } from 'uniku/cuid2'
+import { cuidv2 } from 'uniku/cuid/v2'
 
 // Generate a CUID2 string
-const id = cuid2()
+const id = cuidv2()
 // => "pfh0haxfpzowht3oi213cqos"
 
 // Custom length (2-32 characters)
-const shortId = cuid2({ length: 10 })
+const shortId = cuidv2({ length: 10 })
 // => "tz4a98xxat"
 
 // Validation (type guard)
 const maybeId: unknown = getUserInput()
-if (cuid2.isValid(maybeId)) {
+if (cuidv2.isValid(maybeId)) {
   console.log(maybeId) // TypeScript knows this is a string
 }
 ```
+
+> `uniku/cuid/v2` is the canonical entry point. The older `uniku/cuid2` import
+> still works and re-exports the same generator, but is now deprecated — prefer
+> `import { cuidv2 } from 'uniku/cuid/v2'`.
 
 ### Nanoid (URL-friendly, custom alphabet)
 
@@ -541,12 +547,15 @@ typeid.isValid(id: unknown): id is string
 
 Use an empty prefix (`typeid('')`) to generate Jetify-compatible prefixless TypeIDs.
 
-### `cuid2` (from `uniku/cuid2`)
+### `cuidv2` (from `uniku/cuid/v2`)
 
 ```ts
-cuid2(options?: Cuid2Options): string
-cuid2.isValid(id: unknown): id is string
+cuidv2(options?: CuidV2Options): string
+cuidv2.isValid(id: unknown): id is string
 ```
+
+> Also available (deprecated) as `cuid2` from `uniku/cuid2` — the same generator
+> under the pre-versioned entry point.
 
 **Options:**
 - `length?: number` — ID length (2-32, default 24)
