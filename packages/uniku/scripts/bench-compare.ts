@@ -45,8 +45,6 @@ function isMissingFileError(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
 
-// Shared percent + RME string computation for both the markdown and ANSI
-// formatters below; only the per-status decoration differs between them.
 function formatChangeParts(row: ComparisonRow): { percent: string; rme: string } {
   return {
     percent: (row.change * 100).toFixed(1),

@@ -214,7 +214,7 @@ function formatComparisonAnsi(comparison: string, hasWarning: boolean, maxRme: n
   return result
 }
 
-// Transform sorted comparison results to table rows
+// Transform results to table rows
 const toTableRows = (sorted: [string, ComparisonResult][]): TableRow[] =>
   sorted.map(([name, result]) => ({
     name,
@@ -244,8 +244,6 @@ if (generationRows.length === 0 && validationRows.length === 0 && internalRows.l
   process.exit(0)
 }
 
-// The comparison sections (Generation, Validation) share one shape; only the
-// internal-benchmark section differs, so it stays separate below.
 const mainSections = [
   { title: 'Generation', rows: generationRows },
   { title: 'Validation', rows: validationRows },
