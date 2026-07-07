@@ -99,6 +99,11 @@
         "import": "./build/errors.mjs",
         "default": "./build/errors.mjs"
       },
+      "./generators": {
+        "types": "./build/generators.d.mts",
+        "import": "./build/generators.mjs",
+        "default": "./build/generators.mjs"
+      },
       "./package.json": "./package.json"
     }
   },
@@ -192,6 +197,14 @@
         "default": "./build/errors.mjs"
       },
       "default": "./build/errors.mjs"
+    },
+    "./generators": {
+      "types": "./build/generators.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/generators.ts",
+        "default": "./build/generators.mjs"
+      },
+      "default": "./build/generators.mjs"
     },
     "./package.json": "./package.json"
   },

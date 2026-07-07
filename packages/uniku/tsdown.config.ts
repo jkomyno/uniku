@@ -7,6 +7,7 @@ export default defineConfig({
     // Public entry points
     'src/cuid2/cuid2.ts',
     'src/errors.ts',
+    'src/generators.ts',
     'src/ksuid/ksuid.ts',
     'src/nanoid/nanoid.ts',
     'src/objectid/objectid.ts',
@@ -31,6 +32,7 @@ export default defineConfig({
       './objectid',
       './tsid',
       './errors',
+      './generators',
     ],
     profile: 'esm-only',
   },

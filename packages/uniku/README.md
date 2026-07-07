@@ -221,6 +221,7 @@ deno install npm:uniku
 | `uniku/ksuid` | ~1.3 KB |
 | `uniku/objectid` | ~1.3 KB |
 | `uniku/tsid` | ~1.4 KB |
+| `uniku/generators` | ~140 B |
 
 * The CUID2 entry point imports SHA3-512 from `@noble/hashes`; this table's entry-point size excludes that external dependency.
 

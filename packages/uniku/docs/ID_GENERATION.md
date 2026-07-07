@@ -127,6 +127,10 @@ function isValid(id: unknown): id is string {
 Each generator has its own entry point (no barrel exports):
 - `uniku/uuid/v4`, `uniku/uuid/v7`, `uniku/ulid`, etc.
 
+Two non-generator, metadata-only entry points follow the same standalone-module convention:
+- `uniku/errors` — the shared error classes.
+- `uniku/generators` — `ID_GENERATORS` (the canonical ordered list of supported ID generators) and its derived `IdGenerator` union.
+
 ## Testing
 
 - Mock `Date.now()` for deterministic timestamp tests
