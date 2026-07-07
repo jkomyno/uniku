@@ -2,7 +2,7 @@ import * as Effect from 'effect/Effect'
 import * as Option from 'effect/Option'
 import { Argument, Command, Flag } from 'effect/unstable/cli'
 import { CliError, ValidationFailedError } from '@/src/domain/errors'
-import type { IdType, ValidationResult } from '@/src/domain/types'
+import { ID_GENERATORS, type IdType, type ValidationResult } from '@/src/domain/types'
 import { decodePreprocessedArg } from '@/src/runtime/args'
 import { OutputService, validationOutput } from '@/src/services/OutputService'
 import { StdinService } from '@/src/services/StdinService'
@@ -10,16 +10,10 @@ import { validateAs, validateAutoDetect } from '@/src/validators/validate'
 
 const idArg = Argument.string('id').pipe(Argument.withDescription('The ID to validate'), Argument.optional)
 
-const typeFlag = Flag.choice('type', [
-  'uuid',
-  'ulid',
-  'typeid',
-  'nanoid',
-  'cuid',
-  'ksuid',
-  'objectid',
-  'tsid',
-] as const).pipe(Flag.withDescription('Expected ID type (auto-detected if omitted)'), Flag.optional)
+const typeFlag = Flag.choice('type', ID_GENERATORS).pipe(
+  Flag.withDescription('Expected ID type (auto-detected if omitted)'),
+  Flag.optional,
+)
 
 const stdinFlag = Flag.boolean('stdin').pipe(
   Flag.withDescription('Read IDs from stdin (one per line)'),
