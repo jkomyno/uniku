@@ -1,37 +1,17 @@
 import { defineConfig } from 'tsdown'
 import { baseConfig } from '../../tsdown.config.base'
+import { ENTRYPOINTS } from './scripts/entrypoints.mjs'
 
 export default defineConfig({
   ...baseConfig,
-  entry: [
-    // Public entry points
-    'src/cuid2/cuid2.ts',
-    'src/errors.ts',
-    'src/ksuid/ksuid.ts',
-    'src/nanoid/nanoid.ts',
-    'src/objectid/objectid.ts',
-    'src/tsid/tsid.ts',
-    'src/typeid/typeid.ts',
-    'src/ulid/ulid.ts',
-    'src/uuid/v4.ts',
-    'src/uuid/v7.ts',
-  ],
+  // Public entry points, derived from the shared manifest so build entries,
+  // bundle-summary, and publish-smoke can never drift apart.
+  entry: ENTRYPOINTS.map((entry) => entry.src),
   tsconfig: 'tsconfig.build.json',
   attw: {
     ...baseConfig.attw,
     // Only check public entry points
-    entrypoints: [
-      './uuid/v4',
-      './uuid/v7',
-      './ulid',
-      './typeid',
-      './cuid2',
-      './nanoid',
-      './ksuid',
-      './objectid',
-      './tsid',
-      './errors',
-    ],
+    entrypoints: ENTRYPOINTS.map((entry) => entry.subpath),
     profile: 'esm-only',
   },
 })

@@ -55,6 +55,10 @@ function parseGroupName(fullName: string): { category: string; name: string } | 
   return { category: match[1], name: match[2] }
 }
 
+function formatInternalGroupName(fullName: string): string {
+  return fullName.replace(/^__tests__\/bench\/[^>]+ > /, '')
+}
+
 // Threshold for considering performance roughly equivalent (5%)
 const PARITY_THRESHOLD = 0.05
 // Show warning indicator when RME exceeds this threshold
@@ -211,23 +215,18 @@ function formatComparisonAnsi(comparison: string, hasWarning: boolean, maxRme: n
 }
 
 // Transform results to table rows
-const generationRows: TableRow[] = generationSorted.map(([name, result]) => ({
-  name,
-  unikuOps: result.unikuOps,
-  competitorOps: result.competitorOps,
-  comparison: result.comparison,
-  hasRmeWarning: result.hasRmeWarning,
-  maxRme: result.maxRme,
-}))
+const toTableRows = (sorted: [string, ComparisonResult][]): TableRow[] =>
+  sorted.map(([name, result]) => ({
+    name,
+    unikuOps: result.unikuOps,
+    competitorOps: result.competitorOps,
+    comparison: result.comparison,
+    hasRmeWarning: result.hasRmeWarning,
+    maxRme: result.maxRme,
+  }))
 
-const validationRows: TableRow[] = validationSorted.map(([name, result]) => ({
-  name,
-  unikuOps: result.unikuOps,
-  competitorOps: result.competitorOps,
-  comparison: result.comparison,
-  hasRmeWarning: result.hasRmeWarning,
-  maxRme: result.maxRme,
-}))
+const generationRows = toTableRows(generationSorted)
+const validationRows = toTableRows(validationSorted)
 
 const internalRows: InternalTableRow[] = internalSorted.flatMap(([groupName, group]) =>
   [...group.benchmarks]
@@ -245,29 +244,36 @@ if (generationRows.length === 0 && validationRows.length === 0 && internalRows.l
   process.exit(0)
 }
 
+const mainSections = [
+  { title: 'Generation', rows: generationRows },
+  { title: 'Validation', rows: validationRows },
+]
+
 if (isCI) {
   // In CI, output raw markdown for GitHub rendering
   console.log('## Benchmark Results\n')
-  if (generationRows.length > 0) {
-    console.log(buildMarkdownTable('Generation', generationRows))
-  }
-  if (validationRows.length > 0) {
-    if (generationRows.length > 0) console.log()
-    console.log(buildMarkdownTable('Validation', validationRows))
+  let printed = false
+  for (const { title, rows } of mainSections) {
+    if (rows.length === 0) continue
+    if (printed) console.log()
+    console.log(buildMarkdownTable(title, rows))
+    printed = true
   }
   if (internalRows.length > 0) {
-    if (generationRows.length > 0 || validationRows.length > 0) console.log()
+    if (printed) console.log()
     console.log(buildInternalMarkdownTable(internalRows))
   }
 } else {
   // In terminal, use Bun.inspect.table() for clean formatting
   console.log('\x1b[1;36m## Benchmark Results\x1b[0m\n')
-
-  if (generationRows.length > 0) {
-    console.log('\x1b[1;33m### Generation\x1b[0m\n')
+  let printed = false
+  for (const { title, rows } of mainSections) {
+    if (rows.length === 0) continue
+    if (printed) console.log()
+    console.log(`\x1b[1;33m### ${title}\x1b[0m\n`)
     console.log(
       Bun.inspect.table(
-        generationRows.map((row) => ({
+        rows.map((row) => ({
           ID: row.name,
           uniku: `${row.unikuOps} ops/s`,
           'npm/regex': `${row.competitorOps} ops/s`,
@@ -276,26 +282,11 @@ if (isCI) {
         { colors: true },
       ),
     )
-  }
-
-  if (validationRows.length > 0) {
-    if (generationRows.length > 0) console.log()
-    console.log('\x1b[1;33m### Validation\x1b[0m\n')
-    console.log(
-      Bun.inspect.table(
-        validationRows.map((row) => ({
-          ID: row.name,
-          uniku: `${row.unikuOps} ops/s`,
-          'npm/regex': `${row.competitorOps} ops/s`,
-          Comparison: formatComparisonAnsi(row.comparison, row.hasRmeWarning, row.maxRme),
-        })),
-        { colors: true },
-      ),
-    )
+    printed = true
   }
 
   if (internalRows.length > 0) {
-    if (generationRows.length > 0 || validationRows.length > 0) console.log()
+    if (printed) console.log()
     console.log('\x1b[1;33m### Internal Benchmarks\x1b[0m\n')
     console.log(
       Bun.inspect.table(
@@ -309,8 +300,4 @@ if (isCI) {
       ),
     )
   }
-}
-
-function formatInternalGroupName(fullName: string): string {
-  return fullName.replace(/^__tests__\/bench\/[^>]+ > /, '')
 }

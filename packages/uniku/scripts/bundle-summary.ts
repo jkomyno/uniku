@@ -20,6 +20,7 @@
 
 import { resolve } from 'node:path'
 import { build as tsdownBuild } from 'tsdown'
+import { ENTRYPOINTS, type EntryPoint } from './entrypoints.mjs'
 
 /**
  * Temporarily silence console output during an async operation.
@@ -53,20 +54,6 @@ if (!['tsdown', 'bun'].includes(bundler)) {
   process.exit(1)
 }
 
-const ENTRYPOINTS = [
-  { name: 'uniku/uuid/v4', src: 'src/uuid/v4.ts' },
-  { name: 'uniku/uuid/v7', src: 'src/uuid/v7.ts' },
-  { name: 'uniku/ulid', src: 'src/ulid/ulid.ts' },
-  { name: 'uniku/typeid', src: 'src/typeid/typeid.ts' },
-  { name: 'uniku/cuid2', src: 'src/cuid2/cuid2.ts' },
-  { name: 'uniku/nanoid', src: 'src/nanoid/nanoid.ts' },
-  { name: 'uniku/ksuid', src: 'src/ksuid/ksuid.ts' },
-  { name: 'uniku/objectid', src: 'src/objectid/objectid.ts' },
-  { name: 'uniku/tsid', src: 'src/tsid/tsid.ts' },
-] as const
-
-type EntryPoint = (typeof ENTRYPOINTS)[number]
-
 interface BundleSize {
   name: string
   minifiedBytes: number
@@ -96,8 +83,8 @@ async function calculateWithBun(entry: EntryPoint): Promise<BundleSize> {
   const minifiedBytes = new Uint8Array(minifiedContent)
   const gzipped = Bun.gzipSync(minifiedBytes, { level: 9 })
 
-  // Check if this entry uses external deps (cuid2 uses @noble/hashes)
-  const hasExternal = entry.name === 'uniku/cuid2'
+  // Whether this entry uses external deps (cuid2 uses @noble/hashes)
+  const { hasExternal } = entry
 
   return {
     name: entry.name,
@@ -123,7 +110,7 @@ async function calculateWithTsdown(entry: EntryPoint): Promise<BundleSize> {
       format: 'es',
       dts: false,
       clean: true,
-      external: ['@noble/hashes', '@noble/hashes/*'],
+      deps: { neverBundle: ['@noble/hashes', '@noble/hashes/*'] },
       report: false, // We'll compute sizes ourselves
       config: false, // Don't load tsdown.config.ts
     }),
@@ -138,7 +125,7 @@ async function calculateWithTsdown(entry: EntryPoint): Promise<BundleSize> {
   // Get the output file content
   const jsChunk = bundle.chunks.find((chunk) => chunk.type === 'chunk' && chunk.fileName.endsWith('.mjs'))
 
-  if (!jsChunk || jsChunk.type !== 'chunk') {
+  if (jsChunk?.type !== 'chunk') {
     throw new Error(`No JS chunk found for ${entry.name}`)
   }
 
@@ -149,8 +136,8 @@ async function calculateWithTsdown(entry: EntryPoint): Promise<BundleSize> {
   // Cleanup temp directory
   await Bun.spawn(['rm', '-rf', tmpDir]).exited
 
-  // Check if this entry uses external deps
-  const hasExternal = entry.name === 'uniku/cuid2'
+  // Whether this entry uses external deps (cuid2 uses @noble/hashes)
+  const { hasExternal } = entry
 
   return {
     name: entry.name,

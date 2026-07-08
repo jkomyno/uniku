@@ -2,23 +2,17 @@ import * as Effect from 'effect/Effect'
 import * as Option from 'effect/Option'
 import { Argument, Command, Flag } from 'effect/unstable/cli'
 import { CliError } from '@/src/domain/errors'
-import type { IdType } from '@/src/domain/types'
+import { ID_GENERATORS, type IdType } from '@/src/domain/types'
 import { inspectId } from '@/src/inspectors/inspect'
 import { decodePreprocessedArg } from '@/src/runtime/args'
 import { inspectOutput, OutputService } from '@/src/services/OutputService'
 
 const idArg = Argument.string('id').pipe(Argument.withDescription('The ID to inspect'))
 
-const typeFlag = Flag.choice('type', [
-  'uuid',
-  'ulid',
-  'typeid',
-  'nanoid',
-  'cuid',
-  'ksuid',
-  'objectid',
-  'tsid',
-] as const).pipe(Flag.withDescription('ID type (auto-detected if omitted)'), Flag.optional)
+const typeFlag = Flag.choice('type', ID_GENERATORS).pipe(
+  Flag.withDescription('ID type (auto-detected if omitted)'),
+  Flag.optional,
+)
 
 const jsonFlag = Flag.boolean('json').pipe(Flag.withDescription('Output as JSON'), Flag.withDefault(false))
 

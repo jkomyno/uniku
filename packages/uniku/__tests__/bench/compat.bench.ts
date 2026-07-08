@@ -17,13 +17,15 @@ import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
 
-// Benchmark options for stable, reproducible results
-// Using 500ms time budget (down from 1000ms) - still achieves <2% RME for stable benchmarks
-// Removed explicit iterations to let Vitest auto-calculate optimal count
+// Benchmark options for stable, reproducible results.
+// A 1000ms measurement window with a 500ms / 50-iteration warmup (matching
+// id.bench.ts) collects enough samples to tighten RME on the noisier
+// cross-package competitor benchmarks, whose short-window variance was the main
+// source of misleading swings in the comparison report.
 const benchOptions = {
-  time: 500,
-  warmupTime: 250,
-  warmupIterations: 25,
+  time: 1000,
+  warmupTime: 500,
+  warmupIterations: 50,
 }
 
 // ulid npm (v2.3.0) has no isValid(), use regex

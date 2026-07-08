@@ -21,7 +21,7 @@ export type BenchResults = {
   files: BenchFile[]
 }
 
-export type ComparisonStatus = 'regression' | 'improvement' | 'neutral' | 'new' | 'removed'
+export type ComparisonStatus = 'regression' | 'improvement' | 'neutral' | 'reference' | 'new' | 'removed'
 
 export type ComparisonRow = {
   key: string
@@ -30,7 +30,37 @@ export type ComparisonRow = {
   change: number
   combinedRme: number
   status: ComparisonStatus
+  /**
+   * Whether this benchmark measures uniku's own code. Third-party reference
+   * benchmarks (the `npm`/`regex` competitors) are `false` — their run-to-run
+   * swings are not regressions we can introduce or fix, so they never gate.
+   */
+  owned: boolean
 }
+
+/**
+ * Leaf benchmark names that measure third-party code rather than uniku's own.
+ * Their throughput is outside our control and is the noisiest part of the
+ * suite, so they are reported for context but never classified as a regression.
+ */
+const REFERENCE_BENCH_NAMES = new Set(['npm', 'regex'])
+
+/**
+ * A benchmark is "owned" (subject to regression gating) unless its leaf name is
+ * a known third-party reference competitor. Keys are `<group> > <leaf>`.
+ */
+export function isOwnedBenchmark(key: string): boolean {
+  const leaf = key.split(' > ').at(-1) ?? key
+  return !REFERENCE_BENCH_NAMES.has(leaf)
+}
+
+/**
+ * Default multiplier applied to a benchmark's combined RME when deciding whether
+ * a change is real. A single run's RME understates true cross-run variance on
+ * shared CI runners, so we require a change to clear ~2 standard deviations of
+ * measurement noise (not just 1) before calling it a regression or improvement.
+ */
+export const DEFAULT_NOISE_MULTIPLIER = 2
 
 export function loadBenchResults(path: string): BenchResults {
   return JSON.parse(readFileSync(path, 'utf-8')) as BenchResults
@@ -90,6 +120,8 @@ export function compareBenchResults(
   options: {
     regressionThreshold: number
     improvementThreshold: number
+    /** Multiplier on combined RME for the significance band. Defaults to {@link DEFAULT_NOISE_MULTIPLIER}. */
+    noiseMultiplier?: number
   },
 ): {
   rows: ComparisonRow[]
@@ -98,12 +130,14 @@ export function compareBenchResults(
 } {
   const baseline = collectBenchmarks(baselineResults)
   const current = collectBenchmarks(currentResults)
+  const noiseMultiplier = options.noiseMultiplier ?? DEFAULT_NOISE_MULTIPLIER
 
   const rows: ComparisonRow[] = []
   const regressions: string[] = []
   let hasRegression = false
 
   for (const [key, curr] of current) {
+    const owned = isOwnedBenchmark(key)
     const base = baseline.get(key)
     if (!base) {
       rows.push({
@@ -113,17 +147,23 @@ export function compareBenchResults(
         change: 0,
         combinedRme: 0,
         status: 'new',
+        owned,
       })
       continue
     }
 
     const change = (curr.hz - base.hz) / base.hz
     const combinedRme = ((base.rme ?? 0) + (curr.rme ?? 0)) / 100
-    const regressionLimit = Math.max(options.regressionThreshold, combinedRme)
-    const improvementLimit = Math.max(options.improvementThreshold, combinedRme)
+    const noiseBand = noiseMultiplier * combinedRme
+    const regressionLimit = Math.max(options.regressionThreshold, noiseBand)
+    const improvementLimit = Math.max(options.improvementThreshold, noiseBand)
 
     let status: ComparisonStatus
-    if (change < -regressionLimit) {
+    if (!owned) {
+      // Third-party reference benchmark: report its change for context, but it
+      // can never be a uniku regression, so it never gates.
+      status = 'reference'
+    } else if (change < -regressionLimit) {
       status = 'regression'
       hasRegression = true
       regressions.push(
@@ -142,6 +182,7 @@ export function compareBenchResults(
       change,
       combinedRme,
       status,
+      owned,
     })
   }
 
@@ -154,6 +195,7 @@ export function compareBenchResults(
         change: 0,
         combinedRme: 0,
         status: 'removed',
+        owned: isOwnedBenchmark(key),
       })
     }
   }
@@ -163,8 +205,9 @@ export function compareBenchResults(
       regression: 0,
       improvement: 1,
       neutral: 2,
-      new: 3,
-      removed: 4,
+      reference: 3,
+      new: 4,
+      removed: 5,
     }
     const orderDiff = statusOrder[a.status] - statusOrder[b.status]
     if (orderDiff !== 0) return orderDiff

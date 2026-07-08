@@ -3,52 +3,20 @@ import { mkdtempSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ENTRYPOINTS } from './entrypoints.mjs'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const packageRoot = dirname(scriptDir)
 
-const expectedExports = {
-  './uuid/v4': {
-    types: './build/uuid/v4.d.mts',
-    import: './build/uuid/v4.mjs',
-    default: './build/uuid/v4.mjs',
-  },
-  './uuid/v7': {
-    types: './build/uuid/v7.d.mts',
-    import: './build/uuid/v7.mjs',
-    default: './build/uuid/v7.mjs',
-  },
-  './ulid': {
-    types: './build/ulid/ulid.d.mts',
-    import: './build/ulid/ulid.mjs',
-    default: './build/ulid/ulid.mjs',
-  },
-  './typeid': {
-    types: './build/typeid/typeid.d.mts',
-    import: './build/typeid/typeid.mjs',
-    default: './build/typeid/typeid.mjs',
-  },
-  './cuid2': {
-    types: './build/cuid2/cuid2.d.mts',
-    import: './build/cuid2/cuid2.mjs',
-    default: './build/cuid2/cuid2.mjs',
-  },
-  './nanoid': {
-    types: './build/nanoid/nanoid.d.mts',
-    import: './build/nanoid/nanoid.mjs',
-    default: './build/nanoid/nanoid.mjs',
-  },
-  './ksuid': {
-    types: './build/ksuid/ksuid.d.mts',
-    import: './build/ksuid/ksuid.mjs',
-    default: './build/ksuid/ksuid.mjs',
-  },
-  './errors': {
-    types: './build/errors.d.mts',
-    import: './build/errors.mjs',
-    default: './build/errors.mjs',
-  },
-}
+// Derived from the shared manifest so every published entry point — including
+// objectid, tsid, and generators — is covered here; nothing can be published
+// without a matching packed-exports assertion.
+const expectedExports = Object.fromEntries(
+  ENTRYPOINTS.map((entry) => [
+    entry.subpath,
+    { types: entry.dts, import: entry.mjs, default: entry.mjs },
+  ]),
+)
 
 const runtimeSpecifiers = Object.keys(expectedExports).map((subpath) => `uniku${subpath.slice(1)}`)
 const sourceDir = join(packageRoot, 'src')

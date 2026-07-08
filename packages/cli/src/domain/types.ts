@@ -1,7 +1,15 @@
+import { ID_GENERATORS, type IdGenerator } from 'uniku/generators'
+
+export { ID_GENERATORS }
+
 /**
  * Supported ID types.
+ *
+ * Derived from `uniku`'s canonical `ID_GENERATORS` list — the CLI keeps the
+ * `IdType` name (it carries no product meaning worth a repo-wide rename) but no
+ * longer hand-maintains the union.
  */
-export type IdType = 'uuid' | 'ulid' | 'typeid' | 'nanoid' | 'cuid' | 'ksuid' | 'objectid' | 'tsid'
+export type IdType = IdGenerator
 
 /**
  * Result of validating a single ID.

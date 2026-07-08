@@ -11,8 +11,8 @@ allowBuilds:
 
 catalog:
   typescript: ^6.0.3
-  vitest: ^4.1.9
-  wrangler: ^4.62.0
+  vitest: ^4.1.10
+  wrangler: ^4.107.0
   "@cloudflare/vitest-pool-workers": ^0.18.0
-  "@cloudflare/workers-types": ^4.20260203.0
-  hono: ^4.11.7
+  "@cloudflare/workers-types": ^5.20260706.1
+  hono: ^4.12.28
