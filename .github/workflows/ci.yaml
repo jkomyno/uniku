@@ -122,6 +122,23 @@ jobs:
       - name: Runtime smoke
         run: pnpm --filter uniku smoke:runtime:deno
 
+  smoke-browser:
+    name: Chromium Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Build library
+        run: pnpm --filter uniku build
+
+      - name: Browser runtime smoke
+        run: pnpm --filter uniku smoke:runtime:browser
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -173,7 +190,7 @@ jobs:
     name: Preview Release
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: [check, test, smoke-bun, smoke-deno, build]
+    needs: [check, test, smoke-bun, smoke-deno, smoke-browser, build]
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1

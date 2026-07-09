@@ -231,6 +231,7 @@
     "test:e2e": "pnpm --filter @uniku/e2e-cloudflare test:e2e",
     "test:e2e:cloudflare": "pnpm --filter @uniku/e2e-cloudflare test:e2e:cloudflare",
     "smoke:publish": "node scripts/publish-smoke.mjs",
+    "smoke:runtime:browser": "node scripts/browser-smoke.mjs",
     "smoke:runtime:bun": "bun scripts/runtime-smoke.mjs",
     "smoke:runtime:deno": "deno run --node-modules-dir=manual scripts/runtime-smoke.mjs",
     "bench": "vitest bench --run --project unit",
