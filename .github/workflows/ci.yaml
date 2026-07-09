@@ -199,9 +199,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          pnpm --filter @uniku/cli build:binary
-          tar -tzf packages/cli/dist/uniku-linux-x64.tar.gz | grep -qx 'uniku'
-          test -x packages/cli/dist/uniku-linux-x64
+          cd packages/cli
+          bun scripts/build-binary.ts --target=bun-linux-x64 --name=uniku-linux-x64
+          bun scripts/build-binary.ts --target=bun-linux-arm64 --name=uniku-linux-arm64
+
+          for artifact in uniku-linux-x64 uniku-linux-arm64; do
+            tar -tzf "dist/${artifact}.tar.gz" | grep -qx 'uniku'
+            test -x "dist/${artifact}"
+          done
 
   preview:
     name: Preview Release

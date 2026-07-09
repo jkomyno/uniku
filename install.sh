@@ -44,9 +44,7 @@ detect_platform() {
   esac
 
   case "${os}-${arch}" in
-    linux-x64|darwin-x64|darwin-arm64) ;;
-    linux-arm64)
-      error "linux-arm64 is not yet supported. See https://github.com/$GITHUB_REPO/issues" ;;
+    linux-x64|linux-arm64|darwin-x64|darwin-arm64) ;;
     *)
       error "Unsupported platform: ${os}-${arch}" ;;
   esac
