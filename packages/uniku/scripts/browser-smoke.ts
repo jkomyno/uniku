@@ -145,6 +145,7 @@ const spawnBrowser = (executable: string, profile: string, url: string) =>
       '--disable-extensions',
       '--disable-gpu',
       '--disable-sync',
+      '--dump-dom',
       '--metrics-recording-only',
       '--no-first-run',
       '--no-sandbox',
