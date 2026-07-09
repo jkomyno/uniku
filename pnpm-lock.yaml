@@ -103,6 +103,9 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
     devDependencies:
+      '@effect/platform-bun':
+        specifier: 4.0.0-beta.93
+        version: 4.0.0-beta.93(effect@4.0.0-beta.93)
       '@owpz/ksuid':
         specifier: ^25.7.20
         version: 25.7.20
@@ -115,6 +118,9 @@ importers:
       bson:
         specifier: ^7.3.1
         version: 7.3.1
+      effect:
+        specifier: 4.0.0-beta.93
+        version: 4.0.0-beta.93
       nanoid:
         specifier: ^5.1.16
         version: 5.1.16
