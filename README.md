@@ -675,6 +675,12 @@ uniku inspect 018e5e5c-7c8a-7000-8000-000000000000
 
 See the [CLI README](./packages/cli/README.md) for the full list of commands and options.
 
+## Stability
+
+The [`uniku@1.x` stability contract](./docs/STABILITY.md) defines the supported
+entry points, runtimes, input boundaries, performance goals, and release gates.
+It also records the v1 migration from `uniku/cuid2` to `uniku/cuid/v2`.
+
 ## Related Projects
 
 Third-party libraries that inspired this project:
