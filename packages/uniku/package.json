@@ -228,6 +228,7 @@
     "test": "vitest run",
     "test:unit": "vitest --project unit run",
     "test:integration": "vitest --project integration run",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "pnpm --filter @uniku/e2e-cloudflare test:e2e",
     "test:e2e:cloudflare": "pnpm --filter @uniku/e2e-cloudflare test:e2e:cloudflare",
     "smoke:publish": "node scripts/publish-smoke.mjs",

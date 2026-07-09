@@ -80,6 +80,20 @@ jobs:
           npm_config_update_notifier: "false"
         run: npm run test:ci:node-matrix
 
+  coverage:
+    name: Library Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Coverage gate
+        run: pnpm test:coverage
+
   smoke-bun:
     name: Bun Smoke
     runs-on: ubuntu-latest
@@ -212,7 +226,7 @@ jobs:
     name: Preview Release
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: [check, test, smoke-bun, smoke-deno, smoke-browser, e2e-cloudflare, build]
+    needs: [check, test, coverage, smoke-bun, smoke-deno, smoke-browser, e2e-cloudflare, build]
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
