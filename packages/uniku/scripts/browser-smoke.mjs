@@ -253,8 +253,11 @@ try {
   }
 
   browser.child.kill()
+  const forceKill = setTimeout(() => browser.child.kill('SIGKILL'), 2_000)
+  await browser.closed
+  clearTimeout(forceKill)
   console.log(passMarker)
 } finally {
   await new Promise((resolvePromise) => (server ? server.close(resolvePromise) : resolvePromise()))
-  rmSync(tempDir, { recursive: true, force: true })
+  rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
 }
