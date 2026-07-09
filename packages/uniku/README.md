@@ -556,6 +556,7 @@ tsid.MAX  // 18446744073709551615n
 ## Documentation
 
 For advanced usage, examples, and contributing guidelines, see the [full documentation on GitHub](https://github.com/jkomyno/uniku).
+The [`uniku@1.x` stability contract](../../docs/STABILITY.md) defines the supported entry points, runtimes, and release gates.
 
 ## Related Projects
 
