@@ -229,6 +229,7 @@ function tsidFn<TBuf extends Uint8Array = Uint8Array>(options?: TsidOptions, buf
  * Convert a TSID bigint to 8 bytes.
  */
 function toBytes(id: bigint): Uint8Array {
+  assertValidTsid(id)
   return writeTsidBytes(id)
 }
 
@@ -256,6 +257,10 @@ function fromBytes(bytes: Uint8Array): bigint {
  * `epoch` used at generation time if it was overridden from the default.
  */
 function timestamp(id: bigint, epoch: number = TSID_EPOCH): number {
+  assertValidTsid(id)
+  if (!Number.isInteger(epoch)) {
+    throw new InvalidInputError('TSID_EPOCH_INVALID', 'epoch must be a finite integer')
+  }
   return epoch + Number(id >> BigInt(RANDOM_BITS))
 }
 
@@ -268,6 +273,17 @@ function isValid(id: unknown): id is bigint {
 
 const NIL = 0n
 const MAX = (1n << 64n) - 1n
+
+function assertValidTsid(id: bigint): void {
+  if (id < NIL || id > MAX) {
+    throw new InvalidInputError('TSID_VALUE_OUT_OF_RANGE', `TSID value must be between ${NIL} and ${MAX}`)
+  }
+}
+
+function toString(id: bigint): string {
+  assertValidTsid(id)
+  return encodeTsidString(id)
+}
 
 /**
  * Generate a TSID bigint or write the bytes into a buffer.
@@ -305,7 +321,7 @@ const MAX = (1n << 64n) - 1n
 export const tsid: Tsid = Object.assign(tsidFn, {
   toBytes,
   fromBytes,
-  toString: encodeTsidString,
+  toString,
   fromString: decodeTsidString,
   timestamp,
   isValid,

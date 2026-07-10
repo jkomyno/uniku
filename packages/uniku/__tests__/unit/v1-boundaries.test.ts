@@ -137,7 +137,7 @@ describe('v1 public boundary contract', () => {
   })
 
   describe('caller-owned values', () => {
-    it.fails('UUID v4 does not mutate caller-provided random bytes', () => {
+    it('UUID v4 does not mutate caller-provided random bytes', () => {
       const random = new Uint8Array(16).fill(0xff)
       const before = random.slice()
 
@@ -154,7 +154,7 @@ describe('v1 public boundary contract', () => {
     ]
 
     for (const testCase of invalidTsidCases) {
-      it.fails(testCase.name, () => {
+      it(testCase.name, () => {
         expect(testCase.convert).toThrow(InvalidInputError)
       })
     }

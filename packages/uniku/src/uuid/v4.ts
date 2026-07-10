@@ -7,7 +7,6 @@ const randomUUID = /*@__PURE__*/ globalThis.crypto.randomUUID.bind(globalThis.cr
 export type UuidV4Options = {
   /**
    * 16 bytes of random data to use for UUID generation.
-   * Note: Bytes at index 6 and 8 will be modified in-place to set version/variant bits.
    */
   random?: Uint8Array
 }
@@ -32,17 +31,10 @@ function v4Bytes(rnds: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
     throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16')
   }
 
-  // Set RFC 4122 version (4) and variant (10xx) bits.
-  // Note: This modifies the input array in-place.
-  rnds[6] = (rnds[6] & 0x0f) | 0x40
-  rnds[8] = (rnds[8] & 0x3f) | 0x80
-
   if (!buf) {
-    // No output buffer provided - return the modified random bytes directly
-    return rnds
-  }
-
-  if (!Number.isInteger(offset) || offset < 0 || offset + 16 > buf.length) {
+    buf = new Uint8Array(16)
+    offset = 0
+  } else if (!Number.isInteger(offset) || offset < 0 || offset + 16 > buf.length) {
     throw new BufferError(
       'UUID_BUFFER_OUT_OF_BOUNDS',
       `UUID byte range ${offset}:${offset + 15} is out of buffer bounds`,
@@ -53,6 +45,10 @@ function v4Bytes(rnds: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
   for (let i = 0; i < 16; i += 1) {
     buf[offset + i] = rnds[i]
   }
+
+  // Set RFC 4122 version (4) and variant (10xx) bits on owned output only.
+  buf[offset + 6] = (buf[offset + 6] & 0x0f) | 0x40
+  buf[offset + 8] = (buf[offset + 8] & 0x3f) | 0x80
 
   return buf
 }
