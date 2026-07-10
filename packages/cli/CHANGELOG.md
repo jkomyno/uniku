@@ -1,5 +1,23 @@
 # @uniku/cli
 
+## 0.5.0
+
+### Minor Changes
+
+- 4f2ee6b: Publish a standalone Linux ARM64 CLI binary alongside the existing Linux x64/amd64 and macOS binaries. The installer now detects both `aarch64` and `arm64` Linux hosts and downloads the matching release asset.
+- 16bbd47: Add TSID generation, validation, and inspection support to the CLI, including `--timestamp` (milliseconds), `--node`, and `--node-bits` flags for `generate tsid`, and a `uniku tsid` shorthand. Fixes auto-detection so 13-character TSID strings are not misclassified as CUID2 or Nanoid.
+
+### Patch Changes
+
+- a4d4bf5: Internal maintenance, no user-facing behavior change:
+
+  - Derive the `IdType` type and the `--type` flag choices for `inspect` / `validate` from `uniku`'s canonical `ID_GENERATORS` list instead of three hand-maintained copies of the union. The `--type` values and their order are unchanged.
+  - Switch the CUID call sites to the new `uniku/cuid/v2` import (the `--type cuid` value and `type: 'cuid'` output field are unchanged).
+
+- Updated dependencies [c6ebcb2]
+- Updated dependencies [a4d4bf5]
+  - uniku@0.3.0
+
 ## 0.4.0
 
 ### Minor Changes

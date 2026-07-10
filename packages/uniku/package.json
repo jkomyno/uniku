@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "uniku",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Minimal, tree-shakeable unique ID generators for every JavaScript runtime",
   "author": {
     "name": "Alberto Schiabel",
