@@ -65,6 +65,16 @@ function writeUlidBytesUnchecked(time: number, random: Uint8Array, buf: Uint8Arr
   }
 }
 
+function writeUlidBytes(time: number, random: Uint8Array, buf: Uint8Array, offset: number): void {
+  if (!isWritableRange(buf, offset, ULID_BYTES)) {
+    throw new BufferError(
+      'ULID_BUFFER_OUT_OF_BOUNDS',
+      `ULID byte range ${offset}:${offset + ULID_BYTES - 1} is out of buffer bounds`,
+    )
+  }
+  writeUlidBytesUnchecked(time, random, buf, offset)
+}
+
 /*
  * Overload: no buffer => return a ULID string.
  */
@@ -134,13 +144,7 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
   }
 
   if (buf) {
-    if (!isWritableRange(buf, offset, ULID_BYTES)) {
-      throw new BufferError(
-        'ULID_BUFFER_OUT_OF_BOUNDS',
-        `ULID byte range ${offset}:${offset + ULID_BYTES - 1} is out of buffer bounds`,
-      )
-    }
-    writeUlidBytesUnchecked(time, random, buf, offset)
+    writeUlidBytes(time, random, buf, offset)
     return buf
   }
 
