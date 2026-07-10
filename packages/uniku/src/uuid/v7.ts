@@ -27,6 +27,7 @@ export type UuidV7 = {
 }
 
 const UUID_V7_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const MAX_MSECS = 0xffffffffffff
 
 // Reusable buffer for string output path - avoids allocation per call.
 // Safe because bytes are consumed synchronously by formatUuid().
@@ -107,6 +108,13 @@ function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?:
   let bytes: Uint8Array
 
   if (options) {
+    const msecs = options.msecs
+    if (msecs !== undefined && (!Number.isInteger(msecs) || msecs < 0 || msecs > MAX_MSECS)) {
+      throw new InvalidInputError(
+        'UUID_TIMESTAMP_OUT_OF_RANGE',
+        `Timestamp must be an integer between 0 and ${MAX_MSECS}`,
+      )
+    }
     bytes = v7Bytes(options.random ?? rng(), options.msecs, options.seq, buf ?? reusableBuf, buf ? offset : 0)
   } else {
     // HOT PATH: Inline state management and byte generation for best performance

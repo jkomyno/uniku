@@ -143,12 +143,12 @@ function objectIdFn<TBuf extends Uint8Array = Uint8Array>(
     }
 
     const optSecs = options.secs
-    if (optSecs !== undefined && (optSecs < 0 || optSecs > MAX_SECS)) {
+    if (optSecs !== undefined && (!Number.isInteger(optSecs) || optSecs < 0 || optSecs > MAX_SECS)) {
       throw new InvalidInputError('OBJECTID_TIMESTAMP_OUT_OF_RANGE', `Timestamp must be between 0 and ${MAX_SECS}`)
     }
 
     const optCounter = options.counter
-    if (optCounter !== undefined && (optCounter < 0 || optCounter > MAX_COUNTER)) {
+    if (optCounter !== undefined && (!Number.isInteger(optCounter) || optCounter < 0 || optCounter > MAX_COUNTER)) {
       throw new InvalidInputError('OBJECTID_COUNTER_OUT_OF_RANGE', `Counter must be between 0 and ${MAX_COUNTER}`)
     }
 

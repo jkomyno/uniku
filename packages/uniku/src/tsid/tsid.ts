@@ -140,7 +140,7 @@ function tsidFn<TBuf extends Uint8Array = Uint8Array>(options?: TsidOptions, buf
 
   if (options) {
     const nodeBits = options.nodeBits ?? DEFAULT_NODE_BITS
-    if (nodeBits < 0 || nodeBits > MAX_NODE_BITS) {
+    if (!Number.isInteger(nodeBits) || nodeBits < 0 || nodeBits > MAX_NODE_BITS) {
       throw new InvalidInputError('TSID_NODE_BITS_OUT_OF_RANGE', `nodeBits must be between 0 and ${MAX_NODE_BITS}`)
     }
     counterBits = RANDOM_BITS - nodeBits
@@ -149,7 +149,7 @@ function tsidFn<TBuf extends Uint8Array = Uint8Array>(options?: TsidOptions, buf
 
     const optNode = options.node
     if (optNode !== undefined) {
-      if (optNode < 0 || optNode > nodeMask) {
+      if (!Number.isInteger(optNode) || optNode < 0 || optNode > nodeMask) {
         throw new InvalidInputError('TSID_NODE_OUT_OF_RANGE', `node must be between 0 and ${nodeMask}`)
       }
       node = optNode
@@ -159,7 +159,7 @@ function tsidFn<TBuf extends Uint8Array = Uint8Array>(options?: TsidOptions, buf
 
     const optCounter = options.counter
     if (optCounter !== undefined) {
-      if (optCounter < 0 || optCounter > counterMask) {
+      if (!Number.isInteger(optCounter) || optCounter < 0 || optCounter > counterMask) {
         throw new InvalidInputError('TSID_COUNTER_OUT_OF_RANGE', `counter must be between 0 and ${counterMask}`)
       }
       counter = optCounter
@@ -168,7 +168,13 @@ function tsidFn<TBuf extends Uint8Array = Uint8Array>(options?: TsidOptions, buf
     }
 
     const epoch = options.epoch ?? TSID_EPOCH
+    if (!Number.isInteger(epoch)) {
+      throw new InvalidInputError('TSID_EPOCH_INVALID', 'epoch must be a finite integer')
+    }
     const msecs = options.msecs ?? Date.now()
+    if (!Number.isInteger(msecs)) {
+      throw new InvalidInputError('TSID_TIMESTAMP_INVALID', 'msecs must be a finite integer')
+    }
     const diff = BigInt(msecs) - BigInt(epoch)
     if (diff < 0n || diff > MAX_TIMESTAMP_DIFF) {
       throw new InvalidInputError(

@@ -103,7 +103,7 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
   let timestamp: number
   const secs = options?.secs
   if (secs !== undefined) {
-    if (secs < KSUID_EPOCH) {
+    if (!Number.isInteger(secs) || secs < KSUID_EPOCH) {
       throw new InvalidInputError('KSUID_TIMESTAMP_TOO_LOW', 'Timestamp must be >= KSUID epoch')
     }
 

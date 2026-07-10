@@ -32,6 +32,7 @@ export type Ulid = {
 
 // Validation regex: first char [0-7] to prevent overflow, rest from Crockford alphabet
 const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
+const MAX_MSECS = 0xffffffffffff
 
 type UlidState = {
   msecs: number
@@ -102,6 +103,12 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
   if (options) {
     // Explicit options provided - use them directly without monotonic state
     time = options.msecs ?? defaultTime
+    if (!Number.isInteger(time) || time < 0 || time > MAX_MSECS) {
+      throw new InvalidInputError(
+        'ULID_TIMESTAMP_OUT_OF_RANGE',
+        `Timestamp must be an integer between 0 and ${MAX_MSECS}`,
+      )
+    }
     if (options.random) {
       if (options.random.length < 10) {
         throw new InvalidInputError('ULID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 10 for ULID')
