@@ -80,6 +80,20 @@ jobs:
           npm_config_update_notifier: "false"
         run: npm run test:ci:node-matrix
 
+  coverage:
+    name: Library Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Coverage gate
+        run: pnpm test:coverage
+
   smoke-bun:
     name: Bun Smoke
     runs-on: ubuntu-latest
@@ -121,6 +135,43 @@ jobs:
 
       - name: Runtime smoke
         run: pnpm --filter uniku smoke:runtime:deno
+
+  smoke-browser:
+    name: Chromium Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2.1.2
+
+      - name: Build library
+        run: pnpm --filter uniku build
+
+      - name: Browser runtime smoke
+        run: pnpm --filter uniku smoke:runtime:browser
+
+  e2e-cloudflare:
+    name: Cloudflare Workers E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Build library
+        run: pnpm --filter uniku build
+
+      - name: Run E2E tests
+        run: pnpm test:e2e:cloudflare
 
   build:
     name: Build
@@ -165,15 +216,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          pnpm --filter @uniku/cli build:binary
-          tar -tzf packages/cli/dist/uniku-linux-x64.tar.gz | grep -qx 'uniku'
-          test -x packages/cli/dist/uniku-linux-x64
+          cd packages/cli
+          bun scripts/build-binary.ts --target=bun-linux-x64 --name=uniku-linux-x64
+          bun scripts/build-binary.ts --target=bun-linux-arm64 --name=uniku-linux-arm64
+
+          for artifact in uniku-linux-x64 uniku-linux-arm64; do
+            tar -tzf "dist/${artifact}.tar.gz" | grep -qx 'uniku'
+            test -x "dist/${artifact}"
+          done
 
   preview:
     name: Preview Release
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: [check, test, smoke-bun, smoke-deno, build]
+    needs: [check, test, coverage, smoke-bun, smoke-deno, smoke-browser, e2e-cloudflare, build]
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
