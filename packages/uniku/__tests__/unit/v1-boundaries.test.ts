@@ -22,6 +22,22 @@ describe('v1 public boundary contract', () => {
         generate: () => uuidv7({ msecs: 2 ** 48, random: zeroes(16), seq: 0 }),
       },
       {
+        name: 'UUID v7 rejects NaN sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: Number.NaN }),
+      },
+      {
+        name: 'UUID v7 rejects fractional sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 1.5 }),
+      },
+      {
+        name: 'UUID v7 rejects negative sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: -1 }),
+      },
+      {
+        name: 'UUID v7 rejects sequences above 32 bits',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 2 ** 32 }),
+      },
+      {
         name: 'ULID rejects negative timestamps',
         generate: () => ulid({ msecs: -1, random: zeroes(10) }),
       },
