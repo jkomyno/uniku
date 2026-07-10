@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 import { cuidv2 } from '@/src/cuid/v2'
 import { BufferError, InvalidInputError } from '@/src/errors'
 import { ksuid } from '@/src/ksuid/ksuid'
@@ -20,6 +20,22 @@ describe('v1 public boundary contract', () => {
       {
         name: 'UUID v7 rejects timestamps above 48 bits',
         generate: () => uuidv7({ msecs: 2 ** 48, random: zeroes(16), seq: 0 }),
+      },
+      {
+        name: 'UUID v7 rejects NaN sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: Number.NaN }),
+      },
+      {
+        name: 'UUID v7 rejects fractional sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 1.5 }),
+      },
+      {
+        name: 'UUID v7 rejects negative sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: -1 }),
+      },
+      {
+        name: 'UUID v7 rejects sequences above 32 bits',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 2 ** 32 }),
       },
       {
         name: 'ULID rejects negative timestamps',
@@ -59,11 +75,13 @@ describe('v1 public boundary contract', () => {
       },
     ]
 
-    for (const testCase of cases) {
-      it.fails(testCase.name, () => {
-        expect(testCase.generate).toThrow(InvalidInputError)
-      })
-    }
+    test.each(cases)('$name', ({ generate }) => {
+      expect(generate).toThrow(InvalidInputError)
+    })
+
+    it('UUID v7 accepts the maximum unsigned 32-bit sequence', () => {
+      expect(() => uuidv7({ msecs: 0, random: zeroes(16), seq: 0xffffffff })).not.toThrow()
+    })
   })
 
   describe('canonical byte lengths', () => {
@@ -94,11 +112,9 @@ describe('v1 public boundary contract', () => {
       },
     ]
 
-    for (const testCase of cases) {
-      it.fails(testCase.name, () => {
-        expect(testCase.decode).toThrow(BufferError)
-      })
-    }
+    test.each(cases)('$name', ({ decode }) => {
+      expect(decode).toThrow(BufferError)
+    })
   })
 
   describe('buffer offsets', () => {
@@ -129,15 +145,13 @@ describe('v1 public boundary contract', () => {
       },
     ]
 
-    for (const testCase of cases) {
-      it.fails(testCase.name, () => {
-        expect(testCase.generate).toThrow(BufferError)
-      })
-    }
+    test.each(cases)('$name', ({ generate }) => {
+      expect(generate).toThrow(BufferError)
+    })
   })
 
   describe('caller-owned values', () => {
-    it.fails('UUID v4 does not mutate caller-provided random bytes', () => {
+    it('UUID v4 does not mutate caller-provided random bytes', () => {
       const random = new Uint8Array(16).fill(0xff)
       const before = random.slice()
 
@@ -153,10 +167,8 @@ describe('v1 public boundary contract', () => {
       { name: 'TSID toBytes rejects values above 64 bits', convert: () => tsid.toBytes(tsid.MAX + 1n) },
     ]
 
-    for (const testCase of invalidTsidCases) {
-      it.fails(testCase.name, () => {
-        expect(testCase.convert).toThrow(InvalidInputError)
-      })
-    }
+    test.each(invalidTsidCases)('$name', ({ convert }) => {
+      expect(convert).toThrow(InvalidInputError)
+    })
   })
 })

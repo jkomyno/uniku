@@ -135,14 +135,18 @@ function getRandomFn(random?: Uint8Array): () => number {
 // --- Main generator ---
 
 function cuid2Fn(options?: Cuid2Options): string {
-  const length = options?.length ?? DEFAULT_LENGTH
+  const requestedLength = options?.length
 
-  if (length < MIN_LENGTH || length > MAX_LENGTH) {
+  if (
+    requestedLength !== undefined &&
+    (!Number.isInteger(requestedLength) || requestedLength < MIN_LENGTH || requestedLength > MAX_LENGTH)
+  ) {
     throw new InvalidInputError(
       'CUID2_LENGTH_OUT_OF_RANGE',
-      `CUID2 length must be between ${MIN_LENGTH} and ${MAX_LENGTH}. Received: ${length}`,
+      `CUID2 length must be between ${MIN_LENGTH} and ${MAX_LENGTH}. Received: ${requestedLength}`,
     )
   }
+  const length = requestedLength ?? DEFAULT_LENGTH
 
   const random = getRandomFn(options?.random)
 

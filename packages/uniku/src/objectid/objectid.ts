@@ -1,5 +1,6 @@
 import { writeTimestamp32 } from '../common/bytes'
 import { randomBytes, randomUint32 } from '../common/random'
+import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
 import { decodeObjectIdHex, encodeObjectIdHex } from './hex'
 
@@ -85,17 +86,13 @@ function freshRandom(): Uint8Array {
   return bytes
 }
 
-function objectIdBytes(secs: number, random: Uint8Array, counter: number, buf?: Uint8Array, offset = 0): Uint8Array {
-  if (!buf) {
-    buf = new Uint8Array(OBJECTID_BYTES)
-    offset = 0
-  } else if (offset < 0 || offset + OBJECTID_BYTES > buf.length) {
-    throw new BufferError(
-      'OBJECTID_BUFFER_OUT_OF_BOUNDS',
-      `ObjectID byte range ${offset}:${offset + OBJECTID_BYTES - 1} is out of buffer bounds`,
-    )
-  }
-
+function writeObjectIdBytesUnchecked(
+  secs: number,
+  random: Uint8Array,
+  counter: number,
+  buf: Uint8Array,
+  offset: number,
+): void {
   // Timestamp (32-bit big-endian seconds since Unix epoch) -> bytes 0-3
   writeTimestamp32(buf, offset, secs)
 
@@ -108,8 +105,6 @@ function objectIdBytes(secs: number, random: Uint8Array, counter: number, buf?: 
   buf[offset + TIMESTAMP_BYTES + RANDOM_BYTES] = (counter >>> 16) & 0xff
   buf[offset + TIMESTAMP_BYTES + RANDOM_BYTES + 1] = (counter >>> 8) & 0xff
   buf[offset + TIMESTAMP_BYTES + RANDOM_BYTES + COUNTER_BYTES - 1] = counter & 0xff
-
-  return buf
 }
 
 /*
@@ -143,12 +138,12 @@ function objectIdFn<TBuf extends Uint8Array = Uint8Array>(
     }
 
     const optSecs = options.secs
-    if (optSecs !== undefined && (optSecs < 0 || optSecs > MAX_SECS)) {
+    if (optSecs !== undefined && !isIntegerInRange(optSecs, 0, MAX_SECS)) {
       throw new InvalidInputError('OBJECTID_TIMESTAMP_OUT_OF_RANGE', `Timestamp must be between 0 and ${MAX_SECS}`)
     }
 
     const optCounter = options.counter
-    if (optCounter !== undefined && (optCounter < 0 || optCounter > MAX_COUNTER)) {
+    if (optCounter !== undefined && !isIntegerInRange(optCounter, 0, MAX_COUNTER)) {
       throw new InvalidInputError('OBJECTID_COUNTER_OUT_OF_RANGE', `Counter must be between 0 and ${MAX_COUNTER}`)
     }
 
@@ -183,11 +178,18 @@ function objectIdFn<TBuf extends Uint8Array = Uint8Array>(
   }
 
   if (buf) {
-    objectIdBytes(secs, random, counter, buf, offset)
+    if (!isWritableRange(buf, offset, OBJECTID_BYTES)) {
+      throw new BufferError(
+        'OBJECTID_BUFFER_OUT_OF_BOUNDS',
+        `ObjectID byte range ${offset}:${offset + OBJECTID_BYTES - 1} is out of buffer bounds`,
+      )
+    }
+    writeObjectIdBytesUnchecked(secs, random, counter, buf, offset)
     return buf
   }
 
-  const bytes = objectIdBytes(secs, random, counter)
+  const bytes = new Uint8Array(OBJECTID_BYTES)
+  writeObjectIdBytesUnchecked(secs, random, counter, bytes, 0)
   return encodeObjectIdHex(bytes)
 }
 
@@ -202,6 +204,12 @@ function toBytes(id: string): Uint8Array {
  * Convert 12 bytes to an ObjectID hex string.
  */
 function fromBytes(bytes: Uint8Array): string {
+  if (bytes.length !== OBJECTID_BYTES) {
+    throw new BufferError(
+      'OBJECTID_BYTES_INVALID_LENGTH',
+      `ObjectID bytes must be exactly ${OBJECTID_BYTES} bytes, got ${bytes.length}`,
+    )
+  }
   return encodeObjectIdHex(bytes)
 }
 

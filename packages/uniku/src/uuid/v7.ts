@@ -1,6 +1,7 @@
 import { rng } from '../common/random'
+import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
-import { formatUuid, parseUuid } from './common/uuid'
+import { formatUuid, formatUuidUnchecked, parseUuid } from './common/uuid'
 
 export type UuidV7Options = {
   /**
@@ -9,6 +10,9 @@ export type UuidV7Options = {
    */
   random?: Uint8Array
   msecs?: number
+  /**
+   * Unsigned 32-bit sequence value.
+   */
   seq?: number
 }
 
@@ -27,10 +31,13 @@ export type UuidV7 = {
 }
 
 const UUID_V7_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const UUID_BYTES = 16
+const MAX_MSECS = 0xffffffffffff
+const MAX_SEQ = 0xffffffff
 
 // Reusable buffer for string output path - avoids allocation per call.
-// Safe because bytes are consumed synchronously by formatUuid().
-const reusableBuf = new Uint8Array(16)
+// Safe because bytes are consumed synchronously by formatUuidUnchecked().
+const reusableBuf = new Uint8Array(UUID_BYTES)
 
 type V7State = {
   msecs: number
@@ -47,29 +54,7 @@ type V7State = {
  */
 const state: V7State = { msecs: -Infinity, seq: 0 }
 
-function v7Bytes(
-  rnds: Uint8Array,
-  msecs: number | undefined,
-  seq: number | undefined,
-  buf: Uint8Array,
-  offset = 0,
-): Uint8Array {
-  if (rnds.length < 16) {
-    throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16')
-  }
-
-  if (offset < 0 || offset + 16 > buf.length) {
-    throw new BufferError(
-      'UUID_BUFFER_OUT_OF_BOUNDS',
-      `UUID byte range ${offset}:${offset + 15} is out of buffer bounds`,
-    )
-  }
-
-  msecs ??= Date.now()
-  // Derive a 31-bit sequence if not provided by the caller.
-  // Uses the same formula as the hot path for consistency.
-  seq ??= (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
-
+function writeV7BytesUnchecked(rnds: Uint8Array, msecs: number, seq: number, buf: Uint8Array, offset: number): void {
   // Keep this inline on the UUID v7 hot path. Using writeTimestamp48() here
   // benchmarked slower than the direct byte writes.
   buf[offset++] = (msecs / 0x10000000000) & 0xff
@@ -91,8 +76,50 @@ function v7Bytes(
   buf[offset++] = rnds[13]
   buf[offset++] = rnds[14]
   buf[offset++] = rnds[15]
+}
 
-  return buf
+function writeV7Bytes(rnds: Uint8Array, msecs: number, seq: number, buf: Uint8Array, offset: number): void {
+  if (!isWritableRange(buf, offset, UUID_BYTES)) {
+    throw new BufferError(
+      'UUID_BUFFER_OUT_OF_BOUNDS',
+      `UUID byte range ${offset}:${offset + UUID_BYTES - 1} is out of buffer bounds`,
+    )
+  }
+  writeV7BytesUnchecked(rnds, msecs, seq, buf, offset)
+}
+
+function v7WithOptions<TBuf extends Uint8Array = Uint8Array>(
+  options: UuidV7Options,
+  buf?: TBuf,
+  offset = 0,
+): string | TBuf {
+  const optMsecs = options.msecs
+  if (optMsecs !== undefined && !isIntegerInRange(optMsecs, 0, MAX_MSECS)) {
+    throw new InvalidInputError(
+      'UUID_TIMESTAMP_OUT_OF_RANGE',
+      `Timestamp must be an integer between 0 and ${MAX_MSECS}`,
+    )
+  }
+  const optSeq = options.seq
+  if (optSeq !== undefined && !isIntegerInRange(optSeq, 0, MAX_SEQ)) {
+    throw new InvalidInputError('UUID_SEQUENCE_OUT_OF_RANGE', `Sequence must be an integer between 0 and ${MAX_SEQ}`)
+  }
+  const optRandom = options.random
+  if (optRandom && optRandom.length < UUID_BYTES) {
+    throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', `Random bytes length must be >= ${UUID_BYTES}`)
+  }
+
+  const rnds = optRandom ?? rng()
+  const msecs = optMsecs ?? Date.now()
+  // Derive a 31-bit sequence if not provided by the caller, matching the default hot path.
+  const seq = optSeq ?? (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
+
+  if (buf) {
+    writeV7Bytes(rnds, msecs, seq, buf, offset)
+    return buf
+  }
+  writeV7BytesUnchecked(rnds, msecs, seq, reusableBuf, 0)
+  return formatUuidUnchecked(reusableBuf)
 }
 
 /*
@@ -104,31 +131,32 @@ function v7(options?: UuidV7Options, buf?: undefined, offset?: number): string
  */
 function v7<TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf
 function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?: TBuf, offset?: number): string | TBuf {
-  let bytes: Uint8Array
-
   if (options) {
-    bytes = v7Bytes(options.random ?? rng(), options.msecs, options.seq, buf ?? reusableBuf, buf ? offset : 0)
-  } else {
-    // HOT PATH: Inline state management and byte generation for best performance
-    const now = Date.now()
-    const rnds = rng()
-
-    // Update state (inlined for performance)
-    if (now > state.msecs) {
-      state.seq = (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
-      state.msecs = now
-    } else {
-      state.seq = (state.seq + 1) | 0
-      if (state.seq < 0) {
-        state.seq = 0
-        state.msecs++
-      }
-    }
-
-    bytes = v7Bytes(rnds, state.msecs, state.seq, buf ?? reusableBuf, buf ? offset : 0)
+    return v7WithOptions(options, buf, offset)
   }
 
-  return buf ? (bytes as TBuf) : formatUuid(bytes)
+  // HOT PATH: Inline state management and byte generation for best performance
+  const now = Date.now()
+  const rnds = rng()
+
+  // Update state (inlined for performance)
+  if (now > state.msecs) {
+    state.seq = (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
+    state.msecs = now
+  } else {
+    state.seq = (state.seq + 1) | 0
+    if (state.seq < 0) {
+      state.seq = 0
+      state.msecs++
+    }
+  }
+
+  if (buf) {
+    writeV7Bytes(rnds, state.msecs, state.seq, buf, offset ?? 0)
+    return buf
+  }
+  writeV7BytesUnchecked(rnds, state.msecs, state.seq, reusableBuf, 0)
+  return formatUuidUnchecked(reusableBuf)
 }
 
 function timestamp(id: string): number {

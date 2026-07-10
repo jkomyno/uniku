@@ -231,8 +231,8 @@ export function decodeToBytes(str: string): Uint8Array {
  * Encode 16 bytes to a 26-character ULID string.
  */
 export function bytesToUlid(bytes: Uint8Array): string {
-  if (bytes.length < 16) {
-    throw new BufferError('ULID_BYTES_TOO_SHORT', 'Byte array must be at least 16 bytes')
+  if (bytes.length !== 16) {
+    throw new BufferError('ULID_BYTES_INVALID_LENGTH', `ULID bytes must be exactly 16 bytes, got ${bytes.length}`)
   }
 
   // Timestamp: bytes 0-5 -> 10 characters

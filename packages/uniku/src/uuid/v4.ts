@@ -1,13 +1,15 @@
 import { rng } from '../common/random'
+import { isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
-import { formatUuid, parseUuid } from './common/uuid'
+import { formatUuid, formatUuidUnchecked, parseUuid } from './common/uuid'
 
 const randomUUID = /*@__PURE__*/ globalThis.crypto.randomUUID.bind(globalThis.crypto)
+const UUID_BYTES = 16
+const reusableBuf = new Uint8Array(UUID_BYTES)
 
 export type UuidV4Options = {
   /**
    * 16 bytes of random data to use for UUID generation.
-   * Note: Bytes at index 6 and 8 will be modified in-place to set version/variant bits.
    */
   random?: Uint8Array
 }
@@ -27,34 +29,15 @@ export type UuidV4 = {
 
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-function v4Bytes(rnds: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
-  if (rnds.length < 16) {
-    throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16')
-  }
-
-  // Set RFC 4122 version (4) and variant (10xx) bits.
-  // Note: This modifies the input array in-place.
-  rnds[6] = (rnds[6] & 0x0f) | 0x40
-  rnds[8] = (rnds[8] & 0x3f) | 0x80
-
-  if (!buf) {
-    // No output buffer provided - return the modified random bytes directly
-    return rnds
-  }
-
-  if (offset < 0 || offset + 16 > buf.length) {
-    throw new BufferError(
-      'UUID_BUFFER_OUT_OF_BOUNDS',
-      `UUID byte range ${offset}:${offset + 15} is out of buffer bounds`,
-    )
-  }
-
+function writeV4BytesUnchecked(rnds: Uint8Array, buf: Uint8Array, offset: number): void {
   // Copy 16 UUID bytes into the provided buffer slice.
-  for (let i = 0; i < 16; i += 1) {
+  for (let i = 0; i < UUID_BYTES; i += 1) {
     buf[offset + i] = rnds[i]
   }
 
-  return buf
+  // Set RFC 4122 version (4) and variant (10xx) bits on owned output only.
+  buf[offset + 6] = (buf[offset + 6] & 0x0f) | 0x40
+  buf[offset + 8] = (buf[offset + 8] & 0x3f) | 0x80
 }
 
 /*
@@ -78,8 +61,22 @@ function _v4<TBuf extends Uint8Array = Uint8Array>(
   buf?: TBuf,
   offset?: number,
 ): string | TBuf {
-  const bytes = v4Bytes(options?.random ?? rng(), buf, offset)
-  return buf ?? formatUuid(bytes)
+  const random = options?.random
+  if (random && random.length < UUID_BYTES) {
+    throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', `Random bytes length must be >= ${UUID_BYTES}`)
+  }
+
+  const outputOffset = buf ? (offset ?? 0) : 0
+  if (buf && !isWritableRange(buf, outputOffset, UUID_BYTES)) {
+    throw new BufferError(
+      'UUID_BUFFER_OUT_OF_BOUNDS',
+      `UUID byte range ${outputOffset}:${outputOffset + UUID_BYTES - 1} is out of buffer bounds`,
+    )
+  }
+
+  const output = buf ?? reusableBuf
+  writeV4BytesUnchecked(random ?? rng(), output, outputOffset)
+  return buf ?? formatUuidUnchecked(output)
 }
 
 function isValid(id: unknown): id is string {
