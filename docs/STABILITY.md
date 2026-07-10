@@ -126,6 +126,8 @@ Performance is a product goal, not an excuse for surprising behavior.
 - Default no-argument generation paths remain allocation-conscious and avoid
   validation work for values produced internally.
 - Validation stays at public option, parsing, codec, and buffer boundaries.
+- Unchecked writer helpers are private implementation details, not public
+  `unsafe` entry points.
 - Each generator remains independently importable and tree-shakeable.
 - Bundle-size changes are measured from built entry points and reviewed as part
   of the change that caused them.

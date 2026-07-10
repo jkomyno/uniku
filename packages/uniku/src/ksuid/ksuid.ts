@@ -1,5 +1,6 @@
 import { writeTimestamp32 } from '../common/bytes'
 import { rng } from '../common/random'
+import { isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
 import { decodeBase62, encodeBase62 } from './base62'
 
@@ -58,19 +59,9 @@ export type Ksuid = {
 }
 
 /**
- * Write KSUID bytes to a buffer.
+ * Write already-validated KSUID fields to a buffer.
  */
-function ksuidBytes(timestamp: number, payload: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
-  if (!buf) {
-    buf = new Uint8Array(KSUID_BYTES)
-    offset = 0
-  } else if (!Number.isInteger(offset) || offset < 0 || offset + KSUID_BYTES > buf.length) {
-    throw new BufferError(
-      'KSUID_BUFFER_OUT_OF_BOUNDS',
-      `KSUID byte range ${offset}:${offset + KSUID_BYTES - 1} is out of buffer bounds`,
-    )
-  }
-
+function writeKsuidBytesUnchecked(timestamp: number, payload: Uint8Array, buf: Uint8Array, offset: number): void {
   // Timestamp (32-bit big-endian seconds since KSUID epoch) -> bytes 0-3
   writeTimestamp32(buf, offset, timestamp)
 
@@ -78,8 +69,6 @@ function ksuidBytes(timestamp: number, payload: Uint8Array, buf?: Uint8Array, of
   for (let i = 0; i < PAYLOAD_BYTES; i += 1) {
     buf[offset + TIMESTAMP_BYTES + i] = payload[i]
   }
-
-  return buf
 }
 
 /*
@@ -126,11 +115,18 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
   const payload = random ?? rng()
 
   if (buf) {
-    ksuidBytes(timestamp, payload, buf, offset)
+    if (!isWritableRange(buf, offset, KSUID_BYTES)) {
+      throw new BufferError(
+        'KSUID_BUFFER_OUT_OF_BOUNDS',
+        `KSUID byte range ${offset}:${offset + KSUID_BYTES - 1} is out of buffer bounds`,
+      )
+    }
+    writeKsuidBytesUnchecked(timestamp, payload, buf, offset)
     return buf
   }
 
-  const bytes = ksuidBytes(timestamp, payload)
+  const bytes = new Uint8Array(KSUID_BYTES)
+  writeKsuidBytesUnchecked(timestamp, payload, bytes, 0)
 
   // String mode: create bytes then encode to Base62
   return encodeBase62(bytes)

@@ -6,6 +6,7 @@ Uniku ID generation library implementation.
 
 - Each generator is a function with attached static methods (`toBytes`, `fromBytes`, `isValid`, etc.)
 - Time-ordered generators maintain module-level state for monotonic ordering
+- Public APIs validate caller-controlled values; unchecked writer helpers stay private and require fully resolved inputs
 - Uses Web Crypto API (`globalThis.crypto`) for universal runtime support
 - ESM only, no CommonJS
 

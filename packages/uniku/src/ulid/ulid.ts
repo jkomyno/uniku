@@ -1,5 +1,6 @@
 import { incrementBytesInPlace, writeTimestamp48 } from '../common/bytes'
 import { rng } from '../common/random'
+import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
 import { bytesToUlid, decodeToBytes, decodeUlidTime, encodeRandom, encodeTime } from './crockford'
 
@@ -32,6 +33,8 @@ export type Ulid = {
 
 // Validation regex: first char [0-7] to prevent overflow, rest from Crockford alphabet
 const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
+const ULID_BYTES = 16
+const RANDOM_BYTES = 10
 const MAX_MSECS = 0xffffffffffff
 
 type UlidState = {
@@ -49,29 +52,17 @@ type UlidState = {
  */
 const state: UlidState = {
   msecs: -Infinity,
-  lastRandom: new Uint8Array(10),
+  lastRandom: new Uint8Array(RANDOM_BYTES),
 }
 
-function ulidBytes(time: number, random: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
-  if (!buf) {
-    buf = new Uint8Array(16)
-    offset = 0
-  } else if (!Number.isInteger(offset) || offset < 0 || offset + 16 > buf.length) {
-    throw new BufferError(
-      'ULID_BUFFER_OUT_OF_BOUNDS',
-      `ULID byte range ${offset}:${offset + 15} is out of buffer bounds`,
-    )
-  }
-
+function writeUlidBytesUnchecked(time: number, random: Uint8Array, buf: Uint8Array, offset: number): void {
   // Timestamp (48-bit big-endian milliseconds since Unix epoch) -> bytes 0-5
   writeTimestamp48(buf, offset, time)
 
   // Random (80 bits) -> bytes 6-15
-  for (let i = 0; i < 10; i += 1) {
+  for (let i = 0; i < RANDOM_BYTES; i += 1) {
     buf[offset + 6 + i] = random[i]
   }
-
-  return buf
 }
 
 /*
@@ -98,33 +89,36 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
    * - all ULIDs generated within a single request will have the same timestamp.
    * - the monotonic ordering will rely entirely on incrementing the random portion.
    */
-  const defaultTime = Date.now()
-
   if (options) {
     // Explicit options provided - use them directly without monotonic state
-    time = options.msecs ?? defaultTime
-    if (!Number.isInteger(time) || time < 0 || time > MAX_MSECS) {
+    const optMsecs = options.msecs
+    if (optMsecs !== undefined && !isIntegerInRange(optMsecs, 0, MAX_MSECS)) {
       throw new InvalidInputError(
         'ULID_TIMESTAMP_OUT_OF_RANGE',
         `Timestamp must be an integer between 0 and ${MAX_MSECS}`,
       )
     }
-    if (options.random) {
-      if (options.random.length < 10) {
-        throw new InvalidInputError('ULID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 10 for ULID')
+    time = optMsecs ?? Date.now()
+    const optRandom = options.random
+    if (optRandom) {
+      if (optRandom.length < RANDOM_BYTES) {
+        throw new InvalidInputError(
+          'ULID_RANDOM_BYTES_TOO_SHORT',
+          `Random bytes length must be >= ${RANDOM_BYTES} for ULID`,
+        )
       }
-      random = options.random
+      random = optRandom
     } else {
       random = rng()
     }
   } else {
-    time = defaultTime
+    time = Date.now()
 
     if (time > state.msecs) {
       // New millisecond: generate fresh random
       random = rng()
       state.msecs = time
-      state.lastRandom.set(random.subarray(0, 10))
+      state.lastRandom.set(random.subarray(0, RANDOM_BYTES))
     } else {
       // Same millisecond or clock rollback: preserve last timestamp and increment random portion.
       time = state.msecs
@@ -140,7 +134,13 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
   }
 
   if (buf) {
-    ulidBytes(time, random, buf, offset)
+    if (!isWritableRange(buf, offset, ULID_BYTES)) {
+      throw new BufferError(
+        'ULID_BUFFER_OUT_OF_BOUNDS',
+        `ULID byte range ${offset}:${offset + ULID_BYTES - 1} is out of buffer bounds`,
+      )
+    }
+    writeUlidBytesUnchecked(time, random, buf, offset)
     return buf
   }
 
