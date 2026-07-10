@@ -56,7 +56,7 @@ function ulidBytes(time: number, random: Uint8Array, buf?: Uint8Array, offset = 
   if (!buf) {
     buf = new Uint8Array(16)
     offset = 0
-  } else if (offset < 0 || offset + 16 > buf.length) {
+  } else if (!Number.isInteger(offset) || offset < 0 || offset + 16 > buf.length) {
     throw new BufferError(
       'ULID_BUFFER_OUT_OF_BOUNDS',
       `ULID byte range ${offset}:${offset + 15} is out of buffer bounds`,

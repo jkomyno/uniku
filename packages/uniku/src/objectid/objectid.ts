@@ -89,7 +89,7 @@ function objectIdBytes(secs: number, random: Uint8Array, counter: number, buf?: 
   if (!buf) {
     buf = new Uint8Array(OBJECTID_BYTES)
     offset = 0
-  } else if (offset < 0 || offset + OBJECTID_BYTES > buf.length) {
+  } else if (!Number.isInteger(offset) || offset < 0 || offset + OBJECTID_BYTES > buf.length) {
     throw new BufferError(
       'OBJECTID_BUFFER_OUT_OF_BOUNDS',
       `ObjectID byte range ${offset}:${offset + OBJECTID_BYTES - 1} is out of buffer bounds`,
@@ -202,6 +202,12 @@ function toBytes(id: string): Uint8Array {
  * Convert 12 bytes to an ObjectID hex string.
  */
 function fromBytes(bytes: Uint8Array): string {
+  if (bytes.length !== OBJECTID_BYTES) {
+    throw new BufferError(
+      'OBJECTID_BYTES_INVALID_LENGTH',
+      `ObjectID bytes must be exactly ${OBJECTID_BYTES} bytes, got ${bytes.length}`,
+    )
+  }
   return encodeObjectIdHex(bytes)
 }
 

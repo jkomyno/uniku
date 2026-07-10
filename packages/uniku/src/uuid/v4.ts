@@ -1,6 +1,6 @@
 import { rng } from '../common/random'
 import { BufferError, InvalidInputError } from '../errors'
-import { formatUuid, parseUuid } from './common/uuid'
+import { formatUuid, formatUuidUnchecked, parseUuid } from './common/uuid'
 
 const randomUUID = /*@__PURE__*/ globalThis.crypto.randomUUID.bind(globalThis.crypto)
 
@@ -42,7 +42,7 @@ function v4Bytes(rnds: Uint8Array, buf?: Uint8Array, offset = 0): Uint8Array {
     return rnds
   }
 
-  if (offset < 0 || offset + 16 > buf.length) {
+  if (!Number.isInteger(offset) || offset < 0 || offset + 16 > buf.length) {
     throw new BufferError(
       'UUID_BUFFER_OUT_OF_BOUNDS',
       `UUID byte range ${offset}:${offset + 15} is out of buffer bounds`,
@@ -79,7 +79,7 @@ function _v4<TBuf extends Uint8Array = Uint8Array>(
   offset?: number,
 ): string | TBuf {
   const bytes = v4Bytes(options?.random ?? rng(), buf, offset)
-  return buf ?? formatUuid(bytes)
+  return buf ?? formatUuidUnchecked(bytes)
 }
 
 function isValid(id: unknown): id is string {

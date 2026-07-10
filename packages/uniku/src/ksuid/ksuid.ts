@@ -64,7 +64,7 @@ function ksuidBytes(timestamp: number, payload: Uint8Array, buf?: Uint8Array, of
   if (!buf) {
     buf = new Uint8Array(KSUID_BYTES)
     offset = 0
-  } else if (offset < 0 || offset + KSUID_BYTES > buf.length) {
+  } else if (!Number.isInteger(offset) || offset < 0 || offset + KSUID_BYTES > buf.length) {
     throw new BufferError(
       'KSUID_BUFFER_OUT_OF_BOUNDS',
       `KSUID byte range ${offset}:${offset + KSUID_BYTES - 1} is out of buffer bounds`,
@@ -150,6 +150,12 @@ function toBytes(id: string): Uint8Array {
  * Convert 20 bytes to a KSUID string.
  */
 function fromBytes(bytes: Uint8Array): string {
+  if (bytes.length !== KSUID_BYTES) {
+    throw new BufferError(
+      'KSUID_BYTES_INVALID_LENGTH',
+      `KSUID bytes must be exactly ${KSUID_BYTES} bytes, got ${bytes.length}`,
+    )
+  }
   return encodeBase62(bytes)
 }
 

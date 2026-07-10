@@ -95,7 +95,7 @@ describe('v1 public boundary contract', () => {
     ]
 
     for (const testCase of cases) {
-      it.fails(testCase.name, () => {
+      it(testCase.name, () => {
         expect(testCase.decode).toThrow(BufferError)
       })
     }
@@ -130,7 +130,7 @@ describe('v1 public boundary contract', () => {
     ]
 
     for (const testCase of cases) {
-      it.fails(testCase.name, () => {
+      it(testCase.name, () => {
         expect(testCase.generate).toThrow(BufferError)
       })
     }

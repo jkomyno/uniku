@@ -106,7 +106,7 @@ function writeTsidBytes(value: bigint, buf?: Uint8Array, offset = 0): Uint8Array
   if (!buf) {
     buf = new Uint8Array(TSID_BYTES)
     offset = 0
-  } else if (offset < 0 || offset + TSID_BYTES > buf.length) {
+  } else if (!Number.isInteger(offset) || offset < 0 || offset + TSID_BYTES > buf.length) {
     throw new BufferError(
       'TSID_BUFFER_OUT_OF_BOUNDS',
       `TSID byte range ${offset}:${offset + TSID_BYTES - 1} is out of buffer bounds`,

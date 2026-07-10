@@ -1,4 +1,4 @@
-import { ParseError } from '../../errors'
+import { BufferError, ParseError } from '../../errors'
 import { hexValue } from './hex'
 
 const UUID_BYTE_LENGTH = 16
@@ -93,6 +93,17 @@ const UUID_CHAR_IS_HIGH: boolean[] = [
 const HEX_TABLE: string[] = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0'))
 
 export function formatUuid(bytes: Uint8Array): string {
+  if (bytes.length !== UUID_BYTE_LENGTH) {
+    throw new BufferError(
+      'UUID_BYTES_INVALID_LENGTH',
+      `UUID bytes must be exactly ${UUID_BYTE_LENGTH} bytes, got ${bytes.length}`,
+    )
+  }
+
+  return formatUuidUnchecked(bytes)
+}
+
+export function formatUuidUnchecked(bytes: Uint8Array): string {
   // Direct string concatenation - optimized for V8's string builder.
   // This approach avoids loop overhead and intermediate allocations.
   // See: https://github.com/uuidjs/uuid/pull/434

@@ -1,6 +1,6 @@
 import { rng } from '../common/random'
 import { BufferError, InvalidInputError } from '../errors'
-import { formatUuid, parseUuid } from './common/uuid'
+import { formatUuid, formatUuidUnchecked, parseUuid } from './common/uuid'
 
 export type UuidV7Options = {
   /**
@@ -59,7 +59,7 @@ function v7Bytes(
     throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16')
   }
 
-  if (offset < 0 || offset + 16 > buf.length) {
+  if (!Number.isInteger(offset) || offset < 0 || offset + 16 > buf.length) {
     throw new BufferError(
       'UUID_BUFFER_OUT_OF_BOUNDS',
       `UUID byte range ${offset}:${offset + 15} is out of buffer bounds`,
@@ -136,7 +136,7 @@ function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?:
     bytes = v7Bytes(rnds, state.msecs, state.seq, buf ?? reusableBuf, buf ? offset : 0)
   }
 
-  return buf ? (bytes as TBuf) : formatUuid(bytes)
+  return buf ? (bytes as TBuf) : formatUuidUnchecked(bytes)
 }
 
 function timestamp(id: string): number {
