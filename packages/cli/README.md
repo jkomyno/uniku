@@ -17,7 +17,7 @@ Download and install a standalone binary — no Node.js required:
 curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
 ```
 
-Supports macOS (Intel & Apple Silicon) and Linux (x64). Override the install location or version with environment variables:
+Supports macOS (Intel and Apple Silicon) and Linux (x64/amd64 and ARM64). Override the install location or version with environment variables:
 
 ```bash
 # Custom install directory

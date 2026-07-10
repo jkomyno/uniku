@@ -653,7 +653,7 @@ tsid.MAX  // 18446744073709551615n
 Generate, validate, and inspect IDs from the command line with [`@uniku/cli`](./packages/cli):
 
 ```bash
-# Install pre-built binary (macOS, Linux)
+# Install pre-built binary (macOS x64/ARM64, Linux x64/ARM64)
 curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
 
 # Or install the v0.2.0 binary release with mise

@@ -228,9 +228,11 @@
     "test": "vitest run",
     "test:unit": "vitest --project unit run",
     "test:integration": "vitest --project integration run",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "pnpm --filter @uniku/e2e-cloudflare test:e2e",
     "test:e2e:cloudflare": "pnpm --filter @uniku/e2e-cloudflare test:e2e:cloudflare",
     "smoke:publish": "node scripts/publish-smoke.mjs",
+    "smoke:runtime:browser": "bun scripts/browser-smoke.ts",
     "smoke:runtime:bun": "bun scripts/runtime-smoke.mjs",
     "smoke:runtime:deno": "deno run --node-modules-dir=manual scripts/runtime-smoke.mjs",
     "bench": "vitest bench --run --project unit",
@@ -244,9 +246,11 @@
     "@noble/hashes": "^2.2.0"
   },
   "devDependencies": {
+    "@effect/platform-bun": "4.0.0-beta.93",
     "@owpz/ksuid": "^25.7.20",
     "@paralleldrive/cuid2": "^3.3.0",
     "@types/bun": "^1.3.14",
+    "effect": "4.0.0-beta.93",
     "bson": "^7.3.1",
     "nanoid": "^5.1.16",
     "tsid-ts": "^0.0.9",

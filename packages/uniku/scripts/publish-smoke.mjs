@@ -63,6 +63,12 @@ const assertPackedExports = (packedPackageJson) => {
     fail('Packed exports must not expose the @jkomyno/source condition.')
   }
 
+  const expectedSubpaths = [...Object.keys(expectedExports), './package.json'].sort()
+  const actualSubpaths = Object.keys(packedPackageJson.exports ?? {}).sort()
+  if (JSON.stringify(actualSubpaths) !== JSON.stringify(expectedSubpaths)) {
+    fail(`Packed exports must exactly match the entrypoint manifest. Got: ${actualSubpaths.join(', ')}`)
+  }
+
   for (const [subpath, expected] of Object.entries(expectedExports)) {
     const actual = packedPackageJson.exports?.[subpath]
 
