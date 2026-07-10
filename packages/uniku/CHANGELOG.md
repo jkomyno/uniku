@@ -1,5 +1,17 @@
 # uniku
 
+## 0.3.0
+
+### Minor Changes
+
+- c6ebcb2: Add `uniku/tsid`, a Snowflake-style 64-bit Time-Sorted Unique Identifier generator: a 42-bit millisecond timestamp, a configurable node ID (default 10 bits), and a per-millisecond counter, packed into a `bigint` — this library's first non-string primary type, reflecting TSID's value proposition as a native numeric ID (e.g. a database `BIGINT` primary key). Includes `toBytes`/`fromBytes`/`toString`/`fromString`/`timestamp`/`isValid` support and cross-validation against the `tsid-ts` npm package.
+- a4d4bf5: Add two new entry points:
+
+  - `uniku/generators` exports `ID_GENERATORS` (the canonical ordered list of the 8 supported ID generators) and its derived `IdGenerator` union — a single source of truth for the set of supported generators.
+  - `uniku/cuid/v2` exports the CUID2 generator as `cuidv2`, mirroring the versioned-subpath convention of `uniku/uuid/v4` / `uniku/uuid/v7`.
+
+  The existing `uniku/cuid2` entry point keeps working unchanged but is now `@deprecated` in favor of `uniku/cuid/v2`.
+
 ## 0.2.0
 
 ### Minor Changes
