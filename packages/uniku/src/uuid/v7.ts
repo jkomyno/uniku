@@ -34,7 +34,7 @@ const MAX_MSECS = 0xffffffffffff
 const MAX_SEQ = 0xffffffff
 
 // Reusable buffer for string output path - avoids allocation per call.
-// Safe because bytes are consumed synchronously by formatUuid().
+// Safe because bytes are consumed synchronously by formatUuidUnchecked().
 const reusableBuf = new Uint8Array(16)
 
 type V7State = {

@@ -80,6 +80,10 @@ describe('v1 public boundary contract', () => {
         expect(testCase.generate).toThrow(InvalidInputError)
       })
     }
+
+    it('UUID v7 accepts the maximum unsigned 32-bit sequence', () => {
+      expect(() => uuidv7({ msecs: 0, random: zeroes(16), seq: 0xffffffff })).not.toThrow()
+    })
   })
 
   describe('canonical byte lengths', () => {
