@@ -169,7 +169,9 @@ const failOnBrowserExit = Effect.fn('BrowserSmoke.failOnBrowserExit')(function* 
 const program = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
-  const tempDir = yield* fs.makeTempDirectoryScoped({ prefix: 'uniku-browser-smoke-' })
+  const tempDir = yield* Effect.acquireRelease(fs.makeTempDirectory({ prefix: 'uniku-browser-smoke-' }), (directory) =>
+    fs.remove(directory, { force: true, recursive: true }).pipe(Effect.ignore),
+  )
   const nodeModules = path.join(tempDir, 'node_modules')
   const packageRoot = path.join(nodeModules, 'uniku')
 
