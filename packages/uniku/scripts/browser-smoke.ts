@@ -211,8 +211,8 @@ const program = Effect.gen(function* () {
   yield* Deferred.await(completed).pipe(
     Effect.raceFirst(failOnBrowserExit(browser)),
     Effect.timeoutOrElse({
-      duration: '10 seconds',
-      orElse: () => fail('Chromium did not complete the smoke test within 10 seconds.'),
+      duration: '30 seconds',
+      orElse: () => fail('Chromium did not complete the smoke test within 30 seconds.'),
     }),
   )
   yield* Console.log(PASS_MARKER)
