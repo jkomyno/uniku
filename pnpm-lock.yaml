@@ -107,6 +107,9 @@ importers:
       react-dom:
         specifier: 19.2.7
         version: 19.2.7(react@19.2.7)
+      seroval:
+        specifier: 1.5.5
+        version: 1.5.5
     devDependencies:
       '@tailwindcss/vite':
         specifier: 4.3.2
