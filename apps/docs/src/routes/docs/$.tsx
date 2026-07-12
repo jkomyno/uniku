@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { staticFunctionMiddleware } from '@tanstack/start-static-server-functions'
 import { Suspense } from 'react'
+import { baseAwareStaticClientMiddleware } from '@/lib/static-server-fn'
 import { useMDXComponents } from '@/components/mdx'
 import { baseOptions } from '@/lib/layout'
 import { source } from '@/lib/source'
@@ -29,7 +30,7 @@ export const Route = createFileRoute('/docs/$')({
 
 const loader = createServerFn({ method: 'GET' })
   .validator((slugs: string[]) => slugs)
-  .middleware([staticFunctionMiddleware])
+  .middleware([baseAwareStaticClientMiddleware, staticFunctionMiddleware])
   .handler(async ({ data: slugs }) => {
     const page = source.getPage(slugs)
     if (!page) throw notFound()
