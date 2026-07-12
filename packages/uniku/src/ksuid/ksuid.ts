@@ -45,12 +45,19 @@ export type KsuidOptions = {
 }
 
 export type Ksuid = {
+  /** Generate a time-ordered KSUID string. */
   (): string
+  /** Generate a KSUID with explicit options or write its 20 canonical bytes into a caller-owned buffer. */
   <TBuf extends Uint8Array = Uint8Array>(options: KsuidOptions | undefined, buf: TBuf, offset?: number): TBuf
+  /** Generate a KSUID string with optional timestamp or random payload bytes. */
   (options?: KsuidOptions, buf?: undefined, offset?: number): string
+  /** Convert a KSUID string to its canonical 20-byte representation. */
   toBytes(id: string): Uint8Array
+  /** Convert 20 canonical KSUID bytes to a KSUID string. */
   fromBytes(bytes: Uint8Array): string
+  /** Read the embedded Unix timestamp in milliseconds. */
   timestamp(id: string): number
+  /** Return whether a value is a syntactically valid KSUID string. */
   isValid(id: unknown): id is string
   /** The nil KSUID (all zeros) */
   NIL: string

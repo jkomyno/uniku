@@ -1,0 +1,100 @@
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ArrowRight, Box, Command, Cpu, Gauge, Globe2, TerminalSquare } from 'lucide-react'
+import { HomeLayout } from 'fumadocs-ui/layouts/home'
+import { baseOptions } from '@/lib/layout'
+
+const idRail = [
+  '019b8f1e-70d4-7c5a-b7d2-18f5cc7b95f0',
+  '01JPNBWW9Q54Y5DVXR8F11H3TM',
+  'user_01h2xcejqtf2nbrexx3vqjhp41',
+]
+
+export const Route = createFileRoute('/')({
+  component: Home,
+})
+
+function Home() {
+  return (
+    <HomeLayout {...baseOptions()}>
+      <main className="landing-shell">
+        <section className="landing-hero">
+          <div className="hero-copy">
+            <p className="eyebrow">ID infrastructure for JavaScript</p>
+            <h1>One install. Every ID strategy.</h1>
+            <p className="hero-summary">
+              Install <code>uniku</code> once, then choose the ID that fits the job. Your application imports only the strategy it uses,
+              across Node.js, browsers, edge runtimes, Bun, Deno, and Cloudflare Workers.
+            </p>
+            <div className="hero-actions">
+              <Link className="primary-action" to="/docs/$" params={{ _splat: '' }}>
+                Read the docs <ArrowRight aria-hidden="true" size={16} />
+              </Link>
+              <a className="secondary-action" href="https://www.npmjs.com/package/uniku">
+                View on npm
+              </a>
+            </div>
+          </div>
+
+          <div className="id-atlas" aria-label="Examples of supported identifier formats">
+            <div className="atlas-heading">
+              <span>Format specimens</span>
+            </div>
+            <pre className="atlas-code" aria-label="uniku library example">
+              <code>import {'{'} uuidv7 {'}'} from 'uniku/uuid/v7'</code>
+              <code>const id = uuidv7()</code>
+            </pre>
+            <div className="atlas-rail">
+              {idRail.map((id, index) => (
+                <div className="atlas-row" key={id}>
+                  <span className="atlas-index">0{index + 1}</span>
+                  <code>{id}</code>
+                </div>
+              ))}
+            </div>
+            <p>Pick the shape your system needs. Your runtime pays only for the generator you import.</p>
+          </div>
+        </section>
+
+        <section className="value-grid" aria-label="Why use uniku">
+          <article>
+            <Globe2 aria-hidden="true" size={20} />
+            <h2>Portable by default</h2>
+            <p>Built on web standards, tested end to end across all major JavaScript runtimes.</p>
+          </article>
+          <article>
+            <Gauge aria-hidden="true" size={20} />
+            <h2>Fast and tiny</h2>
+            <p>Up to 85x faster than individual npm alternatives, with direct entry points that keep each import focused.</p>
+          </article>
+          <article>
+            <Box aria-hidden="true" size={20} />
+            <h2>Nine formats, one dependency</h2>
+            <p>UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, and TSID in one package.</p>
+          </article>
+        </section>
+
+        <section className="companion-panel">
+          <div>
+            <p className="eyebrow">The CLI companion</p>
+            <h2>Generate, inspect, and validate from your terminal.</h2>
+            <p>Install <code>@uniku/cli</code> when the ID belongs in a shell script, a migration, or a debugging session.</p>
+          </div>
+          <pre aria-label="uniku CLI example"><TerminalSquare aria-hidden="true" size={17} /> uniku uuid -v 7</pre>
+          <Link className="text-link" to="/docs/$" params={{ _splat: 'cli' }}>
+            Explore the CLI <ArrowRight aria-hidden="true" size={15} />
+          </Link>
+        </section>
+
+        <section className="start-row">
+          <div>
+            <p className="eyebrow">Start here</p>
+            <h2>Choose an ID format with intent.</h2>
+          </div>
+          <Link className="text-link" to="/docs/$" params={{ _splat: 'guides/choosing-an-id' }}>
+            Compare formats <Cpu aria-hidden="true" size={15} />
+          </Link>
+        </section>
+      </main>
+    </HomeLayout>
+  )
+}

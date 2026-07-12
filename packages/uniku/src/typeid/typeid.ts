@@ -5,14 +5,23 @@ import { uuidv7 } from '../uuid/v7'
 export type TypeidOptions = UuidV7Options
 
 export type Typeid = {
+  /** Generate a TypeID from a lowercase entity prefix and a UUID v7 suffix. */
   (prefix: string, options?: TypeidOptions): string
+  /** Convert a TypeID's UUID v7 suffix to its canonical 16-byte representation. */
   toBytes(id: string): Uint8Array
+  /** Build a TypeID from a prefix and canonical UUID v7 bytes. */
   fromBytes(prefix: string, bytes: Uint8Array): string
+  /** Convert a TypeID to its UUID v7 string. */
   toUuid(id: string): string
+  /** Build a TypeID from a prefix and UUID v7 string. */
   fromUuid(prefix: string, uuid: string): string
+  /** Read the UUID v7 timestamp embedded in a TypeID, in milliseconds. */
   timestamp(id: string): number
+  /** Read a TypeID's entity prefix. */
   prefix(id: string): string
+  /** Read a TypeID's UUID v7 suffix. */
   suffix(id: string): string
+  /** Return whether a value is a syntactically valid TypeID. */
   isValid(id: unknown): id is string
 }
 

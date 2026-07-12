@@ -42,12 +42,19 @@ export type ObjectIdOptions = {
 }
 
 export type ObjectId = {
+  /** Generate a MongoDB-compatible ObjectID string. */
   (): string
+  /** Generate an ObjectID with explicit options or write its 12 canonical bytes into a caller-owned buffer. */
   <TBuf extends Uint8Array = Uint8Array>(options: ObjectIdOptions | undefined, buf: TBuf, offset?: number): TBuf
+  /** Generate an ObjectID string with optional timestamp, random field, or counter. */
   (options?: ObjectIdOptions, buf?: undefined, offset?: number): string
+  /** Convert an ObjectID string to its canonical 12-byte representation. */
   toBytes(id: string): Uint8Array
+  /** Convert 12 canonical ObjectID bytes to an ObjectID string. */
   fromBytes(bytes: Uint8Array): string
+  /** Read the embedded Unix timestamp in milliseconds. */
   timestamp(id: string): number
+  /** Return whether a value is a syntactically valid ObjectID string. */
   isValid(id: unknown): id is string
   /** The nil ObjectID (all zeros) */
   NIL: string

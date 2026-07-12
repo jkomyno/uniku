@@ -1,0 +1,18 @@
+---
+title: Nanoid
+description: Compact, URL-safe random strings with configurable length and alphabet.
+icon: Link
+---
+
+Nanoid is the compact choice for short URLs, invite codes, and session tokens. Its default alphabet is URL-safe; pass a length or options only when the boundary needs a different shape.
+
+```ts
+import { nanoid } from 'uniku/nanoid'
+
+const inviteCode = nanoid()
+// 'tCDaBJOIwLpjLMxN_DYdU' (string)
+```
+
+`nanoid.isValid()` validates the default alphabet, not values generated with a custom alphabet.
+
+<ApiReference generator="nanoid" />

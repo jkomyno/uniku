@@ -1,0 +1,18 @@
+---
+title: UUID v4
+description: Random, standards-compatible UUIDs with 122 bits of entropy.
+icon: Dices
+---
+
+UUID v4 is the default when compatibility matters more than sort order. It fits databases and APIs that already understand UUID strings.
+
+```ts
+import { uuidv4 } from 'uniku/uuid/v4'
+
+const sessionId = uuidv4()
+// 'cb688bf0-b80c-4931-91cd-8c31b8d9d131' (string)
+```
+
+Use `toBytes()` when the destination stores UUIDs as 16-byte binary values. Use `isValid()` before accepting an unknown UUID v4 string at an application boundary.
+
+<ApiReference generator="uuid-v4" />

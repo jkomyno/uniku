@@ -1,0 +1,17 @@
+---
+title: UUID v7
+description: Time-ordered UUIDs for primary keys, APIs, and event streams.
+icon: ArrowUpDown
+---
+
+UUID v7 keeps the UUID shape while embedding a millisecond timestamp. It is a strong default for database primary keys when you want chronological locality without creating a custom ID column.
+
+```ts
+import { uuidv7 } from 'uniku/uuid/v7'
+
+const orderId = uuidv7()
+// '019f5732-0342-75f9-9efd-fc3c1f8da7fd' (string)
+uuidv7.timestamp(orderId) // 1783874323266
+```
+
+<ApiReference generator="uuid-v7" />

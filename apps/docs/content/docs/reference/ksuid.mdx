@@ -1,0 +1,16 @@
+---
+title: KSUID
+description: Time-ordered identifiers with a 128-bit random payload.
+icon: Radar
+---
+
+KSUID combines a timestamp with a large random payload. Choose it for high-volume distributed systems that need chronological order and a 27-character URL-safe string.
+
+```ts
+import { ksuid } from 'uniku/ksuid'
+
+const eventId = ksuid()
+// '3GPXkrDipgmtLBpkbfrWSPz8a4F' (string)
+```
+
+<ApiReference generator="ksuid" />

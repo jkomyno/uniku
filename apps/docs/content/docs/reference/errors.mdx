@@ -1,0 +1,50 @@
+---
+title: Errors
+description: Typed, machine-readable errors for invalid input, malformed strings, and buffer bounds.
+icon: TriangleAlert
+---
+
+Every generator throws a typed error instead of a generic `Error`. Each one carries a `code` for programmatic handling and a `_tag` for discriminated matching, compatible with Effect's `catchTag`.
+
+```ts
+import { nanoid } from 'uniku/nanoid'
+import { InvalidInputError } from 'uniku/errors'
+
+try {
+  nanoid(-1)
+} catch (error) {
+  if (error instanceof InvalidInputError) {
+    error.code // 'NANOID_SIZE_INVALID'
+    error._tag // 'InvalidInputError'
+    error.message // 'Size must be a non-negative integer'
+  }
+}
+```
+
+## Error classes
+
+`uniku/errors` exports four classes:
+
+| Export | `_tag` | Thrown when |
+| --- | --- | --- |
+| `UniqueIdError` | (abstract) | Abstract base class every uniku error extends. Not thrown directly. |
+| `InvalidInputError` | `'InvalidInputError'` | Generator arguments are invalid: bad size, alphabet, length, timestamp, or version. |
+| `ParseError` | `'ParseError'` | An ID string fails to parse or decode: wrong format or characters. |
+| `BufferError` | `'BufferError'` | A byte array or buffer is too short, or an offset is out of bounds. |
+
+`InvalidInputError`, `ParseError`, and `BufferError` each carry a `code: string`, a generator-prefixed constant such as `'UUID_RANDOM_BYTES_TOO_SHORT'` or `'TSID_NODE_OUT_OF_RANGE'`, plus the inherited `message: string`.
+
+Most generator modules re-export all four classes, so you rarely need to import from `uniku/errors` directly. Nanoid and CUID v2, which have no binary codec, only re-export `InvalidInputError` and `UniqueIdError`.
+
+## Generator list
+
+`uniku/generators` exports the canonical, ordered list of ID kinds uniku supports:
+
+```ts
+import { ID_GENERATORS, type IdGenerator } from 'uniku/generators'
+
+ID_GENERATORS
+// ['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid', 'objectid', 'tsid']
+```
+
+`IdGenerator` is the union type derived from `ID_GENERATORS`. Tools that enumerate or validate generator kinds, such as `@uniku/cli`'s `--type` flag, should derive from this array instead of hand-copying the union.

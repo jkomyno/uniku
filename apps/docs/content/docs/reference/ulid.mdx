@@ -1,0 +1,16 @@
+---
+title: ULID
+description: Sortable, URL-safe identifiers using Crockford Base32.
+icon: ListOrdered
+---
+
+ULIDs sort by creation time and stay shorter than a hyphenated UUID. Use them when the value will often appear in URLs, logs, or APIs.
+
+```ts
+import { ulid } from 'uniku/ulid'
+
+const eventId = ulid()
+// '01KXBK40T3EQW5BGTMQRX89PTA' (string)
+```
+
+<ApiReference generator="ulid" />

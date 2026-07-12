@@ -55,11 +55,11 @@ export type NanoidOptions = {
 }
 
 export type Nanoid = {
-  /** Generate nanoid with default settings */
+  /** Generate a Nanoid with the default URL-safe alphabet and 21-character length. */
   (): string
-  /** Generate nanoid with custom size */
+  /** Generate a Nanoid with the default alphabet and a custom length. */
   (size: number): string
-  /** Generate nanoid with options */
+  /** Generate a Nanoid with a custom alphabet, length, or deterministic random bytes. */
   (options: NanoidOptions): string
   /**
    * Validate a nanoid string against the default URL-safe alphabet.

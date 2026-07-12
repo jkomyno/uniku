@@ -1,0 +1,71 @@
+---
+title: CLI companion
+description: Generate, inspect, and validate IDs from the terminal.
+icon: Terminal
+---
+
+`@uniku/cli` is the command-line companion to the library. It is useful when an ID belongs in a shell pipeline, a migration, or a one-off diagnostic instead of your application source.
+
+## Install
+
+<CodeBlockTabs defaultValue="npm">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="bun">bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="mise">mise</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+
+  <CodeBlockTab value="npm">
+
+```sh
+npm install -g @uniku/cli
+```
+
+  </CodeBlockTab>
+
+  <CodeBlockTab value="pnpm">
+
+```sh
+pnpm add -g @uniku/cli
+```
+
+  </CodeBlockTab>
+
+  <CodeBlockTab value="bun">
+
+```sh
+bun add -g @uniku/cli
+```
+
+  </CodeBlockTab>
+
+  <CodeBlockTab value="mise">
+
+Installs the current standalone binary without requiring Node.js:
+
+```sh
+mise use -g github:jkomyno/uniku@uniku-cli-v0.5.1
+```
+
+Check the [GitHub releases page](https://github.com/jkomyno/uniku/releases) for the current tag before pinning it in CI.
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Generate
+
+```sh
+uniku uuid -v 7
+uniku typeid --prefix user
+uniku nanoid --size 16
+```
+
+## Inspect and validate
+
+```sh
+uniku inspect 019b8f1e-70d4-7c5a-b7d2-18f5cc7b95f0
+uniku validate --type uuid 019b8f1e-70d4-7c5a-b7d2-18f5cc7b95f0
+```
+
+Use `--json` when the output is going to another program. The CLI and library publish independently: a library `1.0.0` does not require a CLI `1.0.0` at the same time.

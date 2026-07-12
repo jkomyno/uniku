@@ -9,6 +9,10 @@ export type UuidV7Options = {
    * Note: Several bytes will be overwritten with timestamp, version, and variant data.
    */
   random?: Uint8Array
+  /**
+   * Timestamp in milliseconds since Unix epoch.
+   * Defaults to Date.now().
+   */
   msecs?: number
   /**
    * Unsigned 32-bit sequence value.
@@ -17,12 +21,19 @@ export type UuidV7Options = {
 }
 
 export type UuidV7 = {
+  /** Generate a time-ordered UUID v7 string. */
   (): string
+  /** Generate a UUID v7 with explicit options or write its 16 canonical bytes into a caller-owned buffer. */
   <TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf
+  /** Generate a UUID v7 string with optional timestamp, sequence, or random bytes. */
   (options?: UuidV7Options, buf?: undefined, offset?: number): string
+  /** Convert a UUID v7 string to its canonical 16-byte representation. */
   toBytes(id: string): Uint8Array
+  /** Convert 16 canonical UUID bytes to a UUID v7 string. */
   fromBytes(bytes: Uint8Array): string
+  /** Read the embedded Unix timestamp in milliseconds. */
   timestamp(id: string): number
+  /** Return whether a value is a syntactically valid UUID v7 string. */
   isValid(id: unknown): id is string
   /** The nil UUID (all zeros) */
   NIL: string

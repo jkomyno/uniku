@@ -1,0 +1,45 @@
+---
+title: Entry points
+description: The stable direct imports exposed by uniku.
+icon: Braces
+---
+
+The package root is intentionally not exported. Import a generator or metadata module directly:
+
+```ts
+import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv7 } from 'uniku/uuid/v7'
+import { ulid } from 'uniku/ulid'
+import { typeid } from 'uniku/typeid'
+import { cuidv2 } from 'uniku/cuid/v2'
+import { nanoid } from 'uniku/nanoid'
+import { ksuid } from 'uniku/ksuid'
+import { objectid } from 'uniku/objectid'
+import { tsid } from 'uniku/tsid'
+```
+
+Two metadata entry points round out the library:
+
+| Import | Purpose |
+| --- | --- |
+| `uniku/errors` | Typed, machine-readable input, parse, and buffer errors. |
+| `uniku/generators` | The canonical ordered list of supported generator kinds. |
+
+Every generator exposes its own methods, such as `isValid`, `toBytes`, `fromBytes`, or a format-specific timestamp accessor where applicable.
+
+## Generator references
+
+Read the reference for the strategy you use. The public method sections are generated from the TypeScript signatures and JSDoc in `packages/uniku/src`, so they stay aligned with the library source.
+
+<Cards>
+  <Card title="UUID v4" href="/docs/reference/uuid-v4" description="Random, standards-compatible UUIDs." />
+  <Card title="UUID v7" href="/docs/reference/uuid-v7" description="Time-ordered UUIDs for primary keys." />
+  <Card title="ULID" href="/docs/reference/ulid" description="Sortable, URL-safe identifiers." />
+  <Card title="TypeID" href="/docs/reference/typeid" description="UUID v7 values with readable type prefixes." />
+  <Card title="CUID v2" href="/docs/reference/cuid-v2" description="Non-sequential identifiers that resist enumeration." />
+  <Card title="Nanoid" href="/docs/reference/nanoid" description="Compact URL-safe identifiers." />
+  <Card title="KSUID" href="/docs/reference/ksuid" description="High-entropy, time-ordered identifiers." />
+  <Card title="ObjectID" href="/docs/reference/objectid" description="MongoDB-compatible identifiers." />
+  <Card title="TSID" href="/docs/reference/tsid" description="Time-sorted bigint identifiers." />
+  <Card title="Errors" href="/docs/reference/errors" description="Typed errors and the generator list." />
+</Cards>

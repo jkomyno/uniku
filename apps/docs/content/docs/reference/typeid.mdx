@@ -1,0 +1,17 @@
+---
+title: TypeID
+description: UUID v7 identifiers with a readable, domain-specific prefix.
+icon: Tags
+---
+
+TypeID wraps a UUID v7 suffix in a lowercase prefix such as `user_` or `order_`. It is useful when a public identifier should reveal the kind of resource it identifies.
+
+```ts
+import { typeid } from 'uniku/typeid'
+
+const userId = typeid('user')
+// 'user_01kxbk40t3egn9xec2thzpa2w7' (string)
+typeid.prefix(userId) // 'user'
+```
+
+<ApiReference generator="typeid" />
