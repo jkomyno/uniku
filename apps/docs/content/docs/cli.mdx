@@ -4,7 +4,7 @@ description: Generate, inspect, and validate IDs from the terminal.
 icon: Terminal
 ---
 
-`@uniku/cli` is the command-line companion to the library. It is useful when an ID belongs in a shell pipeline, a migration, or a one-off diagnostic instead of your application source.
+`@uniku/cli` is the command-line companion to the library. It is useful when an ID belongs in a shell pipeline, a migration, or a one-off diagnostic instead of your application source. It supports every generator in the library: UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, MongoDB ObjectID, and TSID.
 
 ## Install
 
@@ -53,19 +53,203 @@ Check the [GitHub releases page](https://github.com/jkomyno/uniku/releases) for 
   </CodeBlockTab>
 </CodeBlockTabs>
 
+A standalone binary (no Node.js required) is also available for macOS and Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
+```
+
 ## Generate
 
+Every generator has a top-level shorthand (`uniku uuid`) that is equivalent to `uniku generate uuid`. Every generate command accepts these two options in addition to its own:
+
+| Option | Alias | Description |
+| --- | --- | --- |
+| `--count` | `-n` | Number of IDs to generate (default: `1`) |
+| `--json` | | Output as a JSON array instead of one ID per line |
+
+### uuid
+
+Generate UUIDs (v4 or v7).
+
 ```sh
+uniku uuid
+# 550e8400-e29b-41d4-a716-446655440000
+
 uniku uuid -v 7
-uniku typeid --prefix user
-uniku nanoid --size 16
+# 018e5e5c-7c8a-7000-8000-000000000000
+
+uniku uuid -n 5 --json
 ```
 
-## Inspect and validate
+| Option | Alias | Description |
+| --- | --- | --- |
+| `--uuid-version` | `-v` | UUID version: `4` or `7` (default: `4`) |
+| `--lowercase` | | Output in lowercase |
+
+### ulid
+
+Generate ULIDs.
 
 ```sh
-uniku inspect 019b8f1e-70d4-7c5a-b7d2-18f5cc7b95f0
-uniku validate --type uuid 019b8f1e-70d4-7c5a-b7d2-18f5cc7b95f0
+uniku ulid
+# 01HW9T2W9W9YJ3JZ1H4P4M2T8Q
+
+uniku ulid -n 10 --monotonic --json
+# 10 strictly ordered ULIDs, as a JSON array
+
+uniku ulid --timestamp 1720000000000
+# a ULID for a fixed Unix timestamp (ms)
 ```
 
-Use `--json` when the output is going to another program. The CLI and library publish independently: a library `1.0.0` does not require a CLI `1.0.0` at the same time.
+| Option | Description |
+| --- | --- |
+| `--monotonic` | Generate monotonically increasing ULIDs |
+| `--timestamp` | Unix timestamp in milliseconds, or `now` |
+| `--lowercase` | Output in lowercase |
+
+### typeid
+
+Generate TypeIDs: a UUID v7 with a type prefix.
+
+```sh
+uniku typeid --prefix user
+# user_01h2xcejqtf2nbrexx3vqjhp41
+
+uniku typeid -p api_key -n 5 --json
+# 5 api_key TypeIDs, as JSON
+
+uniku typeid
+# a canonical prefixless TypeID
+```
+
+| Option | Alias | Description |
+| --- | --- | --- |
+| `--prefix` | `-p` | Type prefix, e.g. `user` for `user_...` (empty by default) |
+
+### nanoid
+
+Generate Nanoids.
+
+```sh
+uniku nanoid -n 5 --json
+
+uniku nanoid --size 10 --alphabet hex
+# a 10-char ID from the hex preset
+```
+
+| Option | Alias | Description |
+| --- | --- | --- |
+| `--size` | `-s` | Length of the ID, 1-256 (default: `21`) |
+| `--alphabet` | `-a` | Custom alphabet or preset: `hex`, `numeric`, `alpha` |
+
+### cuid
+
+Generate CUIDs (v2).
+
+```sh
+uniku cuid -n 5 --json
+
+uniku cuid --length 10
+# a 10-char CUID
+```
+
+| Option | Alias | Description |
+| --- | --- | --- |
+| `--length` | `-l` | Length of the ID, 2-32 (default: `24`) |
+
+### ksuid
+
+Generate KSUIDs.
+
+```sh
+uniku ksuid -n 5 --json
+
+uniku ksuid --timestamp 1720000000
+# a KSUID for a fixed Unix timestamp (s)
+```
+
+| Option | Description |
+| --- | --- |
+| `--timestamp` | Unix timestamp in seconds, or `now` |
+
+### objectid
+
+Generate MongoDB ObjectIDs.
+
+```sh
+uniku objectid
+# 66e1a8d3f1c2b3a4d5e6f7a8
+
+uniku objectid --timestamp 1720000000
+# an ObjectID for a fixed Unix timestamp (s)
+```
+
+| Option | Description |
+| --- | --- |
+| `--timestamp` | Unix timestamp in seconds, or `now` |
+
+### tsid
+
+Generate TSIDs: 64-bit Snowflake-style, time-sorted identifiers.
+
+```sh
+uniku tsid
+# 0QXW2CK4XZM2A
+
+uniku tsid --timestamp 1720000000000
+# a TSID for a fixed Unix timestamp (ms) — note: milliseconds, unlike ksuid/objectid's seconds
+
+uniku tsid --node 42 --node-bits 10
+# a TSID for a fixed node ID
+```
+
+| Option | Description |
+| --- | --- |
+| `--timestamp` | Unix timestamp in milliseconds, or `now` |
+| `--node` | Node ID (`0` to `2^node-bits - 1`) |
+| `--node-bits` | Bits allocated to the node ID, 0-20 (default: `10`) |
+
+## Inspect
+
+Decode the metadata embedded in an ID: type, version, timestamp, and random component.
+
+```sh
+uniku inspect 018e5e5c-7c8a-7000-8000-000000000000
+uniku inspect --type ulid 01HW9T2W9W9YJ3JZ1H4P4M2T8Q
+uniku inspect --json 018e5e5c-7c8a-7000-8000-000000000000
+
+# an ID that starts with a dash needs `--` first
+uniku inspect -- --tricky-id
+```
+
+The type is auto-detected unless `--type` is given. For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID, TSID), inspect extracts the embedded timestamp. Random-only IDs (UUID v4, CUID v2, Nanoid) report that no decodable metadata is available. Timestamp precision matches each generator: UUID v7, ULID, and TSID are millisecond-precision; KSUID and ObjectID are second-precision.
+
+| Option | Description |
+| --- | --- |
+| `--type` | ID type: `uuid`, `ulid`, `typeid`, `nanoid`, `cuid`, `ksuid`, `objectid`, `tsid` (auto-detected if omitted) |
+| `--json` | Output as JSON |
+
+## Validate
+
+Check whether an ID is well-formed, one at a time or in bulk from stdin.
+
+```sh
+uniku validate 018e5e5c-7c8a-7000-8000-000000000000
+uniku validate --type typeid user_01h2xcejqtf2nbrexx3vqjhp41
+
+# batch validate, one ID per line
+cat ids.txt | uniku validate --stdin --json
+
+# exit code only: 0 = valid, 2 = invalid
+uniku validate --quiet 018e5e5c-7c8a-7000-8000-000000000000
+```
+
+| Option | Description |
+| --- | --- |
+| `--type` | Expected ID type (auto-detected if omitted) |
+| `--stdin` | Read IDs from stdin (one per line) |
+| `--quiet` | No output, exit code only (`0` valid, `2` invalid) |
+| `--json` | Output as JSON |
+
+Use `--json` whenever the output feeds another program. The CLI and library publish independently: a library `1.0.0` release does not imply a CLI `1.0.0` release at the same time.
