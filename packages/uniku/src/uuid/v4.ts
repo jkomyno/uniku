@@ -15,11 +15,17 @@ export type UuidV4Options = {
 }
 
 export type UuidV4 = {
+  /** Generate a random UUID v4 string. */
   (): string
+  /** Generate a UUID v4 with explicit options or write its 16 canonical bytes into a caller-owned buffer. */
   <TBuf extends Uint8Array = Uint8Array>(options: UuidV4Options | undefined, buf: TBuf, offset?: number): TBuf
+  /** Generate a UUID v4 string with optional deterministic random bytes. */
   (options?: UuidV4Options, buf?: undefined, offset?: number): string
+  /** Convert a UUID v4 string to its canonical 16-byte representation. */
   toBytes(id: string): Uint8Array
+  /** Convert 16 canonical UUID bytes to a UUID v4 string. */
   fromBytes(bytes: Uint8Array): string
+  /** Return whether a value is a syntactically valid UUID v4 string. */
   isValid(id: unknown): id is string
   /** The nil UUID (all zeros) */
   NIL: string

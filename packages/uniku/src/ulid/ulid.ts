@@ -18,12 +18,19 @@ export type UlidOptions = {
 }
 
 export type Ulid = {
+  /** Generate a time-ordered ULID string. */
   (): string
+  /** Generate a ULID with explicit options or write its 16 canonical bytes into a caller-owned buffer. */
   <TBuf extends Uint8Array = Uint8Array>(options: UlidOptions | undefined, buf: TBuf, offset?: number): TBuf
+  /** Generate a ULID string with optional timestamp or random bytes. */
   (options?: UlidOptions, buf?: undefined, offset?: number): string
+  /** Convert a ULID string to its canonical 16-byte representation. */
   toBytes(id: string): Uint8Array
+  /** Convert 16 canonical ULID bytes to a ULID string. */
   fromBytes(bytes: Uint8Array): string
+  /** Read the embedded Unix timestamp in milliseconds. */
   timestamp(id: string): number
+  /** Return whether a value is a syntactically valid ULID string. */
   isValid(id: unknown): id is string
   /** The nil ULID (all zeros) */
   NIL: string
@@ -183,6 +190,10 @@ function isValid(id: unknown): id is string {
   return typeof id === 'string' && ULID_REGEX.test(id)
 }
 
+/**
+ * Generate a ULID string or write its 16 canonical bytes into a buffer.
+ * ULIDs are URL-safe, carry a millisecond timestamp, and sort by creation time.
+ */
 export const ulid: Ulid = Object.assign(ulidFn, {
   toBytes: (id: string) => decodeToBytes(id),
   fromBytes: (bytes: Uint8Array) => bytesToUlid(bytes),

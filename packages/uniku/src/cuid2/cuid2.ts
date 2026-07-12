@@ -18,7 +18,9 @@ export type Cuid2Options = {
 }
 
 export type Cuid2 = {
+  /** Generate a CUID v2 string. */
   (options?: Cuid2Options): string
+  /** Return whether a value is a syntactically valid CUID v2 string. */
   isValid(id: unknown): id is string
 }
 
@@ -181,13 +183,13 @@ function isValid(id: unknown): id is string {
 }
 
 /**
- * Generate a CUID2 string.
+ * Generate a CUID v2 string.
  *
- * CUID2 is a secure, collision-resistant identifier that hashes multiple
+ * CUID v2 is a secure, collision-resistant identifier that hashes multiple
  * entropy sources using SHA3-512. Unlike time-ordered IDs (ULID, UUID v7),
- * CUID2 prevents enumeration attacks by making IDs non-predictable.
+ * CUID v2 prevents enumeration attacks by making IDs non-predictable.
  *
- * Note: CUID2 does not provide toBytes/fromBytes because it is a string-native
+ * Note: CUID v2 does not provide toBytes/fromBytes because it is a string-native
  * format with no canonical binary representation (unlike UUID's 16-byte format).
  *
  * @example

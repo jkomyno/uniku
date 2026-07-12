@@ -62,14 +62,23 @@ export type TsidOptions = {
 }
 
 export type Tsid = {
+  /** Generate a time-sorted TSID bigint. */
   (): bigint
+  /** Generate a TSID with explicit options or write its 8 canonical bytes into a caller-owned buffer. */
   <TBuf extends Uint8Array = Uint8Array>(options: TsidOptions | undefined, buf: TBuf, offset?: number): TBuf
+  /** Generate a TSID bigint with optional timestamp, epoch, node, or counter controls. */
   (options?: TsidOptions, buf?: undefined, offset?: number): bigint
+  /** Convert a TSID bigint to its canonical 8-byte representation. */
   toBytes(id: bigint): Uint8Array
+  /** Convert 8 canonical TSID bytes to a TSID bigint. */
   fromBytes(bytes: Uint8Array): bigint
+  /** Convert a TSID bigint to its canonical 13-character string. */
   toString(id: bigint): string
+  /** Convert a canonical TSID string to a bigint. */
   fromString(str: string): bigint
+  /** Read a TSID timestamp in milliseconds, using the supplied or default epoch. */
   timestamp(id: bigint, epoch?: number): number
+  /** Return whether a value is a valid 64-bit TSID bigint. */
   isValid(id: unknown): id is bigint
   /** The nil TSID (all zeros) */
   NIL: bigint
