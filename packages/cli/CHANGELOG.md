@@ -1,5 +1,12 @@
 # @uniku/cli
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [bc80313]
+  - uniku@0.3.1
+
 ## 0.5.0
 
 ### Minor Changes
