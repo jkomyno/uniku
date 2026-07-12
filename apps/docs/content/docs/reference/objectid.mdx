@@ -1,0 +1,16 @@
+---
+title: ObjectID
+description: MongoDB-compatible 12-byte identifiers.
+icon: Database
+---
+
+ObjectID matches MongoDB's native 12-byte representation. Use it when your application stores `_id` values alongside MongoDB clients or needs to preserve that wire format.
+
+```ts
+import { objectid } from 'uniku/objectid'
+
+const documentId = objectid()
+// '6a53c3139f0aac9835059f6f' (string)
+```
+
+<ApiReference generator="objectid" />

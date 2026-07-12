@@ -1,0 +1,24 @@
+---
+title: Start here
+description: Pick an ID format for the job, then import only that generator.
+icon: Sparkles
+---
+
+import { ArrowRightLeft, PackageOpen, ScanLine, Terminal } from 'lucide-react'
+
+Install <code>uniku</code> once, then choose the identifier that fits the boundary in front of you: a database index, a public URL, an API payload. Every generator has its own entry point, so a UUID, ULID, TypeID, Nanoid, CUID v2, KSUID, ObjectID, or TSID only adds the strategy your application imports.
+
+<Cards>
+  <Card title="Install uniku" href="/docs/getting-started" description="Generate your first ID in one import." icon={<PackageOpen />} />
+  <Card title="Choose an ID" href="/docs/guides/choosing-an-id" description="Compare formats by the job they need to do." icon={<ScanLine />} />
+  <Card title="Use the CLI" href="/docs/cli" description="Generate, inspect, and validate without writing a script." icon={<Terminal />} />
+  <Card title="Migrate to uniku" href="/docs/migration/from-other-libraries" description="Move from a familiar ID package without changing stored identifiers." icon={<ArrowRightLeft />} />
+</Cards>
+
+## The library contract
+
+The library is ESM-only, built on web standards, and tested end to end across Node.js, Bun, Deno, browsers, and Cloudflare Workers. Its supported `1.x` entry points, validation boundaries, and runtime support policy are defined in the [stability contract](https://github.com/jkomyno/uniku/blob/main/docs/STABILITY.md).
+
+<Callout type="info" title="A CLI companion is available">
+  Install <code>@uniku/cli</code> when you need an ID in a terminal, migration, or shell pipeline. It shares the library's formats but has its own release lifecycle.
+</Callout>

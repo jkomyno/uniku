@@ -1,0 +1,16 @@
+---
+title: CUID v2
+description: Non-sequential, string-native identifiers that resist enumeration.
+icon: ShieldCheck
+---
+
+CUID v2 is for public values where predictability is the problem. It is string-native, so there is no byte codec to maintain or expose.
+
+```ts
+import { cuidv2 } from 'uniku/cuid/v2'
+
+const inviteId = cuidv2()
+// 'rqa97fgr3wexenbnth08ihdk' (string)
+```
+
+<ApiReference generator="cuid-v2" />

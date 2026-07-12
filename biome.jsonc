@@ -17,6 +17,10 @@
       "!**/build",
       "!**/coverage",
       "!**/dist",
+      // Generated Fumadocs and TanStack Start sources are build artifacts.
+      "!apps/docs/.source",
+      "!apps/docs/src/generated",
+      "!apps/docs/src/routeTree.gen.ts",
       "!**/.turbo",
       "!public",
       // Read-only source clone of effect-smol (git submodule) — never lint.

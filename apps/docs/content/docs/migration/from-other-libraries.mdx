@@ -1,0 +1,116 @@
+---
+title: Migrate from other libraries
+description: Keep familiar formats while moving to direct, portable imports.
+icon: ArrowRightLeft
+---
+
+Migration is usually an import change first. Keep the stored identifier format stable, then move generation behind the new direct entry point. Every example below shows the value returned by the uniku generator.
+
+## From `uuid`
+
+```diff
+- import { v4 as uuidv4, v7 as uuidv7 } from 'uuid'
++ import { uuidv4 } from 'uniku/uuid/v4'
++ import { uuidv7 } from 'uniku/uuid/v7'
+```
+
+```ts
+const randomId: string = uuidv4()
+const orderedId: string = uuidv7()
+```
+
+uniku only generates UUID v4 and v7. There is no uniku equivalent for v1, v3, v5, or v6; keep the `uuid` package for those, or generate them elsewhere and only use uniku for v4 and v7 values.
+
+The rest of `uuid`'s API maps onto uniku's per-generator methods, scoped to the version you imported:
+
+| `uuid` | uniku |
+| --- | --- |
+| `parse(id)` | `uuidv4.toBytes(id)` / `uuidv7.toBytes(id)` |
+| `stringify(bytes)` | `uuidv4.fromBytes(bytes)` / `uuidv7.fromBytes(bytes)` |
+| `validate(id)` | `uuidv4.isValid(id)` / `uuidv7.isValid(id)` |
+| `version(id)` | Implied by which `isValid` matches: `uuidv4.isValid` accepts only version 4, `uuidv7.isValid` accepts only version 7. |
+
+## From `nanoid`
+
+```diff
+- import { nanoid } from 'nanoid'
++ import { nanoid } from 'uniku/nanoid'
+```
+
+```ts
+const id: string = nanoid()
+```
+
+## From `ulid`
+
+```diff
+- import { ulid } from 'ulid'
++ import { ulid } from 'uniku/ulid'
+```
+
+```ts
+const id: string = ulid()
+```
+
+## From `typeid-js`
+
+`typeid-js` returns a TypeID object. uniku returns the canonical string directly.
+
+```diff
+- import { typeid } from 'typeid-js'
++ import { typeid } from 'uniku/typeid'
+
+- const id = typeid('user').toString()
++ const id: string = typeid('user')
+```
+
+## From `@paralleldrive/cuid2`
+
+```diff
+- import { createId } from '@paralleldrive/cuid2'
++ import { cuidv2 } from 'uniku/cuid/v2'
+```
+
+```ts
+const id: string = cuidv2()
+```
+
+## From `@owpz/ksuid`
+
+```diff
+- import { KSUID } from '@owpz/ksuid'
++ import { ksuid } from 'uniku/ksuid'
+
+- const id = KSUID.random().toString()
++ const id: string = ksuid()
+```
+
+## From `bson`
+
+```diff
+- import { ObjectId } from 'bson'
++ import { objectid } from 'uniku/objectid'
+
+- const id = new ObjectId().toHexString()
++ const id: string = objectid()
+```
+
+## From `tsid-ts`
+
+`tsid-ts` exposes a TSID object. uniku uses the native `bigint` as TSID's primary value.
+
+```diff
+- import { TSID } from 'tsid-ts'
++ import { tsid } from 'uniku/tsid'
+
+- const id = TSID.create().toString()
++ const id: bigint = tsid()
+```
+
+Convert at a string boundary when you need the canonical Base32 form:
+
+```ts
+const publicId: string = tsid.toString(id)
+```
+
+Before replacing an existing generator, test the representation you store and expose. UUIDs, ULIDs, and ObjectIDs have canonical byte forms; Nanoid and CUID v2 are string-native.

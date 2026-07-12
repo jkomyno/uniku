@@ -1,0 +1,122 @@
+---
+title: Getting started
+description: One install, every ID strategy. Import the generator your application needs.
+icon: PackageOpen
+---
+
+## Install
+
+<CodeBlockTabs defaultValue="npm">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="npm">npm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="pnpm">pnpm</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="bun">bun</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="deno">deno</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+
+  <CodeBlockTab value="npm">
+
+```sh
+npm install uniku
+```
+
+  </CodeBlockTab>
+
+  <CodeBlockTab value="pnpm">
+
+```sh
+pnpm add uniku
+```
+
+  </CodeBlockTab>
+
+  <CodeBlockTab value="bun">
+
+```sh
+bun add uniku
+```
+
+  </CodeBlockTab>
+
+  <CodeBlockTab value="deno">
+
+```sh
+deno add uniku
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+uniku is ESM-only. Import the exact generator you want rather than a package-root barrel:
+
+```ts
+import { uuidv7 } from 'uniku/uuid/v7'
+
+const id = uuidv7()
+```
+
+For a Deno project without a package import map, use Deno's npm specifier directly:
+
+```ts
+import { uuidv7 } from 'npm:uniku/uuid/v7'
+
+const id = uuidv7()
+```
+
+## The usual shape
+
+Most generators follow the same pattern: call the generator, keep its primary value, and validate unknown input at the boundary.
+
+```ts
+import { uuidv7 } from 'uniku/uuid/v7'
+
+const id = uuidv7()
+
+if (uuidv7.isValid(id)) {
+  // `id` is a UUID v7 string here.
+}
+```
+
+Time-ordered formats also expose `timestamp()`. Each generator page lists its complete public API, including options, constants, and overloads.
+
+## Every strategy
+
+Each format is independently importable and tree-shakeable. Install one package, then ship only the strategy your application imports.
+
+| Strategy | Direct import | Usual call | Primary value |
+| --- | --- | --- | --- |
+| UUID v4 | `uniku/uuid/v4` | `uuidv4()` | `string` |
+| UUID v7 | `uniku/uuid/v7` | `uuidv7()` | `string` |
+| ULID | `uniku/ulid` | `ulid()` | `string` |
+| TypeID | `uniku/typeid` | `typeid('user')` | `string` |
+| CUID v2 | `uniku/cuid/v2` | `cuidv2()` | `string` |
+| Nanoid | `uniku/nanoid` | `nanoid()` | `string` |
+| KSUID | `uniku/ksuid` | `ksuid()` | `string` |
+| ObjectID | `uniku/objectid` | `objectid()` | `string` |
+| TSID | `uniku/tsid` | `tsid()` | `bigint` |
+
+See [Choosing an ID](/docs/guides/choosing-an-id) for the trade-offs, or open a [generator reference](/docs/reference/uuid-v7) when you already know which format you need.
+
+## Why byte helpers exist
+
+UUIDs, ULIDs, TypeIDs, KSUIDs, ObjectIDs, and TSIDs have a canonical binary representation. Their `toBytes()` and `fromBytes()` helpers let you store and transport that representation without inventing a second codec.
+
+This matters when an ID lives in a binary database column, a compact protocol payload, or a cache key. A UUID, for instance, is 16 bytes instead of its 36-character string form. The helpers also make the string boundary explicit: convert when data leaves your application, preserve bytes where the system already handles bytes.
+
+String-native formats do not pretend otherwise. Nanoid and CUID v2 have no canonical byte encoding, so they expose a smaller API.
+
+## Write into a caller-owned buffer
+
+Binary formats can also write directly into a buffer when an integration already owns the allocation:
+
+```ts
+import { uuidv7 } from 'uniku/uuid/v7'
+
+// 32 bytes: room for the 16-byte UUID plus other fields the caller packs alongside it.
+const destination = new Uint8Array(32)
+
+// Offset 8: write the UUID starting at byte 8, after whatever precedes it in the buffer.
+uuidv7(undefined, destination, 8)
+```
+
+Public inputs are validated. Explicit random bytes and buffer offsets make tests and boundary integrations deterministic without changing the generator's default monotonic state.

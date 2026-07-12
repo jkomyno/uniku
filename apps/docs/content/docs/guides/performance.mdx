@@ -1,0 +1,57 @@
+---
+title: Performance and bundle size
+description: Where uniku beats npm alternatives, where it does not, and what each import weighs.
+icon: Gauge
+---
+
+The numbers below come from the repository's own benchmark and bundle-size tooling, reproduced faithfully including the rows where an npm alternative wins. They run in CI on every push to `main` (GitHub Actions, `ubuntu-latest`), so they reflect ordinary Node.js execution rather than a tuned environment. See the [README](https://github.com/jkomyno/uniku/blob/main/README.md#performance) for the source table.
+
+## Generation speed
+
+Each row compares uniku's generator against the npm package it targets: `uuid` for UUID v4/v7, `ulid`, `@paralleldrive/cuid2`, `@owpz/ksuid`, `bson` for ObjectID, `tsid-ts`, `nanoid`, and `typeid-js`.
+
+| Generator | uniku vs npm |
+| --- | ---: |
+| ULID | 85× faster |
+| CUID2 | 8× faster |
+| TypeID | 2.6× faster |
+| TSID | 1.7× faster |
+| KSUID | 1.5× faster |
+| ObjectID | 1.1× faster |
+| UUID v7 | 1.1× faster |
+| Nanoid | comparable speed |
+| Nanoid (10 chars) | npm is 1.1× faster |
+| UUID v4 | npm is 1.1× faster |
+
+uniku does not claim a uniform speedup. For UUID v4 and 10-character Nanoid, the npm original is marginally faster; those formats do little work, so there is not much room to gain by reimplementing them.
+
+## Bundle size
+
+Every entry point is independently importable and tree-shakeable: importing `uniku/ulid` does not pull in the ULID, TypeID, or KSUID code. Minified and gzipped sizes per entry point:
+
+| Import | Minified + gzipped |
+| --- | ---: |
+| `uniku/ulid` | ~1.8 KB |
+| `uniku/typeid` | ~1.6 KB |
+| `uniku/uuid/v7` | ~1.4 KB |
+| `uniku/tsid` | ~1.4 KB |
+| `uniku/ksuid` | ~1.3 KB |
+| `uniku/objectid` | ~1.3 KB |
+| `uniku/nanoid` | ~1.1 KB |
+| `uniku/uuid/v4` | ~1.1 KB |
+| `uniku/cuid/v2` | ~992 B |
+| `uniku/cuid2` | ~1007 B |
+| `uniku/generators` | ~98 B |
+
+The CUID v2 entry point imports SHA3-512 from `@noble/hashes`, uniku's one runtime dependency; the size above excludes that external dependency's own weight.
+
+## Reproduce these numbers
+
+Run the benchmark and bundle-size tooling from the repository root:
+
+```sh
+pnpm bench:summary
+pnpm bundle:summary
+```
+
+`bench:summary` runs uniku's generators against the equivalent npm package and prints a comparison table. `bundle:summary` builds each entry point and reports its minified, gzipped size.

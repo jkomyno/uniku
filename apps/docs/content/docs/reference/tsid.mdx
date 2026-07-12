@@ -1,0 +1,17 @@
+---
+title: TSID
+description: Time-sorted 64-bit identifiers for native bigint storage.
+icon: Binary
+---
+
+TSID returns a `bigint`, not a string. Use it when a database `BIGINT` primary key is the natural representation and you still need time ordering without a central allocator.
+
+```ts
+import { tsid } from 'uniku/tsid'
+
+const id = tsid()
+// 864184007999370855n (bigint)
+tsid.toString(id) // '0QZHJRV8P0DK7'
+```
+
+<ApiReference generator="tsid" />

@@ -1,0 +1,24 @@
+---
+title: Migrate to uniku v1
+description: Prepare for the v1 entry-point contract without changing identifier data.
+icon: Milestone
+---
+
+uniku v1 keeps its public generator entry points stable and removes one pre-v1 compatibility alias.
+
+## Move CUID v2 to the versioned entry point
+
+`uniku/cuid2` is a pre-v1 alias. Use the canonical versioned import before upgrading:
+
+```diff
+- import { cuid2 } from 'uniku/cuid2'
++ import { cuidv2 } from 'uniku/cuid/v2'
+```
+
+The generator behavior is the same. This is an import migration, not a data migration: existing CUID v2 values remain valid.
+
+## What remains stable
+
+Within `1.x`, uniku will not remove or rename documented entry points, exports, options, methods, or constants. Canonical string formats, byte order, timestamp units, and documented error codes are part of the contract.
+
+Read the [stability contract](https://github.com/jkomyno/uniku/blob/main/docs/STABILITY.md) for the full release and runtime policy.
