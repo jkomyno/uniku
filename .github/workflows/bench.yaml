@@ -6,13 +6,13 @@ on:
     paths:
       - "packages/uniku/src/**"
       - "packages/uniku/__tests__/bench/**"
-      - "packages/uniku/scripts/bench-*.ts"
+      - "packages/uniku/scripts/**"
       - ".github/workflows/bench.yaml"
   pull_request:
     paths:
       - "packages/uniku/src/**"
       - "packages/uniku/__tests__/bench/**"
-      - "packages/uniku/scripts/bench-*.ts"
+      - "packages/uniku/scripts/**"
       - ".github/workflows/bench.yaml"
   workflow_dispatch:
 
@@ -47,7 +47,19 @@ jobs:
         run: pnpm build
 
       - name: Run benchmarks
-        run: pnpm bench:compat
+        run: |
+          mkdir -p "$RUNNER_TEMP/bench-runs"
+          for iteration in 1 2 3; do
+            pnpm bench:compat
+            cp bench-results.json "$RUNNER_TEMP/bench-runs/$iteration.json"
+          done
+          bun scripts/bench-aggregate.ts bench-results.json "$RUNNER_TEMP"/bench-runs/*.json
+        working-directory: packages/uniku
+
+      - name: Measure cold starts
+        run: |
+          set -o pipefail
+          pnpm bench:cold-start | tee "$RUNNER_TEMP/cold-start.md"
         working-directory: packages/uniku
 
       # Fetch baseline from gh-benchmarks branch
@@ -104,6 +116,8 @@ jobs:
             echo "<!-- benchmark-results -->"
             cat "$RUNNER_TEMP/bench-summary.md"
             echo
+            cat "$RUNNER_TEMP/cold-start.md"
+            echo
             if [ "${{ steps.baseline.outputs.exists }}" = "true" ]; then
               echo "### Comparison vs Main"
               cat "$RUNNER_TEMP/bench-comparison.md"
@@ -155,13 +169,27 @@ jobs:
         run: pnpm build
 
       - name: Run benchmarks
-        run: pnpm bench:compat
+        run: |
+          mkdir -p "$RUNNER_TEMP/bench-runs"
+          for iteration in 1 2 3; do
+            pnpm bench:compat
+            cp bench-results.json "$RUNNER_TEMP/bench-runs/$iteration.json"
+          done
+          bun scripts/bench-aggregate.ts bench-results.json "$RUNNER_TEMP"/bench-runs/*.json
         working-directory: packages/uniku
 
       - name: Update baseline
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin gh-benchmarks:gh-benchmarks 2>/dev/null || true
+          if git show gh-benchmarks:baseline.json > "$RUNNER_TEMP/benchmark-baseline.json" 2>/dev/null; then
+            :
+          else
+            rm -f "$RUNNER_TEMP/benchmark-baseline.json"
+          fi
+          bun packages/uniku/scripts/bench-history.ts "$RUNNER_TEMP/baseline.json" "$RUNNER_TEMP/benchmark-baseline.json" packages/uniku/bench-results.json
 
           # Switch to gh-benchmarks branch (create orphan if doesn't exist)
           if git show-ref --verify --quiet refs/heads/gh-benchmarks; then
@@ -171,8 +199,8 @@ jobs:
             git rm -rf . 2>/dev/null || true
           fi
 
-          # Copy results and commit
-          cp packages/uniku/bench-results.json baseline.json
+          # Copy the rolling action-level aggregate and commit.
+          cp "$RUNNER_TEMP/baseline.json" baseline.json
           git add baseline.json
           git commit -m "Update benchmark baseline from ${{ github.sha }}" --allow-empty
 

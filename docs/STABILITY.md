@@ -139,6 +139,21 @@ They report possible regressions instead of blocking a release by themselves.
 Deterministic build, type, test, packed-package, runtime, and bundle checks are
 release gates.
 
+The compatibility benchmark runs three independent repetitions per CI action.
+Its result is the per-row median, and the `gh-benchmarks` baseline retains a
+rolling history of action-level medians. Comparison uses each runner's RME,
+robust within-action repetition dispersion, and robust across-action baseline
+dispersion. Node cold starts are measured
+separately from built entry points as both process-to-exit and import-plus-first
+generation time; they are not mixed with warmed throughput measurements.
+
+Collision tests distinguish independent uniform domains from stateful formats.
+For an IID domain, the test compares the observed duplicate-record ratio with
+the occupancy expectation for its declared output space. UUID v7, TypeID, ULID,
+ObjectID, TSID, and XID instead use their documented per-isolate sequence or
+counter behavior as the small-timeframe oracle. These tests do not certify the
+underlying CSPRNG or provide cross-process uniqueness.
+
 ## Security posture
 
 Random generators use `globalThis.crypto`. CUID2 uses SHA3-512 from

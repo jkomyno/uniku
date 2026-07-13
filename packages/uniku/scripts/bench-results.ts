@@ -5,6 +5,10 @@ export type Benchmark = {
   rank: number
   hz: number
   rme: number
+  /** Robust 95%-style relative dispersion across repetitions in one CI action. */
+  withinActionRme?: number
+  /** Robust 95%-style relative dispersion across historical CI actions. */
+  crossActionRme?: number
 }
 
 export type BenchGroup = {
@@ -17,8 +21,16 @@ export type BenchFile = {
   groups: BenchGroup[]
 }
 
-export type BenchResults = {
+export type BenchmarkSnapshot = {
   files: BenchFile[]
+}
+
+/**
+ * A benchmark result may retain individual run snapshots. `files` is always
+ * the median aggregate used by existing summary and comparison consumers.
+ */
+export type BenchResults = BenchmarkSnapshot & {
+  history?: BenchmarkSnapshot[]
 }
 
 export type ComparisonStatus = 'regression' | 'improvement' | 'neutral' | 'reference' | 'new' | 'removed'
@@ -64,6 +76,106 @@ export const DEFAULT_NOISE_MULTIPLIER = 2
 
 export function loadBenchResults(path: string): BenchResults {
   return JSON.parse(readFileSync(path, 'utf-8')) as BenchResults
+}
+
+/** Aggregate independent benchmark executions using the median for each row. */
+export function aggregateBenchResults(results: BenchResults[]): BenchResults {
+  if (results.length === 0) {
+    throw new Error('At least one benchmark result is required to aggregate')
+  }
+
+  const history = results.flatMap((result) => result.history ?? [toSnapshot(result)])
+  return { ...aggregateBenchmarkSnapshots(history, 'withinActionRme'), history }
+}
+
+/**
+ * Add an action-level aggregate to a rolling baseline. Keeping action
+ * aggregates avoids treating repeat samples from the same shared runner as
+ * independent cross-run evidence.
+ */
+export function mergeBenchmarkHistory(
+  baseline: BenchResults | undefined,
+  current: BenchResults,
+  maxHistory: number,
+): BenchResults {
+  if (!Number.isInteger(maxHistory) || maxHistory < 1) {
+    throw new Error('maxHistory must be a positive integer')
+  }
+
+  const baselineHistory = baseline ? (baseline.history ?? [toSnapshot(baseline)]) : []
+  const currentHistory = current.history ?? [toSnapshot(current)]
+  const currentAction = aggregateBenchmarkSnapshots(currentHistory, 'withinActionRme')
+  const history = [...baselineHistory, currentAction].slice(-maxHistory)
+  return { ...aggregateBenchmarkSnapshots(history, 'crossActionRme'), history }
+}
+
+function toSnapshot(result: BenchmarkSnapshot): BenchmarkSnapshot {
+  return { files: result.files }
+}
+
+function aggregateBenchmarkSnapshots(
+  snapshots: BenchmarkSnapshot[],
+  dispersionField: 'withinActionRme' | 'crossActionRme',
+): BenchmarkSnapshot {
+  const first = snapshots[0]
+  const benchmarksBySnapshot = snapshots.map(collectBenchmarks)
+  assertMatchingBenchmarkMatrices(benchmarksBySnapshot)
+
+  return {
+    files: first.files.map((file) => ({
+      ...file,
+      groups: file.groups.map((group) => {
+        const groupName = normalizeGroupName(file, group)
+        return {
+          ...group,
+          benchmarks: group.benchmarks.map((benchmark) => {
+            const key = `${groupName} > ${benchmark.name}`
+            const matches = benchmarksBySnapshot.map((benchmarks) => benchmarks.get(key)!)
+            const hzs = matches.map((candidate) => candidate.hz)
+            const { withinActionRme: _withinActionRme, crossActionRme: _crossActionRme, ...baseBenchmark } = benchmark
+            return {
+              ...baseBenchmark,
+              hz: median(hzs),
+              rme: median(matches.map((candidate) => candidate.rme ?? 0)),
+              [dispersionField]: robustRelativeRme(hzs),
+            }
+          }),
+        }
+      }),
+    })),
+  }
+}
+
+function assertMatchingBenchmarkMatrices(benchmarksBySnapshot: Map<string, Benchmark>[]): void {
+  const expected = new Set(benchmarksBySnapshot[0].keys())
+
+  for (const [index, benchmarks] of benchmarksBySnapshot.entries()) {
+    const missing = [...expected].filter((key) => !benchmarks.has(key))
+    const extra = [...benchmarks.keys()].filter((key) => !expected.has(key))
+    if (missing.length > 0 || extra.length > 0) {
+      throw new Error(
+        `Benchmark matrix mismatch in snapshot ${index + 1}: missing [${missing.join(', ')}], extra [${extra.join(', ')}]`,
+      )
+    }
+  }
+}
+
+function robustRelativeRme(values: number[]): number {
+  if (values.length < 2) return 0
+
+  const center = median(values)
+  if (center === 0) return 0
+
+  const medianAbsoluteDeviation = median(values.map((value) => Math.abs(value - center)))
+  // Scale a normal-distribution MAD into a two-sided 95% relative band. Unlike
+  // a plain standard deviation, this stays stable if one shared runner is noisy.
+  return (medianAbsoluteDeviation / center) * 1.4826 * 1.96 * 100
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((left, right) => left - right)
+  const middle = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle]
 }
 
 export function collectBenchGroups(results: BenchResults): BenchGroup[] {
@@ -153,7 +265,7 @@ export function compareBenchResults(
     }
 
     const change = (curr.hz - base.hz) / base.hz
-    const combinedRme = ((base.rme ?? 0) + (curr.rme ?? 0)) / 100
+    const combinedRme = (benchmarkUncertainty(base) + benchmarkUncertainty(curr)) / 100
     const noiseBand = noiseMultiplier * combinedRme
     const regressionLimit = Math.max(options.regressionThreshold, noiseBand)
     const improvementLimit = Math.max(options.improvementThreshold, noiseBand)
@@ -215,6 +327,10 @@ export function compareBenchResults(
   })
 
   return { rows, hasRegression, regressions }
+}
+
+function benchmarkUncertainty(benchmark: Benchmark): number {
+  return Math.max(benchmark.rme ?? 0, benchmark.withinActionRme ?? 0, benchmark.crossActionRme ?? 0)
 }
 
 function normalizeGroupName(file: BenchFile, group: BenchGroup): string {

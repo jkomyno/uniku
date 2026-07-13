@@ -1,6 +1,6 @@
 import { InvalidInputError, nanoid, URL_ALPHABET } from '@/src/nanoid/nanoid'
 import { expectValidTypeGuard } from '../helpers/assertions'
-import { expectDistinctRandomSamples } from '../helpers/randomness'
+import { expectDistinctRandomSamples, expectIidDuplicateRatio } from '../helpers/randomness'
 
 describe('nanoid', () => {
   it('generates a 21-character string by default', () => {
@@ -40,6 +40,14 @@ describe('nanoid', () => {
       count: 100_000,
       randomBits: 126,
       generate: nanoid,
+    })
+  })
+
+  it('matches the IID duplicate ratio for a deliberately small configured namespace', () => {
+    expectIidDuplicateRatio({
+      count: 20_000,
+      possibleValues: 16 ** 4,
+      generate: () => nanoid({ alphabet: '0123456789abcdef', size: 4 }),
     })
   })
 
