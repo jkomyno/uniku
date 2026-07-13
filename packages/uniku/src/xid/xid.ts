@@ -44,9 +44,7 @@ const state: XidState = { machineId: undefined, processId: undefined, counter: u
 
 /** Copy pooled bytes before another random draw can refill their backing pool. */
 function freshRandom(count: number): Uint8Array {
-  const bytes = new Uint8Array(count)
-  bytes.set(randomBytes(count))
-  return bytes
+  return randomBytes(count).slice()
 }
 
 function initializeIdentity(): void {

@@ -100,7 +100,7 @@ describe('xid', () => {
   })
 
   it('wraps the shared counter', async () => {
-    const fill = vi.spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((array) => {
+    vi.spyOn(globalThis.crypto, 'getRandomValues').mockImplementation((array) => {
       if (array instanceof Uint8Array) array.fill(0xff)
       return array
     })
@@ -110,7 +110,6 @@ describe('xid', () => {
 
     expect(counterOf(first, freshXid)).toBe(0)
     expect(counterOf(second, freshXid)).toBe(1)
-    fill.mockRestore()
   })
 
   it('rejects invalid options and byte lengths with shared errors', () => {

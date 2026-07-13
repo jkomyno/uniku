@@ -250,11 +250,13 @@ describe('Cross-Validation: XID', () => {
     for (const id of Array.from({ length: BATCH_SIZE }, () => xid())) {
       const fromXidTs = npmXid.parse(id)
       const fromNexid = npmNeXid.fromString(id)
+      const timestamp = xid.timestamp(id)
+      const bytes = xid.toBytes(id)
 
-      expect(fromXidTs.timestamp() * 1000).toBe(xid.timestamp(id))
-      expect(fromNexid.time.getTime()).toBe(xid.timestamp(id))
-      expect(fromXidTs.toBytes()).toEqual(xid.toBytes(id))
-      expect(fromNexid.bytes).toEqual(xid.toBytes(id))
+      expect(fromXidTs.timestamp() * 1000).toBe(timestamp)
+      expect(fromNexid.time.getTime()).toBe(timestamp)
+      expect(fromXidTs.toBytes()).toEqual(bytes)
+      expect(fromNexid.bytes).toEqual(bytes)
     }
   })
 

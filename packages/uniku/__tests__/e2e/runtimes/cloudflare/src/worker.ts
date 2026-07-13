@@ -567,12 +567,13 @@ app.get('/xid/to-bytes', (c) => {
   try {
     const id = xid()
     const bytes = xid.toBytes(id)
+    const restored = xid.fromBytes(bytes)
     return c.json({
       success: true,
       original: id,
       bytes: Array.from(bytes),
-      restored: xid.fromBytes(bytes),
-      roundTripMatch: id === xid.fromBytes(bytes),
+      restored,
+      roundTripMatch: id === restored,
     })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -622,7 +623,9 @@ app.get('/xid/monotonic', (c) => {
     const ids = Array.from({ length: 100 }, () => xid())
     const bytes = ids.map((id) => xid.toBytes(id))
     const counters = bytes.map((idBytes) => (idBytes[9] << 16) | (idBytes[10] << 8) | idBytes[11])
-    const timestamps = ids.map((id) => xid.timestamp(id))
+    const timestamps = bytes.map(
+      (idBytes) => (((idBytes[0] << 24) | (idBytes[1] << 16) | (idBytes[2] << 8) | idBytes[3]) >>> 0) * 1000,
+    )
     return c.json({ success: true, ids, timestamps, counters })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
