@@ -28,6 +28,7 @@
     "nanoid",
     "ksuid",
     "objectid",
+    "xid",
     "mongodb",
     "tsid",
     "snowflake",
@@ -98,6 +99,11 @@
         "types": "./build/tsid/tsid.d.mts",
         "import": "./build/tsid/tsid.mjs",
         "default": "./build/tsid/tsid.mjs"
+      },
+      "./xid": {
+        "types": "./build/xid/xid.d.mts",
+        "import": "./build/xid/xid.mjs",
+        "default": "./build/xid/xid.mjs"
       },
       "./errors": {
         "types": "./build/errors.d.mts",
@@ -202,6 +208,14 @@
         "default": "./build/tsid/tsid.mjs"
       },
       "default": "./build/tsid/tsid.mjs"
+    },
+    "./xid": {
+      "types": "./build/xid/xid.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/xid/xid.ts",
+        "default": "./build/xid/xid.mjs"
+      },
+      "default": "./build/xid/xid.mjs"
     },
     "./errors": {
       "types": "./build/errors.d.mts",
