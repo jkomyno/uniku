@@ -1,5 +1,11 @@
 # uniku
 
+## 0.4.0
+
+### Minor Changes
+
+- 982d7a0: Add an rs/xid-compatible XID generator with CLI support, runtime coverage, and documentation.
+
 ## 0.3.2
 
 ### Patch Changes
