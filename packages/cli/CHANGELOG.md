@@ -1,5 +1,12 @@
 # @uniku/cli
 
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [dd253f4]
+  - uniku@0.3.2
+
 ## 0.5.1
 
 ### Patch Changes
