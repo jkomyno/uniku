@@ -1,5 +1,11 @@
 # uniku
 
+## 0.3.2
+
+### Patch Changes
+
+- dd253f4: Document the public API surface with JSDoc: every overload, method, and options field now carries a description in the published type declarations.
+
 ## 0.3.1
 
 ### Patch Changes
