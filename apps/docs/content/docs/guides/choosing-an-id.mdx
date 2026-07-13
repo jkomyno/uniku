@@ -13,6 +13,7 @@ Different identifiers optimize for different constraints. Start with the boundar
 | Short URLs and invite codes | Nanoid | Compact and URL-safe. |
 | Values that should resist enumeration | CUID v2 | Non-sequential, secure identifier. |
 | MongoDB `_id` compatibility | ObjectID | Matches MongoDB's 12-byte ObjectID format. |
+| Go rs/xid compatibility | XID | Matches rs/xid's compact 12-byte text and binary format. |
 | Native `BIGINT` storage | TSID | A sortable 64-bit integer, not a UUID-shaped string. |
 | Broad standards compatibility | UUID v4 | The conventional random UUID format. |
 
@@ -28,8 +29,8 @@ const orderId = uuidv7()
 
 ## Time ordering is local
 
-UUID v7, ULID, ObjectID, and TSID carry time information. uniku keeps the state required for monotonic sequencing inside one JavaScript isolate; it does not coordinate clocks or sequences between processes or machines.
+UUID v7, ULID, ObjectID, XID, and TSID carry time information. uniku keeps the state required for monotonic sequencing inside one JavaScript isolate; it does not coordinate clocks or sequences between processes or machines.
 
 ## Time order leaks creation time
 
-UUID v7, ULID, KSUID, TSID, and ObjectID embed a creation timestamp in the identifier itself. Anyone who can read the ID can decode when the record was created, not just its order relative to other records. That is a feature for index locality and a leak if the ID is public and the creation time is sensitive, for example a document, invoice, or account that should not reveal how old it is. If the identifier is exposed outside your system and creation time must stay private, use UUID v4, CUID v2, or Nanoid instead: none of them encode a timestamp.
+UUID v7, ULID, KSUID, ObjectID, XID, and TSID embed a creation timestamp in the identifier itself. Anyone who can read the ID can decode when the record was created, not just its order relative to other records. That is a feature for index locality and a leak if the ID is public and the creation time is sensitive, for example a document, invoice, or account that should not reveal how old it is. If the identifier is exposed outside your system and creation time must stay private, use UUID v4, CUID v2, or Nanoid instead: none of them encode a timestamp.

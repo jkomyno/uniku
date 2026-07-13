@@ -44,7 +44,7 @@ Most generator modules re-export all four classes, so you rarely need to import 
 import { ID_GENERATORS, type IdGenerator } from 'uniku/generators'
 
 ID_GENERATORS
-// ['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid', 'objectid', 'tsid']
+// ['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid', 'objectid', 'tsid', 'xid']
 ```
 
 `IdGenerator` is the union type derived from `ID_GENERATORS`. Tools that enumerate or validate generator kinds, such as `@uniku/cli`'s `--type` flag, should derive from this array instead of hand-copying the union.

@@ -93,13 +93,14 @@ Each format is independently importable and tree-shakeable. Install one package,
 | Nanoid | `uniku/nanoid` | `nanoid()` | `string` |
 | KSUID | `uniku/ksuid` | `ksuid()` | `string` |
 | ObjectID | `uniku/objectid` | `objectid()` | `string` |
+| XID | `uniku/xid` | `xid()` | `string` |
 | TSID | `uniku/tsid` | `tsid()` | `bigint` |
 
 See [Choosing an ID](/docs/guides/choosing-an-id) for the trade-offs, or open a [generator reference](/docs/reference/uuid-v7) when you already know which format you need.
 
 ## Why byte helpers exist
 
-UUIDs, ULIDs, TypeIDs, KSUIDs, ObjectIDs, and TSIDs have a canonical binary representation. Their `toBytes()` and `fromBytes()` helpers let you store and transport that representation without inventing a second codec.
+UUIDs, ULIDs, TypeIDs, KSUIDs, ObjectIDs, XIDs, and TSIDs have a canonical binary representation. Their `toBytes()` and `fromBytes()` helpers let you store and transport that representation without inventing a second codec.
 
 This matters when an ID lives in a binary database column, a compact protocol payload, or a cache key. A UUID, for instance, is 16 bytes instead of its 36-character string form. The helpers also make the string boundary explicit: convert when data leaves your application, preserve bytes where the system already handles bytes.
 

@@ -69,7 +69,7 @@ function Home() {
           <article>
             <Box aria-hidden="true" size={20} />
             <h2>Nine formats, one dependency</h2>
-            <p>UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, and TSID in one package.</p>
+            <p>UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID in one package.</p>
           </article>
         </section>
 
