@@ -2,6 +2,7 @@ import { KSUID as npmKsuid } from '@owpz/ksuid'
 import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
 import { ObjectId as NpmObjectId } from 'bson'
 import { nanoid as npmNanoid } from 'nanoid'
+import { init as initNeXid, XID as npmNeXid } from 'nexid'
 import { TSID as npmTsid } from 'tsid-ts'
 import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-js'
 import { ulid as npmUlid } from 'ulid'
@@ -16,6 +17,7 @@ import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
+import { xid } from '@/src/xid/xid'
 
 // Benchmark options for stable, reproducible results.
 // A 1000ms measurement window with a 500ms / 50-iteration warmup (matching
@@ -30,6 +32,7 @@ const benchOptions = {
 
 // ulid npm (v2.3.0) has no isValid(), use regex
 const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
+const nexid = await initNeXid()
 
 // Pre-generate IDs for validation benchmarks
 const testIds = {
@@ -42,6 +45,7 @@ const testIds = {
   unikuKsuid: ksuid(),
   unikuObjectid: objectid(),
   unikuTsid: tsid.toString(tsid()),
+  unikuXid: xid(),
   npmV4: npmUuidV4(),
   npmV7: npmUuidV7(),
   npmUlid: npmUlid(),
@@ -51,6 +55,7 @@ const testIds = {
   npmKsuid: npmKsuid.random().toString(),
   npmObjectid: new NpmObjectId().toHexString(),
   npmTsid: npmTsid.create().toString(),
+  npmXid: nexid.fastId(),
 }
 
 describe('Generation', () => {
@@ -226,6 +231,23 @@ describe('Generation', () => {
       benchOptions,
     )
   })
+
+  describe('XID', () => {
+    bench(
+      'uniku',
+      () => {
+        xid()
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        nexid.fastId()
+      },
+      benchOptions,
+    )
+  })
 })
 
 describe('Validation', () => {
@@ -392,6 +414,28 @@ describe('Validation', () => {
       () => {
         try {
           npmTsid.fromString(testIds.unikuTsid)
+        } catch {
+          // invalid
+        }
+      },
+      benchOptions,
+    )
+  })
+
+  describe('XID', () => {
+    bench(
+      'uniku',
+      () => {
+        xid.isValid(testIds.npmXid)
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        try {
+          // NeXID has no boolean validation helper; parsing is the equivalent.
+          npmNeXid.fromString(testIds.unikuXid)
         } catch {
           // invalid
         }

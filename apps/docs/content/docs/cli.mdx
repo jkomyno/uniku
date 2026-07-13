@@ -4,7 +4,7 @@ description: Generate, inspect, and validate IDs from the terminal.
 icon: Terminal
 ---
 
-`@uniku/cli` is the command-line companion to the library. It is useful when an ID belongs in a shell pipeline, a migration, or a one-off diagnostic instead of your application source. It supports every generator in the library: UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, MongoDB ObjectID, and TSID.
+`@uniku/cli` is the command-line companion to the library. It is useful when an ID belongs in a shell pipeline, a migration, or a one-off diagnostic instead of your application source. It supports every generator in the library: UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, MongoDB ObjectID, XID, and TSID.
 
 ## Install
 
@@ -185,6 +185,17 @@ uniku objectid --timestamp 1720000000
 # an ObjectID for a fixed Unix timestamp (s)
 ```
 
+### xid
+
+Generate XIDs compatible with rs/xid.
+
+```sh
+uniku xid
+
+uniku xid --timestamp 1720000000
+# an XID for a fixed Unix timestamp (s)
+```
+
 | Option | Description |
 | --- | --- |
 | `--timestamp` | Unix timestamp in seconds, or `now` |
@@ -223,11 +234,11 @@ uniku inspect --json 018e5e5c-7c8a-7000-8000-000000000000
 uniku inspect -- --tricky-id
 ```
 
-The type is auto-detected unless `--type` is given. For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID, TSID), inspect extracts the embedded timestamp. Random-only IDs (UUID v4, CUID v2, Nanoid) report that no decodable metadata is available. Timestamp precision matches each generator: UUID v7, ULID, and TSID are millisecond-precision; KSUID and ObjectID are second-precision.
+The type is auto-detected unless `--type` is given. For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID, XID, TSID), inspect extracts the embedded timestamp. Random-only IDs (UUID v4, CUID v2, Nanoid) report that no decodable metadata is available. Timestamp precision matches each generator: UUID v7, ULID, and TSID are millisecond-precision; KSUID, ObjectID, and XID are second-precision.
 
 | Option | Description |
 | --- | --- |
-| `--type` | ID type: `uuid`, `ulid`, `typeid`, `nanoid`, `cuid`, `ksuid`, `objectid`, `tsid` (auto-detected if omitted) |
+| `--type` | ID type: `uuid`, `ulid`, `typeid`, `nanoid`, `cuid`, `ksuid`, `objectid`, `xid`, `tsid` (auto-detected if omitted) |
 | `--json` | Output as JSON |
 
 ## Validate

@@ -1,0 +1,20 @@
+---
+title: XID
+description: Compact, time-ordered identifiers compatible with rs/xid.
+icon: Database
+---
+
+XID is a 12-byte, lowercase base32hex identifier: a seconds-precision timestamp, a 40-bit per-runtime identity, and a shared 24-bit counter. Use it when you need Go's rs/xid wire format in a synchronous JavaScript runtime.
+
+```ts
+import { xid } from 'uniku/xid'
+
+const id = xid()
+// '9m4e2mr0ui3e8a215n4g'
+```
+
+The default identity is random and cached for this runtime. Supplying `machineId` or `processId` changes only that field; calls still use the shared counter unless you also supply `counter`. Supply all four fields for deterministic output.
+
+Independent runtimes choose their identity randomly, so uniqueness across them remains probabilistic rather than host-anchored as in Go's `rs/xid` implementation.
+
+<ApiReference generator="xid" />

@@ -18,6 +18,7 @@ The `uniku@1.x` public entry points are:
 - `uniku/nanoid`
 - `uniku/ksuid`
 - `uniku/objectid`
+- `uniku/xid`
 - `uniku/tsid`
 - `uniku/errors`
 - `uniku/generators`
@@ -111,6 +112,7 @@ starts.
 - UUID v7 and ULID preserve monotonic order when the wall clock stalls or moves
   backward.
 - ObjectID keeps its process-random field and always-incrementing counter.
+- XID keeps a random per-runtime identity and always-incrementing counter.
 - TSID keeps its node ID and advances virtual time if its per-millisecond
   counter overflows.
 - Explicit timestamp, sequence, random, node, or counter options do not mutate

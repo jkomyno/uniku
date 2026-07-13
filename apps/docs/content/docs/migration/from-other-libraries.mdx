@@ -113,4 +113,18 @@ Convert at a string boundary when you need the canonical Base32 form:
 const publicId: string = tsid.toString(id)
 ```
 
-Before replacing an existing generator, test the representation you store and expose. UUIDs, ULIDs, and ObjectIDs have canonical byte forms; Nanoid and CUID v2 are string-native.
+## From `xid-ts` or `nexid`
+
+Both libraries implement the rs/xid representation. uniku returns the canonical string directly and does not require asynchronous setup.
+
+```diff
+- import { Xid } from 'xid-ts'
++ import { xid } from 'uniku/xid'
+
+- const id = new Xid().toString()
++ const id: string = xid()
+```
+
+Use `xid.toBytes(id)` and `xid.fromBytes(bytes)` when you store the 12-byte value.
+
+Before replacing an existing generator, test the representation you store and expose. UUIDs, ULIDs, ObjectIDs, and XIDs have canonical byte forms; Nanoid and CUID v2 are string-native.

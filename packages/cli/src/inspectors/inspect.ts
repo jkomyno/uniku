@@ -5,6 +5,7 @@ import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
+import { xid } from 'uniku/xid'
 import type { IdType, InspectResult } from '@/src/domain/types'
 import { validateAutoDetect } from '@/src/validators/validate'
 
@@ -33,6 +34,8 @@ export function inspectId(id: string, type?: IdType): InspectResult | null {
       return inspectNanoid(id)
     case 'tsid':
       return inspectTsid(id)
+    case 'xid':
+      return inspectXid(id)
   }
 }
 
@@ -136,6 +139,18 @@ function inspectObjectid(id: string): InspectResult {
     timestamp: new Date(ms).toISOString(),
     timestamp_ms: ms,
     random,
+  }
+}
+
+function inspectXid(id: string): InspectResult {
+  const ms = xid.timestamp(id)
+  const bytes = xid.toBytes(id)
+  return {
+    id,
+    type: 'xid',
+    timestamp: new Date(ms).toISOString(),
+    timestamp_ms: ms,
+    random: Buffer.from(bytes.slice(4)).toString('hex'),
   }
 }
 

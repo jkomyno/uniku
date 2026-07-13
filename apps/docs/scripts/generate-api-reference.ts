@@ -260,6 +260,30 @@ const generators: GeneratorDefinition[] = [
     sourcePath: 'packages/uniku/src/tsid/tsid.ts',
     typeName: 'Tsid',
   },
+  {
+    examples: {
+      xid: {
+        input: 'xid()',
+        output: "'9m4e2mr0ui3e8a215n4g'",
+      },
+      toBytes: {
+        input: "xid.toBytes('9m4e2mr0ui3e8a215n4g')",
+        output: 'Uint8Array [77, 136, 225, 91, 96, 244, 134, 228, 40, 65, 45, 201]',
+      },
+      fromBytes: {
+        input: 'xid.fromBytes(Uint8Array.from([77, 136, 225, 91, 96, 244, 134, 228, 40, 65, 45, 201]))',
+        output: "'9m4e2mr0ui3e8a215n4g'",
+      },
+      timestamp: { input: "xid.timestamp('9m4e2mr0ui3e8a215n4g')", output: '1300816219000' },
+      isValid: { input: "xid.isValid('9m4e2mr0ui3e8a215n4g')", output: 'true' },
+      NIL: { input: 'xid.NIL', output: "'00000000000000000000'" },
+      MAX: { input: 'xid.MAX', output: "'vvvvvvvvvvvvvvvvvvvg'" },
+    },
+    id: 'xid',
+    exportName: 'xid',
+    sourcePath: 'packages/uniku/src/xid/xid.ts',
+    typeName: 'Xid',
+  },
 ]
 
 function jsDocText(node: ts.Node): string | undefined {

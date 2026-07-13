@@ -1,8 +1,8 @@
 import { ID_GENERATORS, type IdGenerator } from '@/src/generators'
 
 describe('generators', () => {
-  it('lists exactly the 8 supported ID generators in the expected order', () => {
-    expect(ID_GENERATORS).toEqual(['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid', 'objectid', 'tsid'])
+  it('lists exactly the 9 supported ID generators in the expected order', () => {
+    expect(ID_GENERATORS).toEqual(['uuid', 'ulid', 'typeid', 'nanoid', 'cuid', 'ksuid', 'objectid', 'tsid', 'xid'])
   })
 
   it('contains no duplicate generators', () => {

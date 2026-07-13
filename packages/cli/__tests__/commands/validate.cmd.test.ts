@@ -7,6 +7,7 @@ import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
+import { xid } from 'uniku/xid'
 import { CliError, ValidationFailedError } from '@/src/domain/errors'
 import { cli, MockOutput, TestLive } from '../__utils__'
 
@@ -108,6 +109,23 @@ describe('CLI: uniku validate', () => {
         yield* cli(['validate', id, '--type', 'objectid'])
         const output = yield* MockOutput.getStdout
         expect(output).toEqual(['valid (objectid)'])
+      }),
+    )
+
+    it.effect('[Given] XID [Then] auto-detects and validates as XID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const id = xid()
+        yield* cli(['validate', id])
+        expect(yield* MockOutput.getStdout).toEqual(['valid (xid)'])
+      }),
+    )
+
+    it.effect('[Given] uppercase XID with --type xid [Then] reports invalid', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        const result = yield* cli(['validate', xid().toUpperCase(), '--type', 'xid']).pipe(Effect.flip)
+        assertInstanceOf(result, ValidationFailedError)
       }),
     )
 

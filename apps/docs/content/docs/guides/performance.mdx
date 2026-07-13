@@ -8,7 +8,7 @@ The numbers below come from the repository's own benchmark and bundle-size tooli
 
 ## Generation speed
 
-Each row compares uniku's generator against the npm package it targets: `uuid` for UUID v4/v7, `ulid`, `@paralleldrive/cuid2`, `@owpz/ksuid`, `bson` for ObjectID, `tsid-ts`, `nanoid`, and `typeid-js`.
+Each row compares uniku's generator against the npm package it targets: `uuid` for UUID v4/v7, `ulid`, `@paralleldrive/cuid2`, `@owpz/ksuid`, `bson` for ObjectID, `nexid` for XID, `tsid-ts`, `nanoid`, and `typeid-js`.
 
 | Generator | uniku vs npm |
 | --- | ---: |
@@ -18,6 +18,7 @@ Each row compares uniku's generator against the npm package it targets: `uuid` f
 | TSID | 1.7× faster |
 | KSUID | 1.5× faster |
 | ObjectID | 1.1× faster |
+| XID | See the current benchmark summary |
 | UUID v7 | 1.1× faster |
 | Nanoid | comparable speed |
 | Nanoid (10 chars) | npm is 1.1× faster |
@@ -37,6 +38,7 @@ Every entry point is independently importable and tree-shakeable: importing `uni
 | `uniku/tsid` | ~1.4 KB |
 | `uniku/ksuid` | ~1.3 KB |
 | `uniku/objectid` | ~1.3 KB |
+| `uniku/xid` | ~1.7 KB |
 | `uniku/nanoid` | ~1.1 KB |
 | `uniku/uuid/v4` | ~1.1 KB |
 | `uniku/cuid/v2` | ~992 B |

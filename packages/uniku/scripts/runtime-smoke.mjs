@@ -7,6 +7,7 @@ import { typeid } from '../build/typeid/typeid.mjs'
 import { ulid } from '../build/ulid/ulid.mjs'
 import { uuidv4 } from '../build/uuid/v4.mjs'
 import { uuidv7 } from '../build/uuid/v7.mjs'
+import { xid } from '../build/xid/xid.mjs'
 
 function assert(condition, message) {
   if (!condition) {
@@ -24,6 +25,7 @@ const generators = [
   ['nanoid', nanoid],
   ['ksuid', ksuid],
   ['objectid', objectid],
+  ['xid', xid],
 ]
 
 for (const [name, generate, validator = generate] of generators) {

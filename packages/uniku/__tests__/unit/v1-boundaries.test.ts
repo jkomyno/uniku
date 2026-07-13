@@ -7,6 +7,7 @@ import { tsid } from '@/src/tsid/tsid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
+import { xid } from '@/src/xid/xid'
 
 const zeroes = (length: number) => new Uint8Array(length)
 
@@ -62,6 +63,14 @@ describe('v1 public boundary contract', () => {
         generate: () => objectid({ secs: 0, random: zeroes(5), counter: 1.5 }),
       },
       {
+        name: 'XID rejects fractional process IDs',
+        generate: () => xid({ processId: 1.5 }),
+      },
+      {
+        name: 'XID rejects fractional counters',
+        generate: () => xid({ counter: 1.5 }),
+      },
+      {
         name: 'TSID rejects fractional node-bit allocations',
         generate: () => tsid({ nodeBits: 1.5 }),
       },
@@ -110,6 +119,10 @@ describe('v1 public boundary contract', () => {
         name: 'ObjectID rejects oversized byte arrays',
         decode: () => objectid.fromBytes(zeroes(13)),
       },
+      {
+        name: 'XID rejects oversized byte arrays',
+        decode: () => xid.fromBytes(zeroes(13)),
+      },
     ]
 
     test.each(cases)('$name', ({ decode }) => {
@@ -138,6 +151,10 @@ describe('v1 public boundary contract', () => {
       {
         name: 'ObjectID rejects fractional offsets',
         generate: () => objectid({ secs: 0, random: zeroes(5), counter: 0 }, zeroes(32), 0.5),
+      },
+      {
+        name: 'XID rejects fractional offsets',
+        generate: () => xid({ secs: 0, machineId: zeroes(3), processId: 0, counter: 0 }, zeroes(32), 0.5),
       },
       {
         name: 'TSID rejects fractional offsets',

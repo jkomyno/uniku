@@ -10,6 +10,7 @@
     "nanoid",
     "ksuid",
     "objectid",
+    "xid",
     "tsid",
     "errors"
   ]

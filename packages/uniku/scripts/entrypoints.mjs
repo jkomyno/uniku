@@ -23,6 +23,7 @@ const ENTRIES = [
   { subpath: './ksuid', src: 'src/ksuid/ksuid.ts' },
   { subpath: './objectid', src: 'src/objectid/objectid.ts' },
   { subpath: './tsid', src: 'src/tsid/tsid.ts' },
+  { subpath: './xid', src: 'src/xid/xid.ts' },
   { subpath: './errors', src: 'src/errors.ts' },
   { subpath: './generators', src: 'src/generators.ts' },
 ]

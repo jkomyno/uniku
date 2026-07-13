@@ -35,6 +35,7 @@ console.log(first < second && second < third) // true
 | KSUID              |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ✅  |   ❌  |   ❌  |
 | ObjectID           |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ✅  |   ❌  |
 | TSID               |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ✅  |
+| XID                |   ✅  |  ❌  |     ❌    |   ❌   |  ❌  |   ❌  |   ❌  |   ❌  |   ❌  |
 | Tree-shakeable     |   ✅  |  ✅  |     ✅    |   ✅   |  ✅  |   ✅  |   ❌  |   ❌  |   ❌  |
 | ESM-only           |   ✅  | ✅¹  |     ❌    |   ✅   |  ❌  |   ✅  |   ❌  |   ❌  |   ❌  |
 | Edge/Workers       |   ✅  |  ✅  |     ✅    |   ✅   |  ⚠️  |   ✅  |  ⚠️  |  ⚠️  |  ⚠️  |
@@ -67,6 +68,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | KSUID     | **1.5× faster** |
 | ObjectID  | **1.1× faster** |
 | TSID      | **1.7× faster** |
+| XID | See the current benchmark summary |
 | UUID v7   | **1.1× faster**  |
 | Nanoid    | **~comparable speed** |
 | Nanoid (10 chars) | npm is 1.1× faster |
@@ -88,6 +90,7 @@ Uses `globalThis.crypto` (Web Crypto API) — no Node.js-specific APIs.
 | Very high-volume distributed systems | **KSUID** | Time-ordered with 128-bit entropy |
 | MongoDB `_id` compatibility | **ObjectID** | Drop-in match for MongoDB's native document ID format |
 | Native 64-bit sortable integer ID | **TSID** | Fits a database `BIGINT` primary key, no UUID-sized overhead |
+| Go rs/xid compatibility | **XID** | Compact, time-ordered 12-byte identifier |
 
 ### Detailed Guide
 
@@ -222,6 +225,7 @@ deno install npm:uniku
 | `uniku/ksuid` | ~1.3 KB |
 | `uniku/objectid` | ~1.3 KB |
 | `uniku/tsid` | ~1.4 KB |
+| `uniku/xid` | ~1.7 KB |
 | `uniku/generators` | ~98 B |
 
 * The CUID2 entry point imports SHA3-512 from `@noble/hashes`; this table's entry-point size excludes that external dependency.
@@ -374,6 +378,21 @@ const ts = tsid.timestamp(id)
 const bytes = tsid.toBytes(id)
 const restored = tsid.fromBytes(bytes)
 ```
+
+### XID (time-ordered, rs/xid-compatible)
+
+```ts
+import { xid } from 'uniku/xid'
+
+const id = xid()
+// => "9m4e2mr0ui3e8a215n4g"
+
+const bytes = xid.toBytes(id)
+const restored = xid.fromBytes(bytes)
+const timestamp = xid.timestamp(id)
+```
+
+XID caches a random identity per runtime and uses a shared, always-incrementing counter. Supply `machineId`, `processId`, `secs`, and `counter` for deterministic output.
 
 ## Migrating to uniku
 
@@ -552,6 +571,19 @@ tsid.MAX  // 18446744073709551615n
 ```
 
 > Unlike every other generator listed here, `tsid()` returns `bigint` by default, and `toBytes`/`fromBytes`/`timestamp`/`isValid` all operate on that `bigint`. `toString`/`fromString` are the boundary conversions to/from the 13-character canonical Crockford Base32 string.
+
+### `xid` (from `uniku/xid`)
+
+```ts
+xid(options?: XidOptions): string
+xid(options: XidOptions | undefined, buf: Uint8Array, offset?: number): Uint8Array
+xid.toBytes(id: string): Uint8Array
+xid.fromBytes(bytes: Uint8Array): string
+xid.timestamp(id: string): number
+xid.isValid(id: unknown): id is string
+xid.NIL  // "00000000000000000000"
+xid.MAX  // "vvvvvvvvvvvvvvvvvvvg"
+```
 
 ## Documentation
 

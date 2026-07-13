@@ -5,7 +5,7 @@ import mdx from 'fumadocs-mdx/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS === 'true' ? '/uniku/' : '/',
+  base: process.env.DOCS_BASE_PATH ?? (process.env.GITHUB_ACTIONS === 'true' ? '/uniku/' : '/'),
   plugins: [
     mdx(),
     tailwindcss(),

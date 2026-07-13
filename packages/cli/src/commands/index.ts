@@ -9,6 +9,7 @@ import {
   typeidShorthand,
   ulidShorthand,
   uuidShorthand,
+  xidShorthand,
 } from '@/src/commands/generate.cmd'
 import { inspectCommand } from '@/src/commands/inspect.cmd'
 import { validateCommand } from '@/src/commands/validate.cmd'
@@ -36,6 +37,7 @@ export const rootCommand = Command.make('uniku').pipe(
     cuidShorthand,
     ksuidShorthand,
     objectidShorthand,
+    xidShorthand,
     tsidShorthand,
   ]),
 )
