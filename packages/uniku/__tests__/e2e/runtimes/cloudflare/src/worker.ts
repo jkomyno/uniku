@@ -13,6 +13,7 @@ import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
+import { xid } from 'uniku/xid'
 
 const app = new Hono()
 
@@ -22,7 +23,7 @@ const app = new Hono()
 app.get('/', (c) => {
   return c.json({
     message: 'uniku E2E Test Worker',
-    generators: ['uuid-v4', 'uuid-v7', 'typeid', 'ulid', 'ksuid', 'objectid', 'tsid', 'cuid2', 'nanoid'],
+    generators: ['uuid-v4', 'uuid-v7', 'typeid', 'ulid', 'ksuid', 'objectid', 'xid', 'tsid', 'cuid2', 'nanoid'],
   })
 })
 
@@ -535,6 +536,94 @@ app.get('/objectid/monotonic', (c) => {
       first: ids[0],
       last: ids[ids.length - 1],
     })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================================================
+// XID Endpoints
+// ============================================================================
+
+app.get('/xid/generate', (c) => {
+  try {
+    return c.json({ success: true, id: xid() })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/xid/generate-batch', (c) => {
+  try {
+    const count = Number(c.req.query('count') || '1000')
+    const ids = Array.from({ length: count }, () => xid())
+    return c.json({ success: true, ids, count: ids.length })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/xid/to-bytes', (c) => {
+  try {
+    const id = xid()
+    const bytes = xid.toBytes(id)
+    return c.json({
+      success: true,
+      original: id,
+      bytes: Array.from(bytes),
+      restored: xid.fromBytes(bytes),
+      roundTripMatch: id === xid.fromBytes(bytes),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/xid/timestamp', (c) => {
+  try {
+    const before = Date.now()
+    const id = xid()
+    const after = Date.now()
+    const timestamp = xid.timestamp(id)
+    const beforeSec = Math.floor(before / 1000) * 1000
+    const afterSec = Math.ceil(after / 1000) * 1000
+    return c.json({
+      success: true,
+      id,
+      timestamp,
+      before,
+      after,
+      withinRange: timestamp >= beforeSec && timestamp <= afterSec,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/xid/validate', (c) => {
+  try {
+    const validId = xid()
+    return c.json({
+      success: true,
+      validId,
+      isValidGenerated: xid.isValid(validId),
+      isValidKnownGood: xid.isValid('9m4e2mr0ui3e8a215n4g'),
+      isValidInvalid: xid.isValid('c6e52g2mrqcjl44hf179'),
+      isValidUppercase: xid.isValid('9M4E2MR0UI3E8A215N4G'),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/xid/monotonic', (c) => {
+  try {
+    // Generate synchronously: Workers freeze Date.now() for the duration of a request.
+    const ids = Array.from({ length: 100 }, () => xid())
+    const bytes = ids.map((id) => xid.toBytes(id))
+    const counters = bytes.map((idBytes) => (idBytes[9] << 16) | (idBytes[10] << 8) | idBytes[11])
+    const timestamps = ids.map((id) => xid.timestamp(id))
+    return c.json({ success: true, ids, timestamps, counters })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }

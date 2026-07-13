@@ -12,6 +12,7 @@ const generators = [
   { name: 'ksuid', pattern: /^[0-9A-Za-z]{27}$/ },
   { name: 'objectid', pattern: /^[0-9a-f]{24}$/i },
   { name: 'tsid', pattern: /^[0-9A-Fa-f][0-9A-HJKMNP-TV-Z]{12}$/i },
+  { name: 'xid', pattern: /^[0-9a-v]{19}[0g]$/ },
   { name: 'cuid2', pattern: /^[a-z][a-z0-9]+$/ },
   { name: 'nanoid', pattern: /^[A-Za-z0-9_-]+$/ },
 ] as const
@@ -24,13 +25,15 @@ const generatorsWithBytes = [
   { name: 'ksuid', byteLength: 20 },
   { name: 'objectid', byteLength: 12 },
   { name: 'tsid', byteLength: 8 },
+  { name: 'xid', byteLength: 12 },
 ] as const
-// uuid-v7/ulid/typeid/objectid/tsid all have monotonic ordering guarantees, so
+// uuid-v7/ulid/typeid/objectid/tsid/xid all have monotonic ordering guarantees, so
 // they share the timestamp-extraction and monotonic-ordering checks below.
 // ksuid is deliberately excluded from both: uniku's ksuid has no monotonic
 // guarantee, unlike tsid's counter+node design which specifically exists to
 // guarantee monotonic ordering per node.
-const generatorsWithTimestamp = ['uuid-v7', 'typeid', 'ulid', 'objectid', 'tsid'] as const
+const generatorsWithTimestamp = ['uuid-v7', 'typeid', 'ulid', 'objectid', 'tsid', 'xid'] as const
+const generatorsWithLexicalMonotonicity = ['uuid-v7', 'typeid', 'ulid', 'objectid', 'tsid'] as const
 
 describe('ID generators on Cloudflare Workers', () => {
   // =========================================================================
@@ -112,7 +115,7 @@ describe('ID generators on Cloudflare Workers', () => {
   })
 
   describe('monotonic ordering', () => {
-    it.each(generatorsWithTimestamp)('%s generates monotonically increasing IDs', async (name) => {
+    it.each(generatorsWithLexicalMonotonicity)('%s generates monotonically increasing IDs', async (name) => {
       const response = await SELF.fetch(`http://localhost/${name}/monotonic`)
       expect(response.status).toBe(200)
 
@@ -219,6 +222,24 @@ describe('ID generators on Cloudflare Workers', () => {
       const sorted = [...ids].sort()
       expect(ids).toEqual(sorted)
       expect(new Set(ids).size).toBe(ids.length)
+    })
+  })
+
+  describe('xid counter ordering', () => {
+    it('shares a frozen-time timestamp and advances counters consecutively within one request', async () => {
+      const response = await SELF.fetch('http://localhost/xid/monotonic')
+      expect(response.status).toBe(200)
+
+      const body = (await response.json()) as {
+        success: boolean
+        timestamps: number[]
+        counters: number[]
+      }
+      expect(body.success).toBe(true)
+      expect(new Set(body.timestamps).size).toBe(1)
+      expect(body.counters.every((counter, i) => i === 0 || counter === (body.counters[i - 1] + 1) % 0x1000000)).toBe(
+        true,
+      )
     })
   })
 })
