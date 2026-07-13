@@ -1,5 +1,16 @@
 # @uniku/cli
 
+## 0.6.0
+
+### Minor Changes
+
+- 982d7a0: Add an rs/xid-compatible XID generator with CLI support, runtime coverage, and documentation.
+
+### Patch Changes
+
+- Updated dependencies [982d7a0]
+  - uniku@0.4.0
+
 ## 0.5.2
 
 ### Patch Changes
