@@ -100,6 +100,8 @@ jobs:
         # No build needed when the PR is closed: the preview action only
         # removes the existing deployment in that case.
         if: github.event.action != 'closed'
+        env:
+          DOCS_BASE_PATH: /uniku/pr-preview/pr-${{ github.event.number }}/
         run: pnpm docs:build
 
       - name: Deploy or remove preview
