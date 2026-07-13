@@ -4,23 +4,25 @@ on:
   push:
     branches:
       - main
-    paths:
+    paths: &docs-paths
       - "apps/docs/**"
       - "docs/**"
+      - "packages/uniku/src/**"
       - "README.md"
       - "packages/cli/README.md"
       - "packages/uniku/README.md"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
   pull_request:
-    paths:
-      - "apps/docs/**"
-      - "docs/**"
-      - "README.md"
-      - "packages/cli/README.md"
-      - "packages/uniku/README.md"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
+    # `closed` is required so the preview job can tear down a PR's preview
+    # when it's merged or closed without a final push - it is not part of
+    # `pull_request`'s default type set (opened, synchronize, reopened).
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+    paths: *docs-paths
   workflow_dispatch:
 
 concurrency:
@@ -33,6 +35,9 @@ permissions:
 jobs:
   build:
     name: Build docs
+    # Nothing to typecheck/build when a PR is merely being closed - the
+    # preview job tears down its own deployment independently of this job.
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -48,17 +53,6 @@ jobs:
       - name: Build static site
         run: pnpm docs:build
 
-      - name: Configure GitHub Pages
-        if: github.event_name == 'push'
-        id: pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
-
-      - name: Upload Pages artifact
-        if: github.event_name == 'push'
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
-        with:
-          path: apps/docs/dist/client
-
   deploy:
     name: Deploy GitHub Pages
     if: github.event_name == 'push'
@@ -66,12 +60,53 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
     steps:
-      - name: Deploy Pages artifact
-        id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Build static site
+        run: pnpm docs:build
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4.8.0
+        with:
+          folder: apps/docs/dist/client
+          branch: gh-pages
+          # Preserve concurrently deployed PR previews living under pr-preview/.
+          clean-exclude: pr-preview
+          force: false
+
+  preview:
+    name: Deploy PR preview
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        if: github.event.action != 'closed'
+        uses: ./.github/actions/setup-node
+
+      - name: Build static site
+        # No build needed when the PR is closed: the preview action only
+        # removes the existing deployment in that case.
+        if: github.event.action != 'closed'
+        run: pnpm docs:build
+
+      - name: Deploy or remove preview
+        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
+        with:
+          source-dir: apps/docs/dist/client
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: auto
+          wait-for-pages-deployment: true
