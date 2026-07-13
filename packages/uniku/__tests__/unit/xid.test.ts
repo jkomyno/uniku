@@ -75,6 +75,17 @@ describe('xid', () => {
     expect(counterOf(third, freshXid)).toBe((counterOf(first, freshXid) + 1) & 0xffffff)
   })
 
+  it('keeps a process ID-only partial identity stable', async () => {
+    const { xid: freshXid } = await importFreshXidModule()
+    const first = freshXid({ secs: 1, processId: 0x4567 })
+    const second = freshXid({ secs: 1, processId: 0x4567 })
+    const firstBytes = freshXid.toBytes(first)
+    const secondBytes = freshXid.toBytes(second)
+
+    expect(firstBytes.slice(7, 9)).toEqual(new Uint8Array([0x45, 0x67]))
+    expect(secondBytes.slice(4, 9)).toEqual(firstBytes.slice(4, 9))
+  })
+
   it('is deterministic when every field is supplied', () => {
     const options = { secs: 0xffffffff, machineId: new Uint8Array([1, 2, 3]), processId: 0xabcd, counter: 0xffffff }
     expect(xid(options)).toBe(xid(options))
