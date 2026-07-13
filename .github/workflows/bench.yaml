@@ -206,3 +206,6 @@ jobs:
 
           # Force push to gh-benchmarks
           git push origin gh-benchmarks --force
+
+          # Keep local actions available for their post-job cleanup hooks.
+          git checkout "$GITHUB_SHA"
