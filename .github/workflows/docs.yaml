@@ -26,7 +26,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: docs-${{ github.workflow }}-${{ github.ref }}
+  # A merged PR emits both a push to main and pull_request.closed. Group PR
+  # runs by number so preview cleanup cannot cancel the production deployment.
+  group: docs-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
