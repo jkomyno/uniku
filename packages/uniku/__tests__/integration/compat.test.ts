@@ -2,9 +2,12 @@ import { KSUID as npmKsuid } from '@owpz/ksuid'
 import { createId as npmCuid2, isCuid as npmIsCuid } from '@paralleldrive/cuid2'
 import { ObjectId as npmObjectId } from 'bson'
 import { nanoid as npmNanoid } from 'nanoid'
+import { init as initNeXid, XID as npmNeXid } from 'nexid'
 import { TSID as npmTsid } from 'tsid-ts'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
+import { beforeAll } from 'vitest'
+import { Xid as npmXid } from 'xid-ts'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
@@ -13,6 +16,7 @@ import { tsid } from '@/src/tsid/tsid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
+import { xid } from '@/src/xid/xid'
 
 const BATCH_SIZE = 100
 
@@ -26,6 +30,12 @@ const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 
 // nanoid npm has no isValid(), use regex for default 21-char URL alphabet
 const NANOID_REGEX = /^[A-Za-z0-9_-]{21}$/
+
+let nexid: Awaited<ReturnType<typeof initNeXid>>
+
+beforeAll(async () => {
+  nexid = await initNeXid()
+})
 
 describe('Cross-Validation: UUID v4', () => {
   it('uniku IDs pass npm validation', () => {
@@ -232,5 +242,41 @@ describe('Cross-Validation: TSID', () => {
     // Both should be exactly equal since both share the same default epoch
     expect(unikuTimestamp).toBe(msecs)
     expect(unikuTimestamp).toBe(npmTimestamp)
+  })
+})
+
+describe('Cross-Validation: XID', () => {
+  it('uniku IDs round-trip through xid-ts and nexid', () => {
+    for (const id of Array.from({ length: BATCH_SIZE }, () => xid())) {
+      const fromXidTs = npmXid.parse(id)
+      const fromNexid = npmNeXid.fromString(id)
+
+      expect(fromXidTs.timestamp() * 1000).toBe(xid.timestamp(id))
+      expect(fromNexid.time.getTime()).toBe(xid.timestamp(id))
+      expect(fromXidTs.toBytes()).toEqual(xid.toBytes(id))
+      expect(fromNexid.bytes).toEqual(xid.toBytes(id))
+    }
+  })
+
+  it('xid-ts and nexid IDs round-trip through uniku', () => {
+    const ids = [
+      ...Array.from({ length: BATCH_SIZE }, () => new npmXid().toString()),
+      ...Array.from({ length: BATCH_SIZE }, () => String(nexid.newId())),
+    ]
+
+    for (const id of ids) {
+      expect(xid.isValid(id)).toBe(true)
+      expect(xid.fromBytes(xid.toBytes(id))).toBe(id)
+    }
+  })
+
+  it.each([
+    'c6e52g2mrqcjl44hf179',
+    '9M4E2MR0UI3E8A215N4G',
+  ])('rejects invalid XID %s across all implementations', (id) => {
+    expect(xid.isValid(id)).toBe(false)
+    expect(() => xid.toBytes(id)).toThrow()
+    expect(() => npmXid.parse(id)).toThrow()
+    expect(() => npmNeXid.fromString(id)).toThrow()
   })
 })
