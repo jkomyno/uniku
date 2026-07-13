@@ -59,7 +59,7 @@ jobs:
       - name: Measure cold starts
         run: |
           set -o pipefail
-          node scripts/bench-cold-start.mjs | tee "$RUNNER_TEMP/cold-start.md"
+          pnpm bench:cold-start | tee "$RUNNER_TEMP/cold-start.md"
         working-directory: packages/uniku
 
       # Fetch baseline from gh-benchmarks branch

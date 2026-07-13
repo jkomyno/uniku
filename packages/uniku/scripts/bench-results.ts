@@ -130,10 +130,7 @@ function aggregateBenchmarkSnapshots(
           ...group,
           benchmarks: group.benchmarks.map((benchmark) => {
             const key = `${groupName} > ${benchmark.name}`
-            const matches = benchmarksBySnapshot
-              .map((benchmarks) => benchmarks.get(key))
-              .filter((candidate): candidate is Benchmark => candidate !== undefined)
-            if (matches.length === 0) return benchmark
+            const matches = benchmarksBySnapshot.map((benchmarks) => benchmarks.get(key)!)
             const hzs = matches.map((candidate) => candidate.hz)
             const { withinActionRme: _withinActionRme, crossActionRme: _crossActionRme, ...baseBenchmark } = benchmark
             return {

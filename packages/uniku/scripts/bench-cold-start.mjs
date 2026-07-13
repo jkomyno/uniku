@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { performance } from 'node:perf_hooks'
 
 import { COLD_START_ENTRYPOINTS } from './cold-start-entrypoints.mjs'
 
 const DEFAULT_SAMPLES = 25
 const sampleCount = Number(process.env.UNIKU_COLD_START_SAMPLES ?? DEFAULT_SAMPLES)
+const probePath = fileURLToPath(new URL('./cold-start-probe.mjs', import.meta.url))
 
 if (!Number.isInteger(sampleCount) || sampleCount < 1) {
   throw new Error('UNIKU_COLD_START_SAMPLES must be a positive integer')
@@ -30,7 +32,7 @@ for (const { entrypoint } of COLD_START_ENTRYPOINTS) {
   const importAndFirstId = []
   for (let index = 0; index < sampleCount; index += 1) {
     const started = performance.now()
-    const result = spawnSync(process.execPath, [new URL('./cold-start-probe.mjs', import.meta.url).pathname, entrypoint], {
+    const result = spawnSync(process.execPath, [probePath, entrypoint], {
       encoding: 'utf8',
     })
     processToExit.push(performance.now() - started)

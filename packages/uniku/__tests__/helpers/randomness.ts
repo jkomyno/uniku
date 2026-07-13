@@ -8,7 +8,7 @@ interface DistinctRandomSamplesOptions<T> {
   readonly toKey?: (sample: T) => RandomSampleKey
 }
 
-export interface IidDuplicateRatioOptions<T> {
+interface IidDuplicateRatioOptions<T> {
   readonly count: number
   readonly possibleValues: number
   readonly generate: () => T
@@ -105,11 +105,11 @@ function countDuplicateSamples<T>(count: number, generate: () => T, toKey: (samp
 
   for (let sampleIndex = 0; sampleIndex < count; sampleIndex += 1) {
     const key = toKey(generate())
+    const sizeBefore = seen.size
+    seen.add(key)
 
-    if (seen.has(key)) {
+    if (seen.size === sizeBefore) {
       duplicateCount += 1
-    } else {
-      seen.add(key)
     }
   }
 

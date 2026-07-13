@@ -9,7 +9,7 @@ if (!entry) {
 }
 
 const started = performance.now()
-const module = await import(new URL(`../${entry.mjs.slice(2)}`, import.meta.url))
+const module = await import(new URL(entry.mjs, new URL('../', import.meta.url)))
 entry.invoke(module)
 
 process.stdout.write(`${JSON.stringify({ importAndFirstIdMs: performance.now() - started })}\n`)
