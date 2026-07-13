@@ -2,6 +2,7 @@ import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
 import { tsid } from 'uniku/tsid'
+import { xid } from 'uniku/xid'
 import { CliError } from '@/src/domain/errors'
 import { cli, MockOutput, TestConsole, TestLive } from '../__utils__'
 
@@ -80,6 +81,39 @@ describe('CLI: uniku generate uuid', () => {
 
     it.effect('[Given] generate uuid -l [Then] rejects the removed lowercase alias', () =>
       expectCliRejects(['generate', 'uuid', '-l']),
+    )
+  })
+})
+
+describe('CLI: uniku generate xid', () => {
+  layer(TestLive())((it) => {
+    it.effect('[Given] count, JSON, and a timestamp [Then] generates canonical XIDs', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'xid', '--count', '2', '--timestamp', '1720000000', '--json'])
+        const output = yield* MockOutput.getStdout
+        const ids = JSON.parse(output[0]) as string[]
+        expect(ids).toHaveLength(2)
+        expect(ids.every((id) => xid.isValid(id) && xid.timestamp(id) === 1_720_000_000_000)).toBe(true)
+      }),
+    )
+
+    it.effect('[Given] root xid shorthand [Then] generates one XID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['xid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(xid.isValid(output[0])).toBe(true)
+      }),
+    )
+
+    it.effect('[Given] malformed timestamp [Then] fails with the standard parse error', () =>
+      Effect.gen(function* () {
+        const error = yield* cli(['generate', 'xid', '--timestamp', 'invalid']).pipe(Effect.flip)
+        assertInstanceOf(error, CliError)
+        expect(error.code).toBe('INVALID_TIMESTAMP')
+      }),
     )
   })
 })

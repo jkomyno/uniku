@@ -7,6 +7,7 @@ import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
+import { xid } from 'uniku/xid'
 import { describe, expect, it } from 'vitest'
 import { validateAs, validateAutoDetect } from '@/src/validators/validate'
 
@@ -82,6 +83,12 @@ describe('validateAs', () => {
     const result = validateAs(id, 'objectid')
     expect(result.valid).toBe(true)
     expect(result.type).toBe('objectid')
+  })
+
+  it('validates a canonical XID and rejects uppercase input', () => {
+    const id = xid()
+    expect(validateAs(id, 'xid')).toMatchObject({ valid: true, type: 'xid' })
+    expect(validateAs(id.toUpperCase(), 'xid')).toMatchObject({ valid: false, type: 'xid' })
   })
 
   it('validates a valid TSID', () => {
@@ -200,6 +207,11 @@ describe('validateAutoDetect', () => {
     const result = validateAutoDetect(id)
     expect(result.valid).toBe(true)
     expect(result.type).toBe('objectid')
+  })
+
+  it('auto-detects XID before CUID and Nanoid', () => {
+    const id = xid({ secs: 1, machineId: new Uint8Array(3), processId: 0, counter: 0 })
+    expect(validateAutoDetect(id)).toMatchObject({ valid: true, type: 'xid' })
   })
 
   it('auto-detects CUID', () => {

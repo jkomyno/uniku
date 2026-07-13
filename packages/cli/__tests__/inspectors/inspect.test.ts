@@ -9,6 +9,7 @@ import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
+import { xid } from 'uniku/xid'
 import { inspectId } from '@/src/inspectors/inspect'
 
 describe('inspectId', () => {
@@ -74,6 +75,13 @@ describe('inspectId', () => {
     expect(result.timestamp_ms).toBeTypeOf('number')
     // random+counter tail: 8 bytes = 16 hex chars
     expect(result.random).toHaveLength(16)
+  })
+
+  it('inspects XID with second-precision timestamp and its tail bytes', () => {
+    const id = xid({ secs: 1_720_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
+    const result = inspectId(id, 'xid')
+    assertTrue(result !== null)
+    expect(result).toMatchObject({ type: 'xid', timestamp_ms: 1_720_000_000_000, random: '0000000000000000' })
   })
 
   it('inspects TSID with timestamp within a sane range and a random tail', () => {

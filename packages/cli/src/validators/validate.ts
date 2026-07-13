@@ -7,6 +7,7 @@ import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
+import { xid } from 'uniku/xid'
 import type { IdType, ValidationResult } from '@/src/domain/types'
 
 /**
@@ -30,12 +31,14 @@ export function validateAs(id: string, type: IdType): ValidationResult {
       return validateNanoid(id)
     case 'tsid':
       return validateTsid(id)
+    case 'xid':
+      return validateXid(id)
   }
 }
 
 /**
  * Auto-detect ID type and validate.
- * Detection order: UUID > TypeID > ULID > KSUID > ObjectID > TSID > CUID > Nanoid.
+ * Detection order: UUID > TypeID > ULID > KSUID > ObjectID > TSID > XID > CUID > Nanoid.
  *
  * ObjectID must be checked before CUID: CUID2's default validation regex
  * (`/^[a-z][0-9a-z]+$/`, default length 24) accepts any 24-character string
@@ -53,6 +56,10 @@ export function validateAs(id: string, type: IdType): ValidationResult {
  * length ceiling) - only checking TSID first actually prevents it. Nanoid's
  * fallback check (last, catch-all, no length constraint) must also come
  * after TSID's check for the same reason.
+ *
+ * XID must be checked before CUID2 and Nanoid: its lowercase base32hex
+ * alphabet and 20-character length satisfy both broader validators, but its
+ * canonical final character (0 or g) identifies the stricter XID format.
  */
 export function validateAutoDetect(id: string): ValidationResult {
   // 1. UUID (36 chars, 8-4-4-4-12 format with hyphens)
@@ -88,12 +95,17 @@ export function validateAutoDetect(id: string): ValidationResult {
     return { id, valid: true, type: 'tsid' }
   }
 
-  // 7. CUID (starts with letter, Base36)
+  // 7. XID (20 chars, lowercase Base32hex) - must precede CUID2/Nanoid
+  if (xid.isValid(id)) {
+    return { id, valid: true, type: 'xid' }
+  }
+
+  // 8. CUID (starts with letter, Base36)
   if (cuidv2.isValid(id)) {
     return { id, valid: true, type: 'cuid' }
   }
 
-  // 8. Nanoid (fallback: URL-safe A-Za-z0-9_- and length 1-256)
+  // 9. Nanoid (fallback: URL-safe A-Za-z0-9_- and length 1-256)
   if (nanoid.isValid(id)) {
     return { id, valid: true, type: 'nanoid' }
   }
@@ -137,6 +149,13 @@ function validateObjectid(id: string): ValidationResult {
     return { id, valid: true, type: 'objectid' }
   }
   return { id, valid: false, type: 'objectid', error: 'invalid ObjectID format' }
+}
+
+function validateXid(id: string): ValidationResult {
+  if (xid.isValid(id)) {
+    return { id, valid: true, type: 'xid' }
+  }
+  return { id, valid: false, type: 'xid', error: 'invalid XID format' }
 }
 
 function validateCuid(id: string): ValidationResult {

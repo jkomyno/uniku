@@ -12,6 +12,7 @@ import { generateTsid } from '@/src/generators/tsid'
 import { generateTypeid } from '@/src/generators/typeid'
 import { generateUlid } from '@/src/generators/ulid'
 import { generateUuid } from '@/src/generators/uuid'
+import { generateXid } from '@/src/generators/xid'
 import { idsOutput, OutputService } from '@/src/services/OutputService'
 
 // ── Common flags ────────────────────────────────────────────────────
@@ -255,6 +256,35 @@ const objectidSubcommand = Command.make(
   ]),
 )
 
+// ── XID subcommand ──────────────────────────────────────────────────
+
+const xidTimestampFlag = Flag.string('timestamp').pipe(
+  Flag.withDescription('Unix timestamp in seconds (or "now")'),
+  Flag.optional,
+)
+
+const xidSubcommand = Command.make(
+  'xid',
+  {
+    count: countFlag,
+    json: jsonFlag,
+    timestamp: xidTimestampFlag,
+  },
+  Effect.fn('cli.generate.xid')(function* ({ count, json, timestamp: timestampOpt }) {
+    const output = yield* OutputService
+    const timestampInput = Option.getOrUndefined(timestampOpt)
+    const timestamp = timestampInput !== undefined ? yield* parseTimestampSecs(timestampInput) : undefined
+    const ids = yield* generateXid({ count, timestamp })
+    yield* output.write(idsOutput(ids), { json })
+  }),
+).pipe(
+  Command.withDescription('Generate XIDs'),
+  Command.withExamples([
+    { command: 'uniku xid -n 5 --json', description: 'Generate 5 XIDs as a JSON array' },
+    { command: 'uniku xid --timestamp 1720000000', description: 'Generate an XID for a fixed Unix timestamp (s)' },
+  ]),
+)
+
 // ── TSID subcommand ─────────────────────────────────────────────────
 
 const tsidTimestampFlag = Flag.string('timestamp').pipe(
@@ -324,6 +354,7 @@ export const generateCommand = Command.make('generate').pipe(
     cuidSubcommand,
     ksuidSubcommand,
     objectidSubcommand,
+    xidSubcommand,
     tsidSubcommand,
   ]),
   Command.withExamples([
@@ -345,6 +376,7 @@ export const nanoidShorthand = nanoidSubcommand
 export const cuidShorthand = cuidSubcommand
 export const ksuidShorthand = ksuidSubcommand
 export const objectidShorthand = objectidSubcommand
+export const xidShorthand = xidSubcommand
 export const tsidShorthand = tsidSubcommand
 
 // ── Helpers ─────────────────────────────────────────────────────────
