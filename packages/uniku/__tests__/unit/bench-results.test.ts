@@ -1,9 +1,11 @@
 import {
+  aggregateBenchResults,
   type BenchResults,
   collectBenchGroups,
   collectBenchmarks,
   compareBenchResults,
   isOwnedBenchmark,
+  mergeBenchmarkHistory,
 } from '../../scripts/bench-results'
 
 function bench(name: string, hz: number, rme: number) {
@@ -113,6 +115,53 @@ describe('benchmark results helpers', () => {
 
     expect(result.hasRegression).toBe(true)
     expect(result.rows[0]).toMatchObject({ change: -0.3, status: 'regression', owned: true })
+  })
+
+  it('aggregates repeated benchmark runs by their median throughput and RME', () => {
+    const result = aggregateBenchResults([withSingleBench(100, 1), withSingleBench(300, 3), withSingleBench(200, 2)])
+
+    const benchmark = collectBenchmarks(result).get('__tests__/bench/id.bench.ts > ID Generation > uuidv4')
+    expect(benchmark).toMatchObject({
+      hz: 200,
+      rme: 2,
+    })
+    expect(benchmark?.withinActionRme).toBeCloseTo(145.2948)
+    expect(result.history).toHaveLength(3)
+  })
+
+  it('rejects repetitions with different benchmark matrices', () => {
+    const changedMatrix = withSingleBench(300, 3)
+    changedMatrix.files[0].groups[0].benchmarks.push(bench('uuidv7', 200, 2))
+
+    expect(() => aggregateBenchResults([withSingleBench(100, 1), changedMatrix])).toThrow('Benchmark matrix mismatch')
+  })
+
+  it('keeps a bounded action-level history when adding an aggregate run', () => {
+    const firstAction = aggregateBenchResults([withSingleBench(100, 1), withSingleBench(200, 2)])
+    const current = aggregateBenchResults([withSingleBench(300, 3), withSingleBench(400, 4)])
+    const baseline = mergeBenchmarkHistory(undefined, firstAction, 3)
+
+    const result = mergeBenchmarkHistory(baseline, current, 3)
+
+    expect(result.history).toHaveLength(2)
+    expect(result.history?.map((snapshot) => snapshot.files[0].groups[0].benchmarks[0].hz)).toEqual([150, 350])
+    const benchmark = collectBenchmarks(result).get('__tests__/bench/id.bench.ts > ID Generation > uuidv4')
+    expect(benchmark).toMatchObject({
+      hz: 250,
+    })
+    expect(benchmark?.crossActionRme).toBeCloseTo(116.23584)
+  })
+
+  it('uses cross-action dispersion when deciding whether a benchmark changed', () => {
+    const baseline = withSingleBench(1_000, 1)
+    baseline.files[0].groups[0].benchmarks[0].crossActionRme = 30
+
+    const result = compareBenchResults(baseline, withSingleBench(800, 1), {
+      regressionThreshold: 0.1,
+      improvementThreshold: 0.1,
+    })
+
+    expect(result.rows[0]).toMatchObject({ combinedRme: 0.31, status: 'neutral' })
   })
 })
 

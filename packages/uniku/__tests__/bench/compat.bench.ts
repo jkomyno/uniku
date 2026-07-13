@@ -20,14 +20,14 @@ import { uuidv7 } from '@/src/uuid/v7'
 import { xid } from '@/src/xid/xid'
 
 // Benchmark options for stable, reproducible results.
-// A 1000ms measurement window with a 500ms / 50-iteration warmup (matching
-// id.bench.ts) collects enough samples to tighten RME on the noisier
-// cross-package competitor benchmarks, whose short-window variance was the main
-// source of misleading swings in the comparison report.
+// Three CI repetitions use this 2000ms / 1000ms / 100-iteration budget. The
+// longer individual window reduces in-process noise; the action-level median
+// keeps a single shared-runner excursion out of the comparison baseline.
 const benchOptions = {
-  time: 1000,
-  warmupTime: 500,
-  warmupIterations: 50,
+  iterations: 100,
+  time: 2000,
+  warmupTime: 1000,
+  warmupIterations: 100,
 }
 
 // ulid npm (v2.3.0) has no isValid(), use regex

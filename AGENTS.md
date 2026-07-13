@@ -13,6 +13,7 @@ pnpm test:unit      # Unit tests only
 pnpm typecheck      # TypeScript type checking
 pnpm lint:fix       # Fix lint issues
 pnpm bench:summary  # Run benchmarks to compare uniku to other npm packages, displays summary table
+pnpm --filter uniku bench:cold-start # Report fresh-Node-process cold-start timing for every generator
 pnpm bundle:summary # Run bundle size analysis, displays summary table
 pnpm changeset      # Create changeset for versioning
 ```
@@ -60,6 +61,7 @@ Repo-local skills live under `.agents/skills`:
 - Unit tests validate generator output and edge cases
 - Integration tests cross-validate with npm reference packages
 - E2E tests run in Cloudflare Workers environment
+- CI compatibility benchmarks run three repetitions per action, aggregate per-row medians, and retain rolling action-level baselines; cold starts stay separate from warmed throughput.
 
 ## Package Guidelines
 
