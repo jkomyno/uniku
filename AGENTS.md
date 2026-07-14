@@ -21,6 +21,7 @@ pnpm changeset      # Create changeset for versioning
 ## Architecture
 
 - **Monorepo**: pnpm workspaces + Turborepo
+- **Toolchain**: `mise.toml` is the canonical Node.js version pin; shared CI setup reads it, while compatibility jobs may switch runtimes after dependency installation
 - **Published packages**: `packages/uniku` (ID generators) and `packages/cli` (the `uniku` command)
 - **E2E workspace**: Cloudflare Workers tests live under `packages/uniku/__tests__/e2e/runtimes/cloudflare`
 - **Entry points**: Separate library imports per generator (`uniku/uuid/v7`, `uniku/ulid`, etc.) — no barrel exports

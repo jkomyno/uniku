@@ -1,12 +1,6 @@
 name: 'Setup Node.js'
 description: 'Setup Node.js and pnpm with caching'
 
-inputs:
-  node-version:
-    description: 'Node.js version (leave empty to use .nvmrc)'
-    required: false
-    default: ''
-
 runs:
   using: 'composite'
   steps:
@@ -21,13 +15,26 @@ runs:
         restore-keys: |
           ${{ runner.os }}-turbo-
 
+    - name: Setup mise
+      uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+      with:
+        add_shims_to_path: false
+        cache: false
+        install: false
+
+    - name: Resolve Node.js version
+      id: node-version
+      shell: bash
+      run: |
+        node_version="$(mise config get tools.node)"
+        echo "node-version=$node_version" >> "$GITHUB_OUTPUT"
+
     - name: Setup Node.js
       uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
       with:
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
-        node-version: ${{ inputs.node-version || '' }}
-        node-version-file: ${{ inputs.node-version && '' || '.nvmrc' }}
+        node-version: ${{ steps.node-version.outputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
 
     - name: Install dependencies
