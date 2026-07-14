@@ -63,8 +63,8 @@ function Home() {
           </article>
           <article>
             <Gauge aria-hidden="true" size={20} />
-            <h2>Fast and tiny</h2>
-            <p>Up to 85x faster than individual npm alternatives, with direct entry points that keep each import focused.</p>
+            <h2>Measured and focused</h2>
+            <p>Benchmarked against individual npm alternatives, with direct entry points measured for bundle impact.</p>
           </article>
           <article>
             <Box aria-hidden="true" size={20} />

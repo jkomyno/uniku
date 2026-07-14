@@ -45,10 +45,10 @@ bun add -g @uniku/cli
 Installs the current standalone binary without requiring Node.js:
 
 ```sh
-mise use -g github:jkomyno/uniku@uniku-cli-v0.5.1
+mise use -g github:jkomyno/uniku
 ```
 
-Check the [GitHub releases page](https://github.com/jkomyno/uniku/releases) for the current tag before pinning it in CI.
+Add an explicit version from the [GitHub releases page](https://github.com/jkomyno/uniku/releases) when a project or CI job must stay pinned.
 
   </CodeBlockTab>
 </CodeBlockTabs>
@@ -58,6 +58,14 @@ A standalone binary (no Node.js required) is also available for macOS and Linux:
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | sh
 ```
+
+The installer resolves the latest CLI release automatically. Set `UNIKU_INSTALL_DIR` to choose a destination:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jkomyno/uniku/main/install.sh | UNIKU_INSTALL_DIR="$HOME/.local/bin" sh
+```
+
+For an exact pin, set `UNIKU_VERSION` to a version from the [GitHub releases page](https://github.com/jkomyno/uniku/releases), without the `uniku-cli-v` tag prefix.
 
 ## Generate
 

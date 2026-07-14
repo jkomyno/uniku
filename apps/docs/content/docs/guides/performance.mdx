@@ -4,27 +4,29 @@ description: Where uniku beats npm alternatives, where it does not, and what eac
 icon: Gauge
 ---
 
-The numbers below come from the repository's own benchmark and bundle-size tooling, reproduced faithfully including the rows where an npm alternative wins. They run in CI on every push to `main` (GitHub Actions, `ubuntu-latest`), so they reflect ordinary Node.js execution rather than a tuned environment. See the [README](https://github.com/jkomyno/uniku/blob/main/README.md#performance) for the source table.
+The numbers below come from the repository's own benchmark and bundle-size tooling, including the rows where an npm alternative wins. Benchmarks run in CI on every push to `main` (GitHub Actions, `ubuntu-latest`), so they reflect ordinary Node.js execution rather than a tuned environment.
 
 ## Generation speed
 
 Each row compares uniku's generator against the npm package it targets: `uuid` for UUID v4/v7, `ulid`, `@paralleldrive/cuid2`, `@owpz/ksuid`, `bson` for ObjectID, `nexid` for XID, `tsid-ts`, `nanoid`, and `typeid-js`.
 
+This snapshot comes from the rolling `main` baseline updated on July 14, 2026. Treat the ratios as directional: shared-runner noise and dependency updates can move them. The [live baseline](https://raw.githubusercontent.com/jkomyno/uniku/gh-benchmarks/baseline.json) is the current source of truth.
+
 | Generator | uniku vs npm |
 | --- | ---: |
-| ULID | 85× faster |
-| CUID2 | 8× faster |
-| TypeID | 2.6× faster |
-| TSID | 1.7× faster |
-| KSUID | 1.5× faster |
-| ObjectID | 1.1× faster |
-| XID | 1.3× faster |
-| UUID v7 | 1.1× faster |
-| Nanoid | 1.9× faster |
-| Nanoid (10 chars) | 1.3× faster |
-| UUID v4 | npm is 1.1× faster |
+| ULID | 116× faster |
+| UUID v7 | 6.4× faster |
+| CUID2 | 6.2× faster |
+| TypeID | 3.2× faster |
+| TSID | 2.2× faster |
+| KSUID | 1.6× faster |
+| UUID v4 | 1.2× faster |
+| ObjectID | 1.2× faster |
+| Nanoid | Roughly equal |
+| Nanoid (10 chars) | npm is 1.1× faster |
+| XID | npm is 1.7× faster |
 
-The [compatibility benchmark](https://github.com/jkomyno/uniku/blob/main/packages/uniku/__tests__/bench/compat.bench.ts) runs each implementation in a fresh process. CI balances both launch orders across four repetitions and reports the per-row median, keeping warmed runtime state and one noisy run from deciding the comparison.
+The [compatibility benchmark](https://github.com/jkomyno/uniku/blob/main/packages/uniku/__tests__/bench/compat.bench.ts) runs each implementation in a fresh process. CI balances both launch orders across four repetitions and reports the per-row median. The rolling action baseline keeps warmed runtime state and one noisy run from deciding the comparison.
 
 ## Bundle size
 
@@ -32,18 +34,19 @@ Every entry point is independently importable and tree-shakeable: importing `uni
 
 | Import | Minified + gzipped |
 | --- | ---: |
-| `uniku/ulid` | ~1.8 KB |
-| `uniku/typeid` | ~1.6 KB |
-| `uniku/uuid/v7` | ~1.4 KB |
-| `uniku/tsid` | ~1.4 KB |
+| `uniku/ulid` | ~1.9 KB |
+| `uniku/typeid` | ~2.7 KB |
+| `uniku/uuid/v7` | ~1.6 KB |
+| `uniku/tsid` | ~1.6 KB |
 | `uniku/ksuid` | ~1.3 KB |
-| `uniku/objectid` | ~1.3 KB |
+| `uniku/objectid` | ~1.4 KB |
 | `uniku/xid` | ~1.9 KB |
 | `uniku/nanoid` | ~1.2 KB |
-| `uniku/uuid/v4` | ~1.1 KB |
-| `uniku/cuid/v2` | ~992 B |
-| `uniku/cuid2` | ~1007 B |
-| `uniku/generators` | ~98 B |
+| `uniku/uuid/v4` | ~1.2 KB |
+| `uniku/cuid/v2` | ~1015 B |
+| `uniku/cuid2` | ~1.0 KB |
+| `uniku/errors` | ~184 B |
+| `uniku/generators` | ~101 B |
 
 The CUID v2 entry point imports SHA3-512 from `@noble/hashes`, uniku's one runtime dependency; the size above excludes that external dependency's own weight.
 

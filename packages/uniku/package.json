@@ -14,7 +14,7 @@
     "url": "git+https://github.com/jkomyno/uniku.git",
     "directory": "packages/uniku"
   },
-  "homepage": "https://github.com/jkomyno/uniku#readme",
+  "homepage": "https://jkomyno.github.io/uniku/",
   "bugs": {
     "url": "https://github.com/jkomyno/uniku/issues"
   },
