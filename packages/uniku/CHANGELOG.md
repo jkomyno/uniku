@@ -1,5 +1,11 @@
 # uniku
 
+## 0.4.1
+
+### Patch Changes
+
+- d50c21d: Speed up default Nanoid and XID generation with bounded encoded-character caching.
+
 ## 0.4.0
 
 ### Minor Changes

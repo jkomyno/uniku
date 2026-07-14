@@ -1,5 +1,12 @@
 # @uniku/cli
 
+## 0.6.1
+
+### Patch Changes
+
+- Updated dependencies [d50c21d]
+  - uniku@0.4.1
+
 ## 0.6.0
 
 ### Minor Changes
