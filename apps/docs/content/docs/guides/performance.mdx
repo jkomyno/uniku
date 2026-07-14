@@ -18,10 +18,10 @@ Each row compares uniku's generator against the npm package it targets: `uuid` f
 | TSID | 1.7× faster |
 | KSUID | 1.5× faster |
 | ObjectID | 1.1× faster |
-| XID | 1.4× faster |
+| XID | 1.3× faster |
 | UUID v7 | 1.1× faster |
-| Nanoid | 2× faster |
-| Nanoid (10 chars) | 1.6× faster |
+| Nanoid | 1.9× faster |
+| Nanoid (10 chars) | 1.3× faster |
 | UUID v4 | npm is 1.1× faster |
 
 The [compatibility benchmark](https://github.com/jkomyno/uniku/blob/main/packages/uniku/__tests__/bench/compat.bench.ts) runs each implementation in a fresh process. CI balances both launch orders across four repetitions and reports the per-row median, keeping warmed runtime state and one noisy run from deciding the comparison.
