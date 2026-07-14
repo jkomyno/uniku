@@ -26,10 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
-      published: ${{ steps.changesets.outputs.published }}
       cli-version: ${{ steps.cli-version.outputs.version }}
     # Run on manual dispatch OR when CI succeeded
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -129,7 +128,7 @@ jobs:
 
       - name: Generate combined checksums
         working-directory: release-assets
-        run: cat *.sha256 > CHECKSUMS.sha256
+        run: cat -- *.sha256 > CHECKSUMS.sha256
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
