@@ -7,32 +7,34 @@ const DEFAULT_SIZE = 21
 const MAX_SIZE = 2048
 const NANOID_REGEX = /^[A-Za-z0-9_-]+$/
 
-// Keep Nanoid's private pool for its default hot path. It consumes `size`
-// bytes directly without the shared helper's UUID/CUID2-oriented branches.
+// Keep Nanoid's private pool for its default hot path. Translate random bytes
+// into URL-safe ASCII once per refill, then serve IDs as sequential substrings.
 const POOL_SIZE_MULTIPLIER = 128
 const MAX_POOL_SIZE = 65_536
-let pool: Uint8Array | undefined
+const ASCII_DECODER = new TextDecoder()
+let poolBytes: Uint8Array | undefined
+let characterPool = ''
 let poolOffset = 0
 
 function fillPool(bytes: number): void {
   const size = Math.min(bytes * POOL_SIZE_MULTIPLIER, MAX_POOL_SIZE)
-  if (!pool || pool.length < size) {
-    pool = new Uint8Array(size)
-    crypto.getRandomValues(pool)
-    poolOffset = 0
-  } else if (poolOffset + bytes > pool.length) {
-    crypto.getRandomValues(pool)
+  if (!poolBytes || poolBytes.length < size) {
+    poolBytes = new Uint8Array(size)
+  }
+  if (poolOffset + bytes > characterPool.length) {
+    crypto.getRandomValues(poolBytes)
+    for (let i = 0; i < poolBytes.length; i++) {
+      poolBytes[i] = URL_ALPHABET.charCodeAt(poolBytes[i] & 63)
+    }
+    characterPool = ASCII_DECODER.decode(poolBytes)
     poolOffset = 0
   }
-  poolOffset += bytes
 }
 
 function defaultAlphabetFromPool(size: number): string {
   fillPool(size)
-  let id = ''
-  for (let i = poolOffset - size; i < poolOffset; i++) {
-    id += URL_ALPHABET[pool![i] & 63]
-  }
+  const id = characterPool.substring(poolOffset, poolOffset + size)
+  poolOffset += size
   return id
 }
 

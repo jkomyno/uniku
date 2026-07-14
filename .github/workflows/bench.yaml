@@ -49,9 +49,11 @@ jobs:
       - name: Run benchmarks
         run: |
           mkdir -p "$RUNNER_TEMP/bench-runs"
-          for iteration in 1 2 3; do
-            pnpm bench:compat
-            cp bench-results.json "$RUNNER_TEMP/bench-runs/$iteration.json"
+          orders=(uniku-first reference-first uniku-first reference-first)
+          for iteration in "${!orders[@]}"; do
+            UNIKU_BENCH_ORDER="${orders[$iteration]}" pnpm bench:compat
+            run_number=$((iteration + 1))
+            cp bench-results.json "$RUNNER_TEMP/bench-runs/$run_number.json"
           done
           bun scripts/bench-aggregate.ts bench-results.json "$RUNNER_TEMP"/bench-runs/*.json
         working-directory: packages/uniku
@@ -171,9 +173,11 @@ jobs:
       - name: Run benchmarks
         run: |
           mkdir -p "$RUNNER_TEMP/bench-runs"
-          for iteration in 1 2 3; do
-            pnpm bench:compat
-            cp bench-results.json "$RUNNER_TEMP/bench-runs/$iteration.json"
+          orders=(uniku-first reference-first uniku-first reference-first)
+          for iteration in "${!orders[@]}"; do
+            UNIKU_BENCH_ORDER="${orders[$iteration]}" pnpm bench:compat
+            run_number=$((iteration + 1))
+            cp bench-results.json "$RUNNER_TEMP/bench-runs/$run_number.json"
           done
           bun scripts/bench-aggregate.ts bench-results.json "$RUNNER_TEMP"/bench-runs/*.json
         working-directory: packages/uniku

@@ -22,7 +22,9 @@ describe('xid', () => {
   })
 
   it('generates a canonical lowercase base32hex string', () => {
-    expect(xid()).toMatch(/^[0-9a-v]{19}[0g]$/)
+    const id = xid()
+    expect(id).toMatch(/^[0-9a-v]{19}[0g]$/)
+    expect(xid.fromBytes(xid.toBytes(id))).toBe(id)
   })
 
   it('uses the rs/xid known-answer vector', () => {

@@ -61,7 +61,7 @@ Repo-local skills live under `.agents/skills`:
 - Unit tests validate generator output and edge cases
 - Integration tests cross-validate with npm reference packages
 - E2E tests run in Cloudflare Workers environment
-- CI compatibility benchmarks run three repetitions per action, aggregate per-row medians, and retain rolling action-level baselines; cold starts stay separate from warmed throughput.
+- CI compatibility benchmarks run each implementation in a fresh process, alternate balanced launch orders across four repetitions, aggregate per-row medians, and retain rolling action-level baselines; cold starts stay separate from warmed throughput.
 
 ## Package Guidelines
 

@@ -24,7 +24,7 @@
     },
     "bench:compat": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "__tests__/bench/**"],
+      "inputs": ["src/**", "__tests__/bench/**", "scripts/bench-compat.ts", "scripts/bench-results.ts"],
       "outputs": ["bench-results.json"]
     },
     "bench:summary": {

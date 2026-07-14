@@ -1,8 +1,11 @@
 import { BufferError, ParseError } from '../errors'
 
 const ENCODING = '0123456789abcdefghijklmnopqrstuv'
+const ENCODING_CODES = Uint8Array.from(ENCODING, (character) => character.charCodeAt(0))
 const XID_BYTES = 12
 const XID_LENGTH = 20
+const ENCODED = new Array<number>(XID_LENGTH)
+const COUNTER_SUFFIX = new Array<number>(6)
 
 const DECODING = new Uint8Array(65536)
 DECODING.fill(255)
@@ -19,28 +22,41 @@ export function encodeBase32Hex(bytes: Uint8Array): string {
     )
   }
 
-  return (
-    ENCODING[bytes[0] >> 3] +
-    ENCODING[((bytes[0] << 2) | (bytes[1] >> 6)) & 0x1f] +
-    ENCODING[(bytes[1] >> 1) & 0x1f] +
-    ENCODING[((bytes[1] << 4) | (bytes[2] >> 4)) & 0x1f] +
-    ENCODING[((bytes[2] << 1) | (bytes[3] >> 7)) & 0x1f] +
-    ENCODING[(bytes[3] >> 2) & 0x1f] +
-    ENCODING[((bytes[3] << 3) | (bytes[4] >> 5)) & 0x1f] +
-    ENCODING[bytes[4] & 0x1f] +
-    ENCODING[bytes[5] >> 3] +
-    ENCODING[((bytes[5] << 2) | (bytes[6] >> 6)) & 0x1f] +
-    ENCODING[(bytes[6] >> 1) & 0x1f] +
-    ENCODING[((bytes[6] << 4) | (bytes[7] >> 4)) & 0x1f] +
-    ENCODING[((bytes[7] << 1) | (bytes[8] >> 7)) & 0x1f] +
-    ENCODING[(bytes[8] >> 2) & 0x1f] +
-    ENCODING[((bytes[8] << 3) | (bytes[9] >> 5)) & 0x1f] +
-    ENCODING[bytes[9] & 0x1f] +
-    ENCODING[bytes[10] >> 3] +
-    ENCODING[((bytes[10] << 2) | (bytes[11] >> 6)) & 0x1f] +
-    ENCODING[(bytes[11] >> 1) & 0x1f] +
-    ENCODING[(bytes[11] << 4) & 0x1f]
-  )
+  ENCODED[0] = ENCODING_CODES[bytes[0] >> 3]
+  ENCODED[1] = ENCODING_CODES[((bytes[0] << 2) | (bytes[1] >> 6)) & 0x1f]
+  ENCODED[2] = ENCODING_CODES[(bytes[1] >> 1) & 0x1f]
+  ENCODED[3] = ENCODING_CODES[((bytes[1] << 4) | (bytes[2] >> 4)) & 0x1f]
+  ENCODED[4] = ENCODING_CODES[((bytes[2] << 1) | (bytes[3] >> 7)) & 0x1f]
+  ENCODED[5] = ENCODING_CODES[(bytes[3] >> 2) & 0x1f]
+  ENCODED[6] = ENCODING_CODES[((bytes[3] << 3) | (bytes[4] >> 5)) & 0x1f]
+  ENCODED[7] = ENCODING_CODES[bytes[4] & 0x1f]
+  ENCODED[8] = ENCODING_CODES[bytes[5] >> 3]
+  ENCODED[9] = ENCODING_CODES[((bytes[5] << 2) | (bytes[6] >> 6)) & 0x1f]
+  ENCODED[10] = ENCODING_CODES[(bytes[6] >> 1) & 0x1f]
+  ENCODED[11] = ENCODING_CODES[((bytes[6] << 4) | (bytes[7] >> 4)) & 0x1f]
+  ENCODED[12] = ENCODING_CODES[((bytes[7] << 1) | (bytes[8] >> 7)) & 0x1f]
+  ENCODED[13] = ENCODING_CODES[(bytes[8] >> 2) & 0x1f]
+  ENCODED[14] = ENCODING_CODES[((bytes[8] << 3) | (bytes[9] >> 5)) & 0x1f]
+  ENCODED[15] = ENCODING_CODES[bytes[9] & 0x1f]
+  ENCODED[16] = ENCODING_CODES[bytes[10] >> 3]
+  ENCODED[17] = ENCODING_CODES[((bytes[10] << 2) | (bytes[11] >> 6)) & 0x1f]
+  ENCODED[18] = ENCODING_CODES[(bytes[11] >> 1) & 0x1f]
+  ENCODED[19] = ENCODING_CODES[(bytes[11] << 4) & 0x1f]
+  return String.fromCharCode(...ENCODED)
+}
+
+/** Encode the six XID characters affected by the 24-bit counter. */
+export function encodeCounterSuffix(lastIdentityByte: number, counter: number): string {
+  const high = counter >>> 16
+  const middle = (counter >>> 8) & 0xff
+  const low = counter & 0xff
+  COUNTER_SUFFIX[0] = ENCODING_CODES[((lastIdentityByte << 3) | (high >> 5)) & 0x1f]
+  COUNTER_SUFFIX[1] = ENCODING_CODES[high & 0x1f]
+  COUNTER_SUFFIX[2] = ENCODING_CODES[middle >> 3]
+  COUNTER_SUFFIX[3] = ENCODING_CODES[((middle << 2) | (low >> 6)) & 0x1f]
+  COUNTER_SUFFIX[4] = ENCODING_CODES[(low >> 1) & 0x1f]
+  COUNTER_SUFFIX[5] = ENCODING_CODES[(low << 4) & 0x1f]
+  return String.fromCharCode(...COUNTER_SUFFIX)
 }
 
 /** Decode a canonical lowercase base32hex XID string to its 12 bytes. */
