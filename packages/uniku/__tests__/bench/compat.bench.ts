@@ -7,7 +7,7 @@ import { TSID as npmTsid } from 'tsid-ts'
 import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-js'
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
-import { bench, describe } from 'vitest'
+import { describe, bench as registerBench } from 'vitest'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
@@ -20,14 +20,26 @@ import { uuidv7 } from '@/src/uuid/v7'
 import { xid } from '@/src/xid/xid'
 
 // Benchmark options for stable, reproducible results.
-// Three CI repetitions use this 2000ms / 1000ms / 100-iteration budget. The
-// longer individual window reduces in-process noise; the action-level median
-// keeps a single shared-runner excursion out of the comparison baseline.
+// Four CI repetitions use balanced launch orders and this 1500ms / 750ms /
+// 100-iteration budget. The total action-level measurement time stays stable
+// while each implementation runs in a fresh process.
 const benchOptions = {
   iterations: 100,
-  time: 2000,
-  warmupTime: 1000,
+  time: 1500,
+  warmupTime: 750,
   warmupIterations: 100,
+}
+
+const benchmarkImplementation = process.env.UNIKU_BENCH_IMPLEMENTATION ?? 'all'
+if (!['all', 'uniku', 'reference'].includes(benchmarkImplementation)) {
+  throw new Error('UNIKU_BENCH_IMPLEMENTATION must be all, uniku, or reference')
+}
+
+function bench(name: string, task: () => void, options: typeof benchOptions): void {
+  const selected = name === 'uniku' ? 'uniku' : 'reference'
+  if (benchmarkImplementation === 'all' || benchmarkImplementation === selected) {
+    registerBench(name, task, options)
+  }
 }
 
 // ulid npm (v2.3.0) has no isValid(), use regex
