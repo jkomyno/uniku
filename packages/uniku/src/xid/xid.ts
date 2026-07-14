@@ -2,7 +2,7 @@ import { writeTimestamp32 } from '../common/bytes'
 import { randomBytes, randomUint32 } from '../common/random'
 import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
-import { decodeBase32Hex, encodeBase32Hex } from './base32hex'
+import { decodeBase32Hex, encodeBase32Hex, encodeCounterSuffix } from './base32hex'
 
 const XID_BYTES = 12
 const MACHINE_ID_BYTES = 3
@@ -10,6 +10,9 @@ const MAX_SECS = 0xffffffff
 const MAX_PROCESS_ID = 0xffff
 const MAX_COUNTER = 0xffffff
 const XID_REGEX = /^[0-9a-v]{19}[0g]$/
+const stringBuffer = new Uint8Array(XID_BYTES)
+let cachedPrefixSecs = -1
+let cachedPrefix = ''
 
 export type XidOptions = {
   /** First three bytes used as the XID machine identity. */
@@ -96,6 +99,18 @@ function validateOptions(options: XidOptions): void {
 function xidFn(options?: XidOptions, buf?: undefined, offset?: number): string
 function xidFn<TBuf extends Uint8Array = Uint8Array>(options: XidOptions | undefined, buf: TBuf, offset?: number): TBuf
 function xidFn<TBuf extends Uint8Array = Uint8Array>(options?: XidOptions, buf?: TBuf, offset = 0): string | TBuf {
+  if (options === undefined && buf === undefined) {
+    initializeIdentity()
+    const secs = Math.floor(Date.now() / 1000)
+    const counter = nextCounter()
+    if (secs !== cachedPrefixSecs) {
+      writeXidBytesUnchecked(secs, state.machineId!, state.processId!, counter, stringBuffer, 0)
+      cachedPrefix = encodeBase32Hex(stringBuffer).slice(0, 14)
+      cachedPrefixSecs = secs
+    }
+    return cachedPrefix + encodeCounterSuffix(state.processId! & 0xff, counter)
+  }
+
   if (options !== undefined) validateOptions(options)
 
   const secs = options?.secs ?? Math.floor(Date.now() / 1000)
@@ -117,9 +132,8 @@ function xidFn<TBuf extends Uint8Array = Uint8Array>(options?: XidOptions, buf?:
     return buf
   }
 
-  const bytes = new Uint8Array(XID_BYTES)
-  writeXidBytesUnchecked(secs, machineId, processId, counter, bytes, 0)
-  return encodeBase32Hex(bytes)
+  writeXidBytesUnchecked(secs, machineId, processId, counter, stringBuffer, 0)
+  return encodeBase32Hex(stringBuffer)
 }
 
 function toBytes(id: string): Uint8Array {
