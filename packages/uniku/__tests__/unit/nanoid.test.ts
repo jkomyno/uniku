@@ -13,6 +13,29 @@ describe('nanoid', () => {
     expect(id).toMatch(/^[A-Za-z0-9_-]+$/)
   })
 
+  it('maps and consumes pooled random bytes sequentially', async () => {
+    let nextByte = 0
+    const getRandomValues = vi.fn((bytes: Uint8Array): Uint8Array => {
+      for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = nextByte
+        nextByte = (nextByte + 1) & 0xff
+      }
+      return bytes
+    })
+    vi.stubGlobal('crypto', { getRandomValues })
+    vi.resetModules()
+
+    try {
+      const { nanoid: isolatedNanoid } = await import('@/src/nanoid/nanoid')
+
+      expect(isolatedNanoid(4)).toBe('ABCD')
+      expect(isolatedNanoid(4)).toBe('EFGH')
+      expect(getRandomValues).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('generates custom size with number argument', () => {
     expect(nanoid(10)).toHaveLength(10)
     expect(nanoid(50)).toHaveLength(50)
