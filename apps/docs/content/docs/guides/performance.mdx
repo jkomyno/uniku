@@ -18,13 +18,13 @@ Each row compares uniku's generator against the npm package it targets: `uuid` f
 | TSID | 1.7× faster |
 | KSUID | 1.5× faster |
 | ObjectID | 1.1× faster |
-| XID | See the current benchmark summary |
+| XID | 1.4× faster |
 | UUID v7 | 1.1× faster |
-| Nanoid | comparable speed |
-| Nanoid (10 chars) | npm is 1.1× faster |
+| Nanoid | 2× faster |
+| Nanoid (10 chars) | 1.6× faster |
 | UUID v4 | npm is 1.1× faster |
 
-uniku does not claim a uniform speedup. For UUID v4 and 10-character Nanoid, the npm original is marginally faster; those formats do little work, so there is not much room to gain by reimplementing them.
+The [compatibility benchmark](https://github.com/jkomyno/uniku/blob/main/packages/uniku/__tests__/bench/compat.bench.ts) runs each implementation in a fresh process. CI balances both launch orders across four repetitions and reports the per-row median, keeping warmed runtime state and one noisy run from deciding the comparison.
 
 ## Bundle size
 
@@ -38,8 +38,8 @@ Every entry point is independently importable and tree-shakeable: importing `uni
 | `uniku/tsid` | ~1.4 KB |
 | `uniku/ksuid` | ~1.3 KB |
 | `uniku/objectid` | ~1.3 KB |
-| `uniku/xid` | ~1.7 KB |
-| `uniku/nanoid` | ~1.1 KB |
+| `uniku/xid` | ~1.9 KB |
+| `uniku/nanoid` | ~1.2 KB |
 | `uniku/uuid/v4` | ~1.1 KB |
 | `uniku/cuid/v2` | ~992 B |
 | `uniku/cuid2` | ~1007 B |

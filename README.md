@@ -79,10 +79,10 @@ Benchmarks comparing `uniku` string ID generation with equivalent npm packages:
 | KSUID     | **1.5× faster** |
 | ObjectID  | **1.1× faster** |
 | TSID      | **1.7× faster** |
-| XID | See the current benchmark summary |
+| XID | **1.4× faster** |
 | UUID v7   | **1.1× faster**  |
-| Nanoid    | **~comparable speed** |
-| Nanoid (10 chars) | npm is 1.1× faster |
+| Nanoid    | **2× faster** |
+| Nanoid (10 chars) | **1.6× faster** |
 | TypeID    | **2.6× faster** |
 | UUID v4   | npm is 1.1× faster |
 
@@ -132,11 +132,11 @@ Only import what you use — each entry point is independently tree-shakeable:
 | `uniku/typeid` | ~1.6 KB |
 | `uniku/cuid/v2` | ~992 B* |
 | `uniku/cuid2` | ~1007 B* |
-| `uniku/nanoid` | ~1.1 KB |
+| `uniku/nanoid` | ~1.2 KB |
 | `uniku/ksuid` | ~1.3 KB |
 | `uniku/objectid` | ~1.3 KB |
 | `uniku/tsid` | ~1.4 KB |
-| `uniku/xid` | ~1.7 KB |
+| `uniku/xid` | ~1.9 KB |
 | `uniku/generators` | ~98 B |
 
 * The CUID2 entry point imports SHA3-512 from `@noble/hashes`; this table's entry-point size excludes that external dependency.
