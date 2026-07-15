@@ -1,5 +1,13 @@
 # @uniku/cli
 
+## 0.6.3
+
+### Patch Changes
+
+- c9afba0: Refresh the npm package READMEs to foreground benchmark performance and the full ten-strategy API shared by the library and CLI.
+- Updated dependencies [c9afba0]
+  - uniku@0.4.3
+
 ## 0.6.2
 
 ### Patch Changes

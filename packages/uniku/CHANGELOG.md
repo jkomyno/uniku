@@ -1,5 +1,11 @@
 # uniku
 
+## 0.4.3
+
+### Patch Changes
+
+- c9afba0: Refresh the npm package READMEs to foreground benchmark performance and the full ten-strategy API shared by the library and CLI.
+
 ## 0.4.2
 
 ### Patch Changes
