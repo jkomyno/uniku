@@ -1,0 +1,1 @@
+import{O as e}from"./dist-CPTUTek6.js";export{e as isSpecialLang};
