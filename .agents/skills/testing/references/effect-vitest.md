@@ -7,7 +7,7 @@ The `packages/cli` tests run on Effect v4 with `@effect/vitest` pinned to the sa
 - `packages/cli` must use the workspace catalog vitest (v4): `@effect/vitest`'s dist imports `@vitest/runner` directly, which pnpm resolves to the hoisted copy from the root catalog. A package-local older vitest splits the runner instances and every `layer(...)` block fails with "Vitest failed to find the current suite".
 - CLI test layers must deep-import `@effect/platform-bun/BunServices` — the package barrel pulls in `BunRedis`, which imports the `bun` builtin and crashes the Node-based vitest runner.
 
-Verify the v4 surface from `repos/effect-smol` before writing tests:
+Verify the v4 surface from `repos/effect` before writing tests:
 
 - `import { assert, describe, it, layer } from "@effect/vitest"`
 - `import { assertTrue, assertDefined, assertInstanceOf, assertSome, assertNone } from "@effect/vitest/utils"` — narrowing assertion functions (`asserts` signatures)
@@ -17,7 +17,7 @@ Verify the v4 surface from `repos/effect-smol` before writing tests:
 - `it.effect.each(...)`, `it.effect.skip(...)`, `it.effect.only(...)`, `it.effect.fails(...)`, `it.effect.prop(...)` for Effect tests.
 - `layer(TestLayer)("name", (it) => { ... })` or `it.layer(...)` for shared test layers.
 
-Do not use v3-only APIs such as `it.scoped` or `it.scopedLive` in migrated v4 tests unless the local v4 source exports them. When uncertain, check `repos/effect-smol/packages/vitest/src/index.ts` and `repos/effect-smol/packages/vitest/src/internal/internal.ts`.
+Do not use v3-only APIs such as `it.scoped` or `it.scopedLive` in migrated v4 tests unless the local v4 source exports them. When uncertain, check `repos/effect/packages/vitest/src/index.ts` and `repos/effect/packages/vitest/src/internal/internal.ts`.
 
 ```ts
 import { assert, describe, it } from '@effect/vitest'

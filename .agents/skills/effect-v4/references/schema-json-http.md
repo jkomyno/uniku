@@ -306,7 +306,7 @@ const program = Effect.gen(function* () {
 - Helper names: `schemaBodyJson` (JSON body), `schemaJson` (status + headers + body), `schemaNoBody`, `schemaHeaders`, `schemaBodyUrlParams` — all on `HttpClientResponse`.
 - `retryTransient` retries timeouts, transport errors, and transient statuses (408/429/500/502/503/504); decode (`SchemaError`) failures are never retried — they happen after the client pipeline.
 - Wrap client errors at the service boundary: `Effect.mapError((cause) => new MyServiceError({ cause }))`, with `cause: Schema.Defect()` in the error class.
-- In production services build this client once inside a `Context.Service` layer (see repos/effect-smol/ai-docs/src/50_http-client/10_basics.ts).
+- In production services build this client once inside a `Context.Service` layer (see repos/effect/ai-docs/src/50_http-client/10_basics.ts).
 
 ## Retry and timeout around validated calls
 

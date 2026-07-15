@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Typechecks every fenced ts/typescript code block in this skill against the
-// Effect version declared by the local repos/effect-smol checkout, so examples
-// stay honest while uniku's CLI is still on Effect v3.
+// Effect version declared by the local repos/effect checkout, so examples
+// stay honest as the upstream Effect v4 beta evolves.
 //
 // Usage:
 //   node check-examples.mjs              # checks SKILL.md + references/*.md
@@ -25,7 +25,7 @@ const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..', '..', '..')
 const sanitizeCachePart = (value) => value.replace(/[^A-Za-z0-9.-]/g, '_')
 const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'))
 
-const EFFECT_REPO = path.join(REPO_ROOT, 'repos', 'effect-smol')
+const EFFECT_REPO = path.join(REPO_ROOT, 'repos', 'effect')
 const effectPackage = readJson(path.join(EFFECT_REPO, 'packages', 'effect', 'package.json'))
 const effectRootPackage = readJson(path.join(EFFECT_REPO, 'package.json'))
 const effectVersion = effectPackage.version

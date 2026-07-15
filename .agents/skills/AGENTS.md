@@ -15,7 +15,7 @@ public package docs, release docs, or local source-reference clones.
 
 - Keep each `SKILL.md` short enough to load eagerly; move deep examples and
   long API catalogs into first-level `references/` files.
-- Route version-sensitive Effect v4 advice to `repos/effect-smol` before
+- Route version-sensitive Effect v4 advice to `repos/effect` before
   changing CLI migration code. Do not rely on public docs when they drift from
   the local source reference.
 - Skill guidance may describe internal agent workflow, but public docs and

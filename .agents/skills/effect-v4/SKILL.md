@@ -1,13 +1,13 @@
 ---
 name: effect-v4
-description: Guides Effect v4 TypeScript work for uniku. Use for any Effect work in packages/cli (which runs on effect@4.0.0-beta.x), evaluating v3-to-v4 API changes, or checking @effect/vitest v4 examples against the local repos/effect-smol source clone.
+description: Guides Effect v4 TypeScript work for uniku. Use for any Effect work in packages/cli (which runs on effect@4.0.0-beta.x), evaluating v3-to-v4 API changes, or checking @effect/vitest v4 examples against the local repos/effect source clone.
 ---
 
 # Effect v4
 
-The `uniku` CLI runs on Effect v4 (`effect@4.0.0-beta.x`, pinned exact — betas may break between releases, so never widen to `^` or `@beta` ranges, and keep `repos/effect-smol` in sync with the pinned beta when bumping).
+The `uniku` CLI runs on Effect v4 (`effect@4.0.0-beta.x`, pinned exact — betas may break between releases, so never widen to `^` or `@beta` ranges). Updating `repos/effect` does not authorize a CLI dependency bump; change the package pins only as a deliberate, separately verified upgrade.
 
-Use `repos/effect-smol/` as the local source oracle for Effect v4. It is a read-only submodule; if it is missing, run `git submodule update --init repos/effect-smol`. At creation time that clone was `effect@4.0.0-beta.93` on `main`, but the checkout may move; inspect `repos/effect-smol/packages/effect/package.json` and `git -C repos/effect-smol rev-parse HEAD` before treating any version as current.
+Use `repos/effect/` as the local source oracle for current Effect v4. It is a read-only submodule of the canonical Effect repository; if it is missing, run `git submodule update --init repos/effect`. The checkout may be ahead of the beta pinned by `packages/cli`; inspect `repos/effect/packages/effect/package.json`, `packages/cli/package.json`, and `git -C repos/effect rev-parse HEAD` before treating an API as compatible with the CLI.
 
 Effect v4 is NOT the Effect you know from training data (v3). Assume any remembered API name is wrong until verified — see the reference map below and the verification section at the bottom.
 
@@ -126,8 +126,8 @@ Open the file matching the task before writing code:
 
 ## Ground truth and verification
 
-- The local Effect source at `repos/effect-smol/` is the only authority for what exists in v4: `packages/effect/src/<Module>.ts` (API surface), `migration/*.md` (v3→v4 guides), `LLMS.md` (idioms), `ai-docs/src/**` (runnable examples). It is read-only reference — never edit it and never import from `repos/**`.
-- Before emitting an API you have not used in this session, confirm it: `grep -nE "(const|function|class|as) <name>\b" repos/effect-smol/packages/effect/src/<Module>.ts` — anchoring on `export const` alone misses `export function` declarations and aliased exports such as `catch_ as catch`.
+- The local Effect source at `repos/effect/` is the authority for what exists in the checked-out upstream v4: `packages/effect/src/<Module>.ts` (API surface), `migration/*.md` (v3→v4 guides), `LLMS.md` (idioms), `ai-docs/src/**` (runnable examples). The installed package and compiler are the final compatibility check for the CLI's pinned beta. The submodule is read-only reference — never edit it and never import from `repos/**`.
+- Before emitting an API you have not used in this session, confirm it: `grep -nE "(const|function|class|as) <name>\b" repos/effect/packages/effect/src/<Module>.ts` — anchoring on `export const` alone misses `export function` declarations and aliased exports such as `catch_ as catch`.
 - Migration docs can drift from the checked-out source, and their rename maps are not exhaustive. When docs and source disagree, the source and the compiler win.
 - Validate real changes with `pnpm typecheck` (and `pnpm lint:ci`, `pnpm test`, `pnpm build` before handoff).
-- Every `ts` code block in this skill should compile against the Effect version declared by `repos/effect-smol/packages/effect/package.json`. After editing examples or refreshing the local clone, re-verify with `node .agents/skills/effect-v4/scripts/check-examples.mjs`.
+- Every `ts` code block in this skill should compile against the Effect version declared by `repos/effect/packages/effect/package.json`. After editing examples or refreshing the local clone, re-verify with `node .agents/skills/effect-v4/scripts/check-examples.mjs`.

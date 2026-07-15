@@ -110,11 +110,11 @@ const program = Effect.gen(function* () {
 ```
 
 - Reusable schema values for config: `Config.Port` (int 1–65535), `Config.Boolean`, `Config.LogLevel`, `Config.Array(item, { separator? })`, `Config.Record(key, value, { separator?, keyValueSeparator? })` — the latter two also decode flat strings like `"a,b,c"` and `"k1=v1,k2=v2"`.
-- Schema v4 is a full rewrite; before using other Schema APIs read `repos/effect-smol/migration/schema.md`.
+- Schema v4 is a full rewrite; before using other Schema APIs read `repos/effect/migration/schema.md`.
 
 ### Trap: `withDefault` swallows malformed JSON config values
 
-`Config.withDefault` falls back whenever the failure consists **only of missing-data issues** (`MissingKey`, missing `AnyOf` members). After `Schema.fromJsonString`, a present-but-structurally-wrong value — a JSON document missing a required key, or a tagged union whose discriminant matches no member — can fail with those same issues, indistinguishable from "env var absent". Verify this behavior against `repos/effect-smol` and the compiler before relying on a default for structured config.
+`Config.withDefault` falls back whenever the failure consists **only of missing-data issues** (`MissingKey`, missing `AnyOf` members). After `Schema.fromJsonString`, a present-but-structurally-wrong value — a JSON document missing a required key, or a tagged union whose discriminant matches no member — can fail with those same issues, indistinguishable from "env var absent". Verify this behavior against `repos/effect` and the compiler before relying on a default for structured config.
 
 ```ts
 import { Config, Effect, Option, Schema } from 'effect'

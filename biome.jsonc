@@ -23,7 +23,7 @@
       "!apps/docs/src/routeTree.gen.ts",
       "!**/.turbo",
       "!public",
-      // Read-only source clone of effect-smol (git submodule) — never lint.
+      // Read-only source clone of Effect (git submodule) — never lint.
       "!repos",
       "!plans",
       // Local, gitignored Claude Code settings — not part of the repo sources.

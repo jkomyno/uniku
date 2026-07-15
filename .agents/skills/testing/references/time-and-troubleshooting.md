@@ -47,4 +47,4 @@ Update fixtures and assertions when product behavior changed intentionally. Dele
 - State pollution: reset refs, databases, temp directories, globals, and fake timers in `beforeEach` or `afterEach`.
 - Hanging Effect test: make sure the delayed work is forked, the test clock is advanced, and all scoped resources can close.
 - Hidden live dependency: inject `Clock`, `Random`, fetch/client, filesystem, config, and persistence through services or adapter layers.
-- Effect API uncertainty: verify against `repos/effect-smol/**` before writing the snippet or implementation.
+- Effect API uncertainty: verify against `repos/effect/**` before writing the snippet or implementation.
