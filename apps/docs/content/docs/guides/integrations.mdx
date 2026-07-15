@@ -9,7 +9,7 @@ import drizzleUlid from '../../../../../examples/drizzle-ulid.ts?raw'
 import effectTypeid from '../../../../../examples/effect-typeid.ts?raw'
 import honoNanoid from '../../../../../examples/hono-nanoid.ts?raw'
 
-These examples are the complete Bun test files from the `uniku` repository. Clone the repository and run `pnpm examples:check` to typecheck and execute all three with the Bun version pinned in `mise.toml`.
+The examples below add Nanoid request IDs to Hono, binary ULIDs to a Drizzle schema, and prefixed TypeIDs to an Effect service. Each is self-contained and runs with the command below it.
 
 ## Hono request IDs with Nanoid
 
@@ -42,5 +42,5 @@ An Effect service keeps ID generation injectable without leaking framework types
 Run it with `pnpm --filter @uniku/examples example:effect`.
 
 <Callout type="info" title="Effect v4 prerelease">
-This example uses the same exact Effect v4 beta as the `uniku` CLI. Effect v4 is still prerelease software, so keep the example aligned with the workspace pin.
+This example pins Effect `4.0.0-beta.93`. Effect v4 is still prerelease software, so check its release notes before changing that version.
 </Callout>
