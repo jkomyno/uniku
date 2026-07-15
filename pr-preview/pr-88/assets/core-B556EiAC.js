@@ -1,1 +1,0 @@
-import{O as e}from"./dist-BIm5QBnl.js";export{e as isSpecialLang};

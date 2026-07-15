@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/core-B556EiAC.js","assets/dist-BIm5QBnl.js","assets/index-BlkyHkmd.js","assets/rolldown-runtime-QTnfLwEv.js","assets/createLucideIcon-BUKHJUio.js","assets/dist-WyagwRHs.js","assets/jsx-runtime-By8HlURe.js","assets/dist-B45FPjmv.js"])))=>i.map(i=>d[i]);
-import{r as e}from"./rolldown-runtime-QTnfLwEv.js";import{n as t}from"./createLucideIcon-BUKHJUio.js";import{_ as n}from"./dist-WyagwRHs.js";import{t as r}from"./jsx-runtime-By8HlURe.js";import{F as i,a,i as o,v as s}from"./index-BlkyHkmd.js";var c=e(t(),1),l=e(r(),1);async function u(e,t){let n=e.getBundledThemes(),r=t.filter(t=>{if(typeof t==`string`&&!(t in n))return!1;try{return e.getTheme(t),!1}catch{return!0}});r.length>0&&await e.loadTheme(...r)}function d(e){return`theme`in e?[e.theme]:Object.values(e.themes).filter(e=>e!==void 0)}function f(e){let t;return{init(n){return t=e.init(n)},getOrInit(){return t??this.init()}}}async function p(e,t,n){let{fallbackLanguage:r=`text`,...a}=n,{isSpecialLang:o}=await i(async()=>{let{isSpecialLang:e}=await import(`./core-B556EiAC.js`);return{isSpecialLang:e}},__vite__mapDeps([0,1,2,3,4,5,6]));return!o(a.lang)&&!(a.lang in e.getBundledLanguages())&&!e.getLoadedLanguages().includes(a.lang)&&(a.lang=r),await Promise.all([u(e,d(a)),e.loadLanguage(a.lang)]),e.codeToHast(t,a)}function m(e,t,n,r){let[i,a]=(0,c.useState)(n.defaultValue),o=(0,c.useRef)(null);return(0,c.useEffect)(()=>{async function r(){return s(await p(typeof e==`function`?await e():e,t,n),{...l,components:n.components})}let i=r();return o.current=i,i.then(e=>{o.current===i&&a(e)}),()=>{o.current=null}},r),i}var h=(0,c.createContext)(void 0);function g(e){let t=(0,c.use)(h);return(0,l.jsx)(o,{...e,...t,className:n(`my-0`,e.className,t?.className),children:(0,l.jsx)(a,{children:e.children})})}function _({lang:e,code:t,codeblock:n,options:r,wrapInSuspense:i=!0,highlighter:a}){let o=(0,c.useId)(),s={lang:e,defaultColor:!1,...r,components:{pre:g,...r.components}},u=m(a,t,s,[o,e,t]);return i&&(u??=(0,l.jsx)(v,{code:t,components:s.components})),(0,l.jsx)(h,{value:n,children:u})}function v({code:e,components:t={}}){let{pre:n=`pre`,code:r=`code`}=t;return(0,l.jsx)(n,{children:(0,l.jsx)(r,{children:e.split(`
-`).map((e,t)=>(0,l.jsx)(`span`,{className:`line`,children:e},t))})})}var y=f({async init(e){let{createHighlighter:t,createJavaScriptRegexEngine:n}=await i(async()=>{let{createHighlighter:e,createJavaScriptRegexEngine:t}=await import(`./dist-B45FPjmv.js`);return{createHighlighter:e,createJavaScriptRegexEngine:t}},__vite__mapDeps([7,3,2,4,5,6,1]));return t({langs:[],themes:[],langAlias:e?.langAlias,engine:n()})}});function b(e){return(0,l.jsx)(_,{highlighter:()=>y.getOrInit(),options:{themes:{light:`github-light`,dark:`github-dark`}},...e})}var x=`import { expect, test } from 'bun:test'
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/core--3SEhJhA.js","assets/dist-stIHllqH.js","assets/index-CrAoHZ8B.js","assets/rolldown-runtime-QTnfLwEv.js","assets/createLucideIcon-BUKHJUio.js","assets/dist-WyagwRHs.js","assets/jsx-runtime-By8HlURe.js","assets/dist-D6puftG0.js"])))=>i.map(i=>d[i]);
+import{r as e}from"./rolldown-runtime-QTnfLwEv.js";import{n as t}from"./createLucideIcon-BUKHJUio.js";import{_ as n}from"./dist-WyagwRHs.js";import{t as r}from"./jsx-runtime-By8HlURe.js";import{F as i,a,i as o,v as s}from"./index-CrAoHZ8B.js";var c=e(t(),1),l=e(r(),1);async function u(e,t){let n=e.getBundledThemes(),r=t.filter(t=>{if(typeof t==`string`&&!(t in n))return!1;try{return e.getTheme(t),!1}catch{return!0}});r.length>0&&await e.loadTheme(...r)}function d(e){return`theme`in e?[e.theme]:Object.values(e.themes).filter(e=>e!==void 0)}function f(e){let t;return{init(n){return t=e.init(n)},getOrInit(){return t??this.init()}}}async function p(e,t,n){let{fallbackLanguage:r=`text`,...a}=n,{isSpecialLang:o}=await i(async()=>{let{isSpecialLang:e}=await import(`./core--3SEhJhA.js`);return{isSpecialLang:e}},__vite__mapDeps([0,1,2,3,4,5,6]));return!o(a.lang)&&!(a.lang in e.getBundledLanguages())&&!e.getLoadedLanguages().includes(a.lang)&&(a.lang=r),await Promise.all([u(e,d(a)),e.loadLanguage(a.lang)]),e.codeToHast(t,a)}function m(e,t,n,r){let[i,a]=(0,c.useState)(n.defaultValue),o=(0,c.useRef)(null);return(0,c.useEffect)(()=>{async function r(){return s(await p(typeof e==`function`?await e():e,t,n),{...l,components:n.components})}let i=r();return o.current=i,i.then(e=>{o.current===i&&a(e)}),()=>{o.current=null}},r),i}var h=(0,c.createContext)(void 0);function g(e){let t=(0,c.use)(h);return(0,l.jsx)(o,{...e,...t,className:n(`my-0`,e.className,t?.className),children:(0,l.jsx)(a,{children:e.children})})}function _({lang:e,code:t,codeblock:n,options:r,wrapInSuspense:i=!0,highlighter:a}){let o=(0,c.useId)(),s={lang:e,defaultColor:!1,...r,components:{pre:g,...r.components}},u=m(a,t,s,[o,e,t]);return i&&(u??=(0,l.jsx)(v,{code:t,components:s.components})),(0,l.jsx)(h,{value:n,children:u})}function v({code:e,components:t={}}){let{pre:n=`pre`,code:r=`code`}=t;return(0,l.jsx)(n,{children:(0,l.jsx)(r,{children:e.split(`
+`).map((e,t)=>(0,l.jsx)(`span`,{className:`line`,children:e},t))})})}var y=f({async init(e){let{createHighlighter:t,createJavaScriptRegexEngine:n}=await i(async()=>{let{createHighlighter:e,createJavaScriptRegexEngine:t}=await import(`./dist-D6puftG0.js`);return{createHighlighter:e,createJavaScriptRegexEngine:t}},__vite__mapDeps([7,3,2,4,5,6,1]));return t({langs:[],themes:[],langAlias:e?.langAlias,engine:n()})}});function b(e){return(0,l.jsx)(_,{highlighter:()=>y.getOrInit(),options:{themes:{light:`github-light`,dark:`github-dark`}},...e})}var x=`import { expect, test } from 'bun:test'
 import { PGlite } from '@electric-sql/pglite'
 import { eq, sql } from 'drizzle-orm'
 import { customType, pgTable, text } from 'drizzle-orm/pg-core'
@@ -70,7 +70,9 @@ test('generates and stores a binary ULID with Drizzle', async () => {
 
     if (!delivery) throw new Error('The joined delivery was not returned')
 
-    // Example: delivery.eventId = '01KXJMQ2CN69EPDB5V8716Y3XJ'
+    // Example: delivery.eventId = '01KXJP51P435NADKZ683PNVK1R'
+
+    console.log('delivery.eventId:', delivery.eventId)
 
     expect(delivery.eventId).toBe(event.id)
     expect(typeof delivery.eventId).toBe('string')
@@ -111,7 +113,9 @@ const program = Effect.gen(function* () {
 
 test('generates a prefixed TypeID through an Effect service', () => {
   const userId = Effect.runSync(program.pipe(Effect.provide(UserIds.layer)))
-  // Example: userId = 'user_01kxjmq2cnet9bcfc2ncycy0yf'
+  // Example: userId = 'user_01kxjp5jcqej3tm5bgqj6mz05r'
+
+  console.log('userId:', userId)
 
   expect(typeid.isValid(userId)).toBe(true)
   expect(typeid.prefix(userId)).toBe('user')
@@ -131,7 +135,7 @@ app.use(
 )
 
 app.get('/', (context) => context.json({ requestId: context.get('requestId') }))
-// Example: requestId = '_2DECPU7LD9yGaCxNoR1P'
+// Example: requestId = 'QC-h76CxpXPmlj9e_1nAG'
 
 test('uses a Nanoid as the Hono request ID', async () => {
   const response = await app.request('/')
@@ -142,6 +146,8 @@ test('uses a Nanoid as the Hono request ID', async () => {
   if (!body || typeof body !== 'object' || !('requestId' in body) || typeof body.requestId !== 'string') {
     throw new Error('Hono did not return a request ID')
   }
+
+  console.log('body.requestId:', body.requestId)
 
   expect(nanoid.isValid(body.requestId)).toBe(true)
   expect(response.headers.get('X-Request-Id')).toBe(body.requestId)
