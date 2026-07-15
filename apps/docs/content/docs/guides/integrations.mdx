@@ -21,16 +21,16 @@ Run it with `pnpm --filter @uniku/examples example:hono`.
 
 ## Drizzle ORM v1 with binary ULIDs
 
-`ulid.toBytes()` produces the canonical 16-byte representation as a runtime-neutral `Uint8Array`. Drizzle v1's built-in PostgreSQL `bytea()` type is Node.js-specific, so this example declares a small `customType` that maps `bytea` directly to `Uint8Array` instead.
+The `binaryUlid` custom type exposes a string to application code while declaring a PostgreSQL `bytea` column. Its Drizzle codec converts ULID strings to `Uint8Array` parameters and selected bytes back to canonical ULID strings.
 
-The column's `$defaultFn` generates the binary ULID when an insert omits `id`. The example uses an in-memory PGlite database, so it needs no external PostgreSQL server; it inserts one event, reads the returned 16 bytes, and restores the canonical ULID string with `ulid.fromBytes()`.
+The column's `$defaultFn` generates a ULID when an insert omits `id`. Both sides of the foreign key remain 16-byte values in PostgreSQL, so the join compares their binary representation while the returned `eventId` is already a string. The example uses an in-memory PGlite database, so it needs no external PostgreSQL server.
 
 <DynamicCodeBlock lang="ts" code={drizzleUlid} codeblock={{ title: 'drizzle-ulid.ts' }} />
 
 Run it with `pnpm --filter @uniku/examples example:drizzle`.
 
 <Callout type="info" title="Drizzle v1 release candidate">
-The example pins Drizzle ORM `1.0.0-rc.4`. The v1 line is still a release candidate, so check its release notes before changing that version.
+The example pins Drizzle ORM `1.0.0-rc.4`. Codecs are configured per PostgreSQL type, so this client treats every `bytea` column as a binary ULID. The v1 line is still a release candidate, so check its release notes before changing that version.
 </Callout>
 
 ## Effect v4 services with TypeID

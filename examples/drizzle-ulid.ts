@@ -1,24 +1,41 @@
 import { expect, test } from 'bun:test'
 import { PGlite } from '@electric-sql/pglite'
-import { sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { customType, pgTable, text } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/pglite'
 import { ulid } from 'uniku/ulid'
 
-const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+const binaryUlid = customType<{ data: string; driverData: Uint8Array }>({
   dataType: () => 'bytea',
+  codec: 'bytea',
 })
 
 const events = pgTable('events', {
-  id: bytea()
+  id: binaryUlid()
     .primaryKey()
-    .$defaultFn(() => ulid.toBytes(ulid())),
+    .$defaultFn(() => ulid()),
   name: text().notNull(),
+})
+
+const eventDeliveries = pgTable('event_deliveries', {
+  eventId: binaryUlid('event_id')
+    .notNull()
+    .references(() => events.id),
+  target: text().notNull(),
 })
 
 test('generates and stores a binary ULID with Drizzle', async () => {
   const client = new PGlite()
-  const db = drizzle({ client })
+  const db = drizzle({
+    client,
+    codecs: {
+      bytea: {
+        normalize: (value: Uint8Array) => ulid.fromBytes(value),
+        normalizeInJson: (value: string) => ulid.fromBytes(Uint8Array.fromBase64(value)),
+        normalizeParam: (value: string) => ulid.toBytes(value),
+      },
+    },
+  })
 
   try {
     await db.execute(sql`
@@ -27,17 +44,37 @@ test('generates and stores a binary ULID with Drizzle', async () => {
         name text not null
       )
     `)
+    await db.execute(sql`
+      create table event_deliveries (
+        event_id bytea not null references events(id),
+        target text not null
+      )
+    `)
 
     const [event] = await db.insert(events).values({ name: 'account.created' }).returning()
 
     if (!event) throw new Error('The inserted event was not returned')
 
-    const restoredId = ulid.fromBytes(event.id)
-    // Example: restoredId = '01KXJMQ2CN69EPDB5V8716Y3XJ'
+    await db.insert(eventDeliveries).values({ eventId: event.id, target: 'analytics' })
 
-    expect(event.id).toBeInstanceOf(Uint8Array)
-    expect(event.id).toHaveLength(16)
-    expect(ulid.isValid(restoredId)).toBe(true)
+    const [delivery] = await db
+      .select({
+        eventId: events.id,
+        storedBytes: sql<number>`octet_length(${events.id})`,
+        target: eventDeliveries.target,
+      })
+      .from(events)
+      .innerJoin(eventDeliveries, eq(events.id, eventDeliveries.eventId))
+
+    if (!delivery) throw new Error('The joined delivery was not returned')
+
+    // Example: delivery.eventId = '01KXJMQ2CN69EPDB5V8716Y3XJ'
+
+    expect(delivery.eventId).toBe(event.id)
+    expect(typeof delivery.eventId).toBe('string')
+    expect(ulid.isValid(delivery.eventId)).toBe(true)
+    expect(delivery.storedBytes).toBe(16)
+    expect(delivery.target).toBe('analytics')
     expect(event.name).toBe('account.created')
   } finally {
     await client.close()
