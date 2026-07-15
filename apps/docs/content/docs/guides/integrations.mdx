@@ -1,6 +1,7 @@
 ---
 title: Integrations
 description: Runnable starting points for Hono, Drizzle ORM v1, and Effect v4.
+icon: Blocks
 ---
 
 import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock'
@@ -28,9 +29,9 @@ The column's `$defaultFn` generates the binary ULID when an insert omits `id`. T
 
 Run it with `pnpm --filter @uniku/examples example:drizzle`.
 
-:::note
+<Callout type="info" title="Drizzle v1 release candidate">
 The example pins Drizzle ORM `1.0.0-rc.4`. The v1 line is still a release candidate, so check its release notes before changing that version.
-:::
+</Callout>
 
 ## Effect v4 services with TypeID
 
@@ -40,6 +41,6 @@ An Effect service keeps ID generation injectable without leaking framework types
 
 Run it with `pnpm --filter @uniku/examples example:effect`.
 
-:::note
+<Callout type="info" title="Effect v4 prerelease">
 This example uses the same exact Effect v4 beta as the `uniku` CLI. Effect v4 is still prerelease software, so keep the example aligned with the workspace pin.
-:::
+</Callout>
