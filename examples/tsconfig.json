@@ -7,6 +7,6 @@
     "declarationMap": false,
     "isolatedDeclarations": false,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["bun"]
   }
 }

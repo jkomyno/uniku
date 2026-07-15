@@ -8,7 +8,9 @@ on:
       - "apps/docs/**"
       - "docs/**"
       - "examples/**"
+      - ".github/actions/setup-bun/action.yaml"
       - ".github/workflows/docs.yaml"
+      - "mise.toml"
       - "packages/uniku/src/**"
       - "README.md"
       - "packages/cli/README.md"
@@ -51,6 +53,9 @@ jobs:
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
 
       - name: Typecheck docs and snippets
         run: pnpm docs:typecheck

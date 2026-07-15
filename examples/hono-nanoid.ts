@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+import { expect, test } from 'bun:test'
 import { Hono } from 'hono'
 import { requestId } from 'hono/request-id'
 import { nanoid } from 'uniku/nanoid'
@@ -14,12 +14,16 @@ app.use(
 
 app.get('/', (context) => context.json({ requestId: context.get('requestId') }))
 
-const response = await app.request('/')
-const body: unknown = await response.json()
+test('uses a Nanoid as the Hono request ID', async () => {
+  const response = await app.request('/')
+  const body: unknown = await response.json()
 
-assert(body && typeof body === 'object' && 'requestId' in body)
-assert(typeof body.requestId === 'string')
-assert(nanoid.isValid(body.requestId))
-assert.equal(response.headers.get('X-Request-Id'), body.requestId)
+  expect(body).toEqual({ requestId: expect.any(String) })
 
-console.log(body)
+  if (!body || typeof body !== 'object' || !('requestId' in body) || typeof body.requestId !== 'string') {
+    throw new Error('Hono did not return a request ID')
+  }
+
+  expect(nanoid.isValid(body.requestId)).toBe(true)
+  expect(response.headers.get('X-Request-Id')).toBe(body.requestId)
+})

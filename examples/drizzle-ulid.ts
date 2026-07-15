@@ -1,47 +1,44 @@
-import assert from 'node:assert/strict'
-import { Buffer } from 'node:buffer'
+import { expect, test } from 'bun:test'
 import { PGlite } from '@electric-sql/pglite'
 import { sql } from 'drizzle-orm'
-import { bytea, pgTable, text } from 'drizzle-orm/pg-core'
+import { customType, pgTable, text } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/pglite'
 import { ulid } from 'uniku/ulid'
 
+const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+  dataType: () => 'bytea',
+})
+
 const events = pgTable('events', {
-  id: bytea().primaryKey(),
+  id: bytea()
+    .primaryKey()
+    .$defaultFn(() => ulid.toBytes(ulid())),
   name: text().notNull(),
 })
 
-const client = new PGlite()
-const db = drizzle({ client })
+test('generates and stores a binary ULID with Drizzle', async () => {
+  const client = new PGlite()
+  const db = drizzle({ client })
 
-try {
-  await db.execute(sql`
-    create table events (
-      id bytea primary key,
-      name text not null
-    )
-  `)
+  try {
+    await db.execute(sql`
+      create table events (
+        id bytea primary key,
+        name text not null
+      )
+    `)
 
-  const id = ulid()
-  const [event] = await db
-    .insert(events)
-    .values({
-      id: Buffer.from(ulid.toBytes(id)),
-      name: 'account.created',
-    })
-    .returning()
+    const [event] = await db.insert(events).values({ name: 'account.created' }).returning()
 
-  if (!event) throw new Error('The inserted event was not returned')
+    if (!event) throw new Error('The inserted event was not returned')
 
-  const restoredId = ulid.fromBytes(event.id)
+    const restoredId = ulid.fromBytes(event.id)
 
-  assert.equal(restoredId, id)
-  assert.equal(event.name, 'account.created')
-
-  console.log({
-    id: restoredId,
-    name: event.name,
-  })
-} finally {
-  await client.close()
-}
+    expect(event.id).toBeInstanceOf(Uint8Array)
+    expect(event.id).toHaveLength(16)
+    expect(ulid.isValid(restoredId)).toBe(true)
+    expect(event.name).toBe('account.created')
+  } finally {
+    await client.close()
+  }
+})

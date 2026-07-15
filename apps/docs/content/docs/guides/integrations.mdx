@@ -8,7 +8,7 @@ import drizzleUlid from '../../../../../examples/drizzle-ulid.ts?raw'
 import effectTypeid from '../../../../../examples/effect-typeid.ts?raw'
 import honoNanoid from '../../../../../examples/hono-nanoid.ts?raw'
 
-These examples are the complete, executable files from the `uniku` repository. Clone the repository and run `pnpm examples:check` to typecheck and execute all three.
+These examples are the complete Bun test files from the `uniku` repository. Clone the repository and run `pnpm examples:check` to typecheck and execute all three with the Bun version pinned in `mise.toml`.
 
 ## Hono request IDs with Nanoid
 
@@ -20,9 +20,9 @@ Run it with `pnpm --filter @uniku/examples example:hono`.
 
 ## Drizzle ORM v1 with binary ULIDs
 
-Drizzle ORM v1 provides a PostgreSQL `bytea()` column. `ulid.toBytes()` produces the canonical 16-byte representation; `Buffer.from()` adapts those bytes to Drizzle's PostgreSQL insert type. The selected value remains compatible with `ulid.fromBytes()`.
+`ulid.toBytes()` produces the canonical 16-byte representation as a runtime-neutral `Uint8Array`. Drizzle v1's built-in PostgreSQL `bytea()` type is Node.js-specific, so this example declares a small `customType` that maps `bytea` directly to `Uint8Array` instead.
 
-The example uses an in-memory PGlite database, so it needs no external PostgreSQL server. It creates a table, inserts one event, reads the returned binary ID, and restores the canonical ULID string.
+The column's `$defaultFn` generates the binary ULID when an insert omits `id`. The example uses an in-memory PGlite database, so it needs no external PostgreSQL server; it inserts one event, reads the returned 16 bytes, and restores the canonical ULID string with `ulid.fromBytes()`.
 
 <DynamicCodeBlock lang="ts" code={drizzleUlid} codeblock={{ title: 'drizzle-ulid.ts' }} />
 

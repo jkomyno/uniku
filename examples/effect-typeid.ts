@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+import { expect, test } from 'bun:test'
 import { Context, Effect, Layer } from 'effect'
 import { typeid } from 'uniku/typeid'
 
@@ -25,9 +25,9 @@ const program = Effect.gen(function* () {
   return yield* userIds.next()
 })
 
-const userId = Effect.runSync(program.pipe(Effect.provide(UserIds.layer)))
+test('generates a prefixed TypeID through an Effect service', () => {
+  const userId = Effect.runSync(program.pipe(Effect.provide(UserIds.layer)))
 
-assert(typeid.isValid(userId))
-assert.equal(typeid.prefix(userId), 'user')
-
-console.log({ userId })
+  expect(typeid.isValid(userId)).toBe(true)
+  expect(typeid.prefix(userId)).toBe('user')
+})

@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "check": "pnpm --filter uniku build && pnpm run typecheck && pnpm run test",
-    "example:drizzle": "node --conditions=@jkomyno/source --import tsx drizzle-ulid.ts",
-    "example:effect": "node --conditions=@jkomyno/source --import tsx effect-typeid.ts",
-    "example:hono": "node --conditions=@jkomyno/source --import tsx hono-nanoid.ts",
+    "check": "pnpm run typecheck && pnpm run test",
+    "example:drizzle": "bun test --conditions=@jkomyno/source ./drizzle-ulid.ts",
+    "example:effect": "bun test --conditions=@jkomyno/source ./effect-typeid.ts",
+    "example:hono": "bun test --conditions=@jkomyno/source ./hono-nanoid.ts",
     "test": "pnpm run example:hono && pnpm run example:drizzle && pnpm run example:effect",
     "typecheck": "tsc --noEmit"
   },
@@ -19,11 +19,7 @@
     "uniku": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "26.1.0",
-    "tsx": "^4.23.0",
+    "@types/bun": "1.3.14",
     "typescript": "catalog:"
-  },
-  "engines": {
-    "node": ">=20.19.0"
   }
 }
