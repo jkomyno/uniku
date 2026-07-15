@@ -4,7 +4,7 @@
 [![Documentation](https://img.shields.io/badge/docs-CLI-5b5bd6.svg)](https://jkomyno.github.io/uniku/docs/cli/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Generate, validate, and inspect IDs from a terminal or shell pipeline. The CLI supports every format in `uniku`: UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID.
+One CLI for all ten ID strategies in `uniku`: UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID. Generate, validate, and inspect them from a terminal or shell pipeline.
 
 [CLI documentation](https://jkomyno.github.io/uniku/docs/cli/) · [GitHub releases](https://github.com/jkomyno/uniku/releases) · [Library documentation](https://jkomyno.github.io/uniku/)
 

@@ -6,9 +6,9 @@
 [![Documentation](https://img.shields.io/badge/docs-read-5b5bd6.svg)](https://jkomyno.github.io/uniku/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-One library. Every ID format. Every modern JavaScript runtime.
+Ten ID strategies behind one consistent, type-safe API. The fastest implementation of each in our [current CI benchmark](https://jkomyno.github.io/uniku/docs/guides/performance/).
 
-> **uniku** */uˈniːku/* — Maltese for "unique"
+> **uniku** */uˈniːku/*: Maltese for "unique"
 
 [Documentation](https://jkomyno.github.io/uniku/) · [Getting started](https://jkomyno.github.io/uniku/docs/getting-started/) · [Choosing an ID](https://jkomyno.github.io/uniku/docs/guides/choosing-an-id/) · [API reference](https://jkomyno.github.io/uniku/docs/reference/entry-points/) · [CLI](https://jkomyno.github.io/uniku/docs/cli/)
 
@@ -21,11 +21,12 @@ const id = uuidv7()
 
 ## Why `uniku`?
 
-- **One focused package** — UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID.
-- **Portable by default** — Runs on Node.js, Bun, Deno, browsers, edge runtimes, and Cloudflare Workers using `globalThis.crypto`.
-- **Tree-shakeable entry points** — Import only the generator you use; the package root is intentionally not exported.
-- **Useful at system boundaries** — Validate unknown input, convert canonical binary formats to bytes, or write directly into a caller-owned buffer.
-- **Small dependency surface** — CUID v2 is the only generator with a runtime dependency (`@noble/hashes`).
+- **Fastest across the benchmark suite.** Every strategy beats its dedicated npm alternative in the current isolated-process CI benchmark, from 1.2× for UUID v4 and ObjectID to 116× for ULID.
+- **Ten strategies, one type-safe API.** UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID each expose a callable generator with matching typed helpers.
+- **Portable by default.** Runs on Node.js, Bun, Deno, browsers, edge runtimes, and Cloudflare Workers using `globalThis.crypto`.
+- **Tree-shakeable entry points.** Import only the generator you use; the package root is intentionally not exported.
+- **Useful at system boundaries.** Validate unknown input, convert canonical binary formats to bytes, or write directly into a caller-owned buffer.
+- **Small dependency surface.** CUID v2 is the only generator with a runtime dependency (`@noble/hashes`).
 
 ## Install
 
@@ -82,11 +83,11 @@ The [choosing guide](https://jkomyno.github.io/uniku/docs/guides/choosing-an-id/
 
 ## Documentation
 
-- [Getting started](https://jkomyno.github.io/uniku/docs/getting-started/) — installation, direct imports, validation, and byte helpers
-- [Generator reference](https://jkomyno.github.io/uniku/docs/reference/entry-points/) — generated from the public TypeScript signatures and JSDoc
-- [Migration guide](https://jkomyno.github.io/uniku/docs/migration/from-other-libraries/) — move from `uuid`, `nanoid`, `ulid`, CUID2, KSUID, BSON, TSID, or XID libraries
-- [Performance and bundle size](https://jkomyno.github.io/uniku/docs/guides/performance/) — benchmark methodology, current measurements, and reproduction commands
-- [Stability contract](https://github.com/jkomyno/uniku/blob/main/docs/STABILITY.md) — the entry points and compatibility policy planned for `uniku@1.0.0`
+- [Getting started](https://jkomyno.github.io/uniku/docs/getting-started/): installation, direct imports, validation, and byte helpers
+- [Generator reference](https://jkomyno.github.io/uniku/docs/reference/entry-points/): generated from the public TypeScript signatures and JSDoc
+- [Migration guide](https://jkomyno.github.io/uniku/docs/migration/from-other-libraries/): move from `uuid`, `nanoid`, `ulid`, CUID2, KSUID, BSON, TSID, or XID libraries
+- [Performance and bundle size](https://jkomyno.github.io/uniku/docs/guides/performance/): benchmark methodology, current measurements, and reproduction commands
+- [Stability contract](https://github.com/jkomyno/uniku/blob/main/docs/STABILITY.md): the entry points and compatibility policy planned for `uniku@1.0.0`
 
 ## CLI companion
 

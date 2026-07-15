@@ -19,11 +19,11 @@ function Home() {
       <main className="landing-shell">
         <section className="landing-hero">
           <div className="hero-copy">
-            <p className="eyebrow">ID infrastructure for JavaScript</p>
-            <h1>One install. Every ID strategy.</h1>
+            <p className="eyebrow">Ten type-safe strategies. One API.</p>
+            <h1>Ten ID strategies. The fastest implementation of each.</h1>
             <p className="hero-summary">
-              Install <code>uniku</code> once, then choose the ID that fits the job. Your application imports only the strategy it uses,
-              across Node.js, browsers, edge runtimes, Bun, Deno, and Cloudflare Workers.
+              <code>uniku</code> puts UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID behind one
+              consistent API. In the current CI benchmark, every generator beats its dedicated npm alternative.
             </p>
             <div className="hero-actions">
               <Link className="primary-action" to="/docs/$" params={{ _splat: '' }}>
@@ -57,19 +57,25 @@ function Home() {
 
         <section className="value-grid" aria-label="Why use uniku">
           <article>
-            <Globe2 aria-hidden="true" size={20} />
-            <h2>Portable by default</h2>
-            <p>Built on web standards, tested end to end across all major JavaScript runtimes.</p>
-          </article>
-          <article>
             <Gauge aria-hidden="true" size={20} />
-            <h2>Measured and focused</h2>
-            <p>Benchmarked against individual npm alternatives, with direct entry points measured for bundle impact.</p>
+            <h2>Fastest across the suite</h2>
+            <p>
+              Every strategy beats its dedicated npm alternative in the current isolated-process{' '}
+              <Link to="/docs/$" params={{ _splat: 'guides/performance' }}>
+                CI benchmark
+              </Link>
+              .
+            </p>
           </article>
           <article>
             <Box aria-hidden="true" size={20} />
-            <h2>Nine formats, one dependency</h2>
-            <p>UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID in one package.</p>
+            <h2>Ten strategies, one type-safe API</h2>
+            <p>Each direct entry point exposes a callable generator with matching typed helpers.</p>
+          </article>
+          <article>
+            <Globe2 aria-hidden="true" size={20} />
+            <h2>Portable by default</h2>
+            <p>Built on web standards, tested end to end across all major JavaScript runtimes.</p>
           </article>
         </section>
 
