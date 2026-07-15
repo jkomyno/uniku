@@ -1,1 +1,0 @@
-import{O as e}from"./dist-DMiqnz1z.js";export{e as isSpecialLang};

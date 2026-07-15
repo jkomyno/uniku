@@ -1,4 +1,4 @@
-import{r as e}from"./rolldown-runtime-QTnfLwEv.js";import{t}from"./jsx-runtime-By8HlURe.js";var n=e(t()),r={title:`Getting started`,description:`One install, every ID strategy. Import the generator your application needs.`,icon:`PackageOpen`},i=`
+import{r as e}from"./rolldown-runtime-QTnfLwEv.js";import{t}from"./jsx-runtime-By8HlURe.js";var n=e(t()),r={title:`Getting started`,description:`Install ten type-safe ID strategies, then import only the generator your application needs.`,icon:`PackageOpen`},i=`
 
 ## Install [#install]
 
