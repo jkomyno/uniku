@@ -13,7 +13,7 @@ app.use(
 )
 
 app.get('/', (context) => context.json({ requestId: context.get('requestId') }))
-// Example: requestId = '_2DECPU7LD9yGaCxNoR1P'
+// Example: requestId = 'QC-h76CxpXPmlj9e_1nAG'
 
 test('uses a Nanoid as the Hono request ID', async () => {
   const response = await app.request('/')
@@ -24,6 +24,8 @@ test('uses a Nanoid as the Hono request ID', async () => {
   if (!body || typeof body !== 'object' || !('requestId' in body) || typeof body.requestId !== 'string') {
     throw new Error('Hono did not return a request ID')
   }
+
+  console.log('body.requestId:', body.requestId)
 
   expect(nanoid.isValid(body.requestId)).toBe(true)
   expect(response.headers.get('X-Request-Id')).toBe(body.requestId)

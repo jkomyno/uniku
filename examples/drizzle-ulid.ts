@@ -68,7 +68,9 @@ test('generates and stores a binary ULID with Drizzle', async () => {
 
     if (!delivery) throw new Error('The joined delivery was not returned')
 
-    // Example: delivery.eventId = '01KXJMQ2CN69EPDB5V8716Y3XJ'
+    // Example: delivery.eventId = '01KXJP51P435NADKZ683PNVK1R'
+
+    console.log('delivery.eventId:', delivery.eventId)
 
     expect(delivery.eventId).toBe(event.id)
     expect(typeof delivery.eventId).toBe('string')

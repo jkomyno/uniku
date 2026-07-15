@@ -27,7 +27,9 @@ const program = Effect.gen(function* () {
 
 test('generates a prefixed TypeID through an Effect service', () => {
   const userId = Effect.runSync(program.pipe(Effect.provide(UserIds.layer)))
-  // Example: userId = 'user_01kxjmq2cnet9bcfc2ncycy0yf'
+  // Example: userId = 'user_01kxjp5jcqej3tm5bgqj6mz05r'
+
+  console.log('userId:', userId)
 
   expect(typeid.isValid(userId)).toBe(true)
   expect(typeid.prefix(userId)).toBe('user')
