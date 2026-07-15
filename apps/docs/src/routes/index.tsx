@@ -20,7 +20,7 @@ function Home() {
         <section className="landing-hero">
           <div className="hero-copy">
             <p className="eyebrow">Ten type-safe strategies. One API.</p>
-            <h1>Ten ID strategies. The fastest implementation of each.</h1>
+            <h1>One install. Every ID strategy.</h1>
             <p className="hero-summary">
               <code>uniku</code> puts UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID behind one
               consistent API. In the current CI benchmark, every generator beats its dedicated npm alternative.
@@ -37,7 +37,7 @@ function Home() {
 
           <div className="id-atlas" aria-label="Examples of supported identifier formats">
             <div className="atlas-heading">
-              <span>Format specimens</span>
+              <span>UUID v7 · ULID · TypeID and more</span>
             </div>
             <pre className="atlas-code" aria-label="uniku library example">
               <code>import {'{'} uuidv7 {'}'} from 'uniku/uuid/v7'</code>
