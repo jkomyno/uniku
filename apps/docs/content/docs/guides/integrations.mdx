@@ -1,0 +1,46 @@
+---
+title: Integrations
+description: Runnable starting points for Hono, Drizzle ORM v1, and Effect v4.
+icon: Blocks
+---
+
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock'
+import drizzleUlid from '../../../../../examples/drizzle-ulid.ts?raw'
+import effectTypeid from '../../../../../examples/effect-typeid.ts?raw'
+import honoNanoid from '../../../../../examples/hono-nanoid.ts?raw'
+
+The examples below add Nanoid request IDs to Hono, binary ULIDs to a Drizzle schema, and prefixed TypeIDs to an Effect service. Each is self-contained and runs with the command below it.
+
+## Hono request IDs with Nanoid
+
+Hono's request ID middleware accepts a synchronous `generator`. When a request does not already carry a valid `X-Request-Id` header, this example generates a compact Nanoid, stores it in the request context, and returns it in the response header.
+
+<DynamicCodeBlock lang="ts" code={honoNanoid} codeblock={{ title: 'hono-nanoid.ts' }} />
+
+Run it with `pnpm --filter @uniku/examples example:hono`.
+
+## Drizzle ORM v1 with binary ULIDs
+
+The `binaryUlid` custom type exposes a string to application code while declaring a PostgreSQL `bytea` column. Its Drizzle codec converts ULID strings to `Uint8Array` parameters and selected bytes back to canonical ULID strings.
+
+The column's `$defaultFn` generates a ULID when an insert omits `id`. Both sides of the foreign key remain 16-byte values in PostgreSQL, so the join compares their binary representation while the returned `eventId` is already a string. The example uses an in-memory PGlite database, so it needs no external PostgreSQL server.
+
+<DynamicCodeBlock lang="ts" code={drizzleUlid} codeblock={{ title: 'drizzle-ulid.ts' }} />
+
+Run it with `pnpm --filter @uniku/examples example:drizzle`.
+
+<Callout type="info" title="Drizzle v1 release candidate">
+The example pins Drizzle ORM `1.0.0-rc.4`. Codecs are configured per PostgreSQL type, so this client treats every `bytea` column as a binary ULID. The v1 line is still a release candidate, so check its release notes before changing that version.
+</Callout>
+
+## Effect v4 services with TypeID
+
+An Effect service keeps ID generation injectable without leaking framework types into the generated value. This service exposes a traced `next()` effect and returns TypeID strings with a stable `user_` prefix.
+
+<DynamicCodeBlock lang="ts" code={effectTypeid} codeblock={{ title: 'effect-typeid.ts' }} />
+
+Run it with `pnpm --filter @uniku/examples example:effect`.
+
+<Callout type="info" title="Effect v4 prerelease">
+This example pins Effect `4.0.0-beta.93`. Effect v4 is still prerelease software, so check its release notes before changing that version.
+</Callout>

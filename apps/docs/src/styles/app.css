@@ -321,6 +321,13 @@ code {
   padding: 5rem 0 1rem;
 }
 
+.start-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: flex-end;
+}
+
 .docs-actions {
   align-items: center;
   border-bottom: 1px solid var(--color-fd-border);
@@ -457,6 +464,10 @@ code {
     align-items: start;
     flex-direction: column;
     gap: 1.5rem;
+  }
+
+  .start-links {
+    justify-content: flex-start;
   }
 
   .api-reference dl > div {

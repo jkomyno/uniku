@@ -1,0 +1,24 @@
+name: 'Setup Bun'
+description: 'Setup the Bun version pinned in mise.toml'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup mise
+      uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+      with:
+        add_shims_to_path: false
+        cache: false
+        install: false
+
+    - name: Resolve Bun version
+      id: bun-version
+      shell: bash
+      run: |
+        bun_version="$(mise config get tools.bun)"
+        echo "bun-version=$bun_version" >> "$GITHUB_OUTPUT"
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2.1.2
+      with:
+        bun-version: ${{ steps.bun-version.outputs.bun-version }}

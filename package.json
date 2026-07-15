@@ -19,6 +19,7 @@
     "docs:build": "pnpm --filter @uniku/docs build",
     "docs:dev": "pnpm --filter @uniku/docs dev",
     "docs:typecheck": "pnpm --filter @uniku/docs typecheck",
+    "examples:check": "pnpm --filter @uniku/examples check",
     "clean": "turbo run clean",
     "install:binary": "turbo run install:binary",
     "lint:ci": "biome ci",

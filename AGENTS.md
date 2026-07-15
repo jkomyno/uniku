@@ -12,6 +12,7 @@ pnpm test:e2e       # Run all e2e tests (e.g., on Cloudflare Workers)
 pnpm test:unit      # Unit tests only
 pnpm typecheck      # TypeScript type checking
 pnpm lint:fix       # Fix lint issues
+pnpm examples:check # Typecheck and run the docs integration examples
 pnpm bench:summary  # Run benchmarks to compare uniku to other npm packages, displays summary table
 pnpm --filter uniku bench:cold-start # Report fresh-Node-process cold-start timing for every generator
 pnpm bundle:summary # Run bundle size analysis, displays summary table
@@ -21,8 +22,9 @@ pnpm changeset      # Create changeset for versioning
 ## Architecture
 
 - **Monorepo**: pnpm workspaces + Turborepo
-- **Toolchain**: `mise.toml` is the canonical Node.js version pin; shared CI setup reads it, while compatibility jobs may switch runtimes after dependency installation
+- **Toolchain**: `mise.toml` is the canonical Node.js and Bun version pin; shared CI setup reads it, while compatibility jobs may switch runtimes after dependency installation
 - **Published packages**: `packages/uniku` (ID generators) and `packages/cli` (the `uniku` command)
+- **Runnable docs examples**: `examples` contains Bun tests for the typechecked Hono, Drizzle v1, and Effect v4 examples rendered by the docs site
 - **E2E workspace**: Cloudflare Workers tests live under `packages/uniku/__tests__/e2e/runtimes/cloudflare`
 - **Entry points**: Separate library imports per generator (`uniku/uuid/v7`, `uniku/ulid`, etc.) — no barrel exports
 - **Runtime**: Uses Web Crypto API (`globalThis.crypto`) for universal compatibility

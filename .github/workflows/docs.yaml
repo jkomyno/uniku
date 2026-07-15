@@ -7,11 +7,15 @@ on:
     paths: &docs-paths
       - "apps/docs/**"
       - "docs/**"
+      - "examples/**"
+      - ".github/actions/setup-bun/action.yaml"
       - ".github/workflows/docs.yaml"
+      - "mise.toml"
       - "packages/uniku/src/**"
       - "README.md"
       - "packages/cli/README.md"
       - "packages/uniku/README.md"
+      - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
   pull_request:
@@ -50,8 +54,14 @@ jobs:
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
 
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
       - name: Typecheck docs and snippets
         run: pnpm docs:typecheck
+
+      - name: Run integrated examples
+        run: pnpm examples:check
 
       - name: Build static site
         run: pnpm docs:build

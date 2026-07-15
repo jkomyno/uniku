@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, Box, Command, Cpu, Gauge, Globe2, TerminalSquare } from 'lucide-react'
+import { ArrowRight, Blocks, Box, Cpu, Gauge, Globe2, TerminalSquare } from 'lucide-react'
 import { HomeLayout } from 'fumadocs-ui/layouts/home'
 import { baseOptions } from '@/lib/layout'
 
@@ -90,9 +90,14 @@ function Home() {
             <p className="eyebrow">Start here</p>
             <h2>Choose an ID format with intent.</h2>
           </div>
-          <Link className="text-link" to="/docs/$" params={{ _splat: 'guides/choosing-an-id' }}>
-            Compare formats <Cpu aria-hidden="true" size={15} />
-          </Link>
+          <div className="start-links">
+            <Link className="text-link" to="/docs/$" params={{ _splat: 'guides/choosing-an-id' }}>
+              Compare formats <Cpu aria-hidden="true" size={15} />
+            </Link>
+            <Link className="text-link" to="/docs/$" params={{ _splat: 'guides/integrations' }}>
+              Browse integrations <Blocks aria-hidden="true" size={15} />
+            </Link>
+          </div>
         </section>
       </main>
     </HomeLayout>
