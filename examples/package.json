@@ -1,0 +1,29 @@
+{
+  "name": "@uniku/examples",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "check": "pnpm run typecheck && pnpm run test",
+    "example:drizzle": "node --conditions=@jkomyno/source --import tsx drizzle-ulid.ts",
+    "example:effect": "node --conditions=@jkomyno/source --import tsx effect-typeid.ts",
+    "example:hono": "node --conditions=@jkomyno/source --import tsx hono-nanoid.ts",
+    "test": "pnpm run example:hono && pnpm run example:drizzle && pnpm run example:effect",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.4",
+    "drizzle-orm": "1.0.0-rc.4",
+    "effect": "4.0.0-beta.93",
+    "hono": "catalog:",
+    "uniku": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.0",
+    "tsx": "^4.23.0",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
