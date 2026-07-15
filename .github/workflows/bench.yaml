@@ -3,17 +3,13 @@ name: Benchmarks
 on:
   push:
     branches: [main]
-    paths:
+    paths: &benchmark_paths
       - "packages/uniku/src/**"
       - "packages/uniku/__tests__/bench/**"
       - "packages/uniku/scripts/**"
       - ".github/workflows/bench.yaml"
   pull_request:
-    paths:
-      - "packages/uniku/src/**"
-      - "packages/uniku/__tests__/bench/**"
-      - "packages/uniku/scripts/**"
-      - ".github/workflows/bench.yaml"
+    paths: *benchmark_paths
   workflow_dispatch:
 
 concurrency:
@@ -26,11 +22,9 @@ permissions:
 jobs:
   benchmark:
     name: Run Benchmarks
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    permissions:
-      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -144,13 +138,13 @@ jobs:
       # Report regressions without failing PRs. Shared-runner benchmark variance can
       # exceed the threshold for rows unrelated to the current change.
       - name: Report benchmark regressions
-        if: github.event_name == 'pull_request' && steps.compare.outputs.has_regression == 'true'
+        if: steps.compare.outputs.has_regression == 'true'
         run: |
           echo "::warning::Performance regression detected; see PR comment for details."
 
   update-baseline:
     name: Update Benchmark Baseline
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -188,11 +182,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git fetch origin gh-benchmarks:gh-benchmarks 2>/dev/null || true
-          if git show gh-benchmarks:baseline.json > "$RUNNER_TEMP/benchmark-baseline.json" 2>/dev/null; then
-            :
-          else
-            rm -f "$RUNNER_TEMP/benchmark-baseline.json"
-          fi
+          git show gh-benchmarks:baseline.json > "$RUNNER_TEMP/benchmark-baseline.json" 2>/dev/null \
+            || rm -f "$RUNNER_TEMP/benchmark-baseline.json"
           bun packages/uniku/scripts/bench-history.ts "$RUNNER_TEMP/baseline.json" "$RUNNER_TEMP/benchmark-baseline.json" packages/uniku/bench-results.json
 
           # Switch to gh-benchmarks branch (create orphan if doesn't exist)

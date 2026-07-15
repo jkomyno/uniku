@@ -4,7 +4,7 @@ Thanks for your interest in contributing to uniku.
 
 ## Prerequisites
 
-- Node.js 24.13.0
+- [mise](https://mise.jdx.dev/) for the Node.js version pinned in `mise.toml`
 - pnpm via Corepack, pinned by `package.json`
 - Bun (optional, for `pnpm bench:summary`)
 
@@ -16,6 +16,7 @@ git clone https://github.com/jkomyno/uniku.git
 cd uniku
 
 # Install dependencies
+mise install
 corepack enable
 pnpm install
 
