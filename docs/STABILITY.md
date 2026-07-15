@@ -49,10 +49,9 @@ The library is ESM-only and targets ES2023 plus the Web Crypto API.
 
 The v1 compatibility matrix covers:
 
-- Node.js `>=20.19.0`, tested at that exact floor and on the Mise-pinned latest
-  Node.js 25.x release;
-- current stable Bun, with the latest canary exercised in CI;
-- the Mise-pinned latest stable Deno 2 release;
+- Node.js `>=20.19.0`, including the maintained Node 20, 22, and 24 lines;
+- current stable Bun;
+- current stable Deno 2;
 - Cloudflare Workers;
 - current stable Chromium and compatible evergreen browsers.
 
