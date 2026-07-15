@@ -1,5 +1,13 @@
 # @uniku/cli
 
+## 0.6.2
+
+### Patch Changes
+
+- cc16323: Replace duplicated package README reference material with concise getting-started guidance and prominent links to the maintained documentation site.
+- Updated dependencies [cc16323]
+  - uniku@0.4.2
+
 ## 0.6.1
 
 ### Patch Changes
