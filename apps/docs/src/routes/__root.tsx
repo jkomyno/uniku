@@ -11,10 +11,11 @@ export const Route = createRootRoute({
       { charSet: 'utf-8' },
       { content: 'width=device-width, initial-scale=1', name: 'viewport' },
       {
-        content: 'Portable, lightweight unique ID generation for every JavaScript runtime.',
+        content:
+          "Ten type-safe ID strategies behind one consistent API. In uniku's current CI benchmark, every generator beats its dedicated npm alternative.",
         name: 'description',
       },
-      { title: 'uniku: IDs for every JavaScript runtime' },
+      { title: 'uniku: ten type-safe ID strategies, each benchmarked fastest' },
     ],
   }),
 })

@@ -1,10 +1,10 @@
 ---
 title: Entry points
-description: The stable direct imports exposed by uniku.
+description: Ten stable generator entry points behind one consistent, type-safe API.
 icon: Braces
 ---
 
-The package root is intentionally not exported. Import a generator or metadata module directly:
+uniku exposes ten ID generation strategies with a consistent callable-generator API and format-specific typed helpers. The package root is intentionally not exported, so import a generator or metadata module directly:
 
 ```ts
 import { uuidv4 } from 'uniku/uuid/v4'

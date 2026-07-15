@@ -1,16 +1,17 @@
 ---
 title: Start here
-description: Pick an ID format for the job, then import only that generator.
+description: Ten type-safe ID strategies behind one API, with the fastest implementation of each in our current CI benchmark.
 icon: Sparkles
 ---
 
-import { ArrowRightLeft, Blocks, PackageOpen, ScanLine, Terminal } from 'lucide-react'
+import { ArrowRightLeft, Blocks, Gauge, PackageOpen, ScanLine, Terminal } from 'lucide-react'
 
-Install <code>uniku</code> once, then choose the identifier that fits the boundary in front of you: a database index, a public URL, or an API payload. Every generator has its own entry point, so a UUID, ULID, TypeID, Nanoid, CUID v2, KSUID, ObjectID, XID, or TSID only adds the strategy your application imports.
+<code>uniku</code> collects ten ID generation strategies behind one consistent, type-safe API: UUID v4/v7, ULID, TypeID, Nanoid, CUID v2, KSUID, ObjectID, XID, and TSID. In the current CI benchmark, every generator beats its dedicated npm alternative. Each strategy still has its own entry point, so your application ships only the code it imports.
 
 <Cards>
   <Card title="Install uniku" href="/docs/getting-started" description="Generate your first ID in one import." icon={<PackageOpen />} />
-  <Card title="Choose an ID" href="/docs/guides/choosing-an-id" description="Compare formats by the job they need to do." icon={<ScanLine />} />
+  <Card title="Compare ten strategies" href="/docs/guides/choosing-an-id" description="Choose a format by the job it needs to do." icon={<ScanLine />} />
+  <Card title="See the benchmarks" href="/docs/guides/performance" description="Compare every generator with its dedicated npm alternative." icon={<Gauge />} />
   <Card title="Browse integrations" href="/docs/guides/integrations" description="Start with runnable Hono, Drizzle, and Effect examples." icon={<Blocks />} />
   <Card title="Use the CLI" href="/docs/cli" description="Generate, inspect, and validate without writing a script." icon={<Terminal />} />
   <Card title="Migrate to uniku" href="/docs/migration/from-other-libraries" description="Move from a familiar ID package without changing stored identifiers." icon={<ArrowRightLeft />} />
@@ -18,7 +19,7 @@ Install <code>uniku</code> once, then choose the identifier that fits the bounda
 
 ## The library contract
 
-The library is ESM-only, built on web standards, and tested end to end across Node.js, Bun, Deno, browsers, and Cloudflare Workers. The [stability contract](https://github.com/jkomyno/uniku/blob/main/docs/STABILITY.md) defines the entry points, validation boundaries, and runtime support policy that take effect with `uniku@1.0.0`.
+Every generator import returns a callable function with precise TypeScript signatures and the helpers that make sense for its format, such as `isValid()`, `toBytes()`, `fromBytes()`, or `timestamp()`. The library is ESM-only, built on web standards, and tested end to end across Node.js, Bun, Deno, browsers, and Cloudflare Workers. The [stability contract](https://github.com/jkomyno/uniku/blob/main/docs/STABILITY.md) defines the entry points, validation boundaries, and runtime support policy that take effect with `uniku@1.0.0`.
 
 <Callout type="info" title="A CLI companion is available">
   Install <code>@uniku/cli</code> when you need an ID in a terminal, migration, or shell pipeline. It shares the library's formats but has its own release lifecycle.

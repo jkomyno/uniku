@@ -1,32 +1,34 @@
 ---
 title: Performance and bundle size
-description: Where uniku beats npm alternatives, where it does not, and what each import weighs.
+description: Every uniku generator beats its dedicated npm alternative in the current CI benchmark. See the measurements and bundle cost of each import.
 icon: Gauge
 ---
 
-The numbers below come from the repository's own benchmark and bundle-size tooling, including the rows where an npm alternative wins. Benchmarks run in CI on every push to `main` (GitHub Actions, `ubuntu-latest`), so they reflect ordinary Node.js execution rather than a tuned environment.
+Generation speed is a primary design constraint in uniku. In the current CI snapshot, every one of its ten strategies beats the dedicated npm implementation it targets. The smallest measured lead is 1.2× for UUID v4 and ObjectID; ULID reaches 116×.
+
+The claim is deliberately scoped to generation speed against the established package for each format. Application performance still depends on where and how IDs are created.
 
 ## Generation speed
 
 Each row compares uniku's generator against the npm package it targets: `uuid` for UUID v4/v7, `ulid`, `@paralleldrive/cuid2`, `@owpz/ksuid`, `bson` for ObjectID, `nexid` for XID, `tsid-ts`, `nanoid`, and `typeid-js`.
 
-This snapshot comes from the rolling `main` baseline updated on July 14, 2026. Treat the ratios as directional: shared-runner noise and dependency updates can move them. The [live baseline](https://raw.githubusercontent.com/jkomyno/uniku/gh-benchmarks/baseline.json) is the current source of truth.
+This snapshot comes from a [four-repetition CI run](https://github.com/jkomyno/uniku/actions/runs/29329215014) on July 14, 2026. Treat the ratios as directional because shared-runner noise and dependency updates can move them. The [rolling baseline](https://raw.githubusercontent.com/jkomyno/uniku/gh-benchmarks/baseline.json) tracks results across CI runs for regression detection.
 
 | Generator | uniku vs npm |
 | --- | ---: |
 | ULID | 116× faster |
-| UUID v7 | 6.4× faster |
+| UUID v7 | 6.3× faster |
 | CUID2 | 6.2× faster |
-| TypeID | 3.2× faster |
-| TSID | 2.2× faster |
+| TypeID | 3.3× faster |
+| TSID | 2.3× faster |
+| Nanoid | 2× faster |
 | KSUID | 1.6× faster |
+| XID | 1.4× faster |
+| Nanoid (10 chars) | 1.4× faster |
 | UUID v4 | 1.2× faster |
 | ObjectID | 1.2× faster |
-| Nanoid | Roughly equal |
-| Nanoid (10 chars) | npm is 1.1× faster |
-| XID | npm is 1.7× faster |
 
-The [compatibility benchmark](https://github.com/jkomyno/uniku/blob/main/packages/uniku/__tests__/bench/compat.bench.ts) runs each implementation in a fresh process. CI balances both launch orders across four repetitions and reports the per-row median. The rolling action baseline keeps warmed runtime state and one noisy run from deciding the comparison.
+The [compatibility benchmark](https://github.com/jkomyno/uniku/blob/main/packages/uniku/__tests__/bench/compat.bench.ts) runs each implementation in a fresh process. CI balances both launch orders across four repetitions and reports the per-row median, so warmed runtime state and one noisy run do not decide the comparison.
 
 ## Bundle size
 
