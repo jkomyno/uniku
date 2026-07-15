@@ -261,7 +261,7 @@ const ShippingAddress = Schema.Struct({
 
 - v3 → v4: `Schema.filter(predicate, { message })` → `.check(Schema.makeFilter(predicate))`. The predicate may return `undefined`/`true` (pass), `false`, a `string` message, `{ path, issue }`, or an array of `Schema.FilterIssue`.
 - Returning a `path` makes the error land on the right form field instead of the form root — combine with the per-field mapping above.
-- v3 `Schema.optionalWith(...)` is gone: `optionalKey(S)` = key may be absent; `optional(S)` = absent or `undefined`. Defaults use `Schema.withDecodingDefaultType(Effect.succeed(x))` (see `repos/effect-smol/migration/schema.md`).
+- v3 `Schema.optionalWith(...)` is gone: `optionalKey(S)` = key may be absent; `optional(S)` = absent or `undefined`. Defaults use `Schema.withDecodingDefaultType(Effect.succeed(x))` (see `repos/effect/migration/schema.md`).
 
 ### Nested forms
 

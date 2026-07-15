@@ -1,6 +1,6 @@
 # Error Management in Effect v4
 
-How to define, raise, recover from, transform, and accumulate errors in Effect v4. Covers tagged errors via `Schema.TaggedErrorClass`, the renamed `catch*` family (`Effect.catch`, `catchTag` with tag arrays, `catchTags`), v4-only reason-based errors (`catchReason`/`catchReasons`/`unwrapReason`), the flattened `Cause` model, `Result` (the v4 replacement for `Either`), retries/timeouts with `Schedule`, and error accumulation (`mode: "result"`, `Effect.partition`, `Effect.validate`). Deep dives: `repos/effect-smol/migration/error-handling.md`, `repos/effect-smol/migration/cause.md`.
+How to define, raise, recover from, transform, and accumulate errors in Effect v4. Covers tagged errors via `Schema.TaggedErrorClass`, the renamed `catch*` family (`Effect.catch`, `catchTag` with tag arrays, `catchTags`), v4-only reason-based errors (`catchReason`/`catchReasons`/`unwrapReason`), the flattened `Cause` model, `Result` (the v4 replacement for `Either`), retries/timeouts with `Schedule`, and error accumulation (`mode: "result"`, `Effect.partition`, `Effect.validate`). Deep dives: `repos/effect/migration/error-handling.md`, `repos/effect/migration/cause.md`.
 
 ## Defining typed errors
 
@@ -349,8 +349,7 @@ const selective = Effect.retry(callApi, {
 })
 
 // Exponential backoff (100ms, 200ms, 400ms...) with jitter, max 5 retries.
-// Schedule.both = intersection: stops as soon as either schedule stops.
-const policy = Schedule.exponential('100 millis').pipe(Schedule.jittered, Schedule.both(Schedule.recurs(5)))
+const policy = Schedule.exponential('100 millis').pipe(Schedule.jittered, Schedule.upTo({ times: 5 }))
 const resilient = Effect.retry(callApi, policy)
 
 // Fallback once retries are exhausted
@@ -359,7 +358,7 @@ const withFallback = Effect.retryOrElse(callApi, Schedule.recurs(2), (error) =>
 )
 ```
 
-- **v3 → v4**: `Schedule.compose` / `Schedule.intersect` / `Schedule.union` / `Schedule.whileInput` / `Schedule.upTo` are gone. Use `Schedule.both` (AND / max delay), `Schedule.either` (OR / min delay), `Schedule.take(n)` to cap recurrences, `Schedule.andThen` to sequence, and the `while` retry option instead of input predicates.
+- **v3 → v4**: `Schedule.compose` / `Schedule.intersect` / `Schedule.union` / `Schedule.whileInput` are gone. Use `Schedule.max([...])` (AND / max delay), `Schedule.min([...])` (OR / min delay), `Schedule.upTo({ times, duration })` to cap an existing schedule, `Schedule.andThen` to sequence, and the `while` retry option instead of input predicates.
 - `Schedule.jittered` takes no arguments in v4 (scales each delay by a random 0.8–1.2 factor). v3's `Schedule.jittered(min, max)` form does not exist.
 - The effect always runs once before the policy applies: `Schedule.recurs(3)` means up to 4 total attempts.
 - Defects and interruptions are never retried — only expected errors.
@@ -382,7 +381,7 @@ const limited: Effect.Effect<string, ApiError | Cause.TimeoutError> = fetchData.
 const resilient = fetchData.pipe(
   Effect.timeout('2 seconds'),
   Effect.retry({
-    schedule: Schedule.exponential('100 millis').pipe(Schedule.both(Schedule.recurs(3))),
+    schedule: Schedule.exponential('100 millis').pipe(Schedule.upTo({ times: 3 })),
     while: Predicate.isTagged('TimeoutError'),
   }),
   Effect.catchTag('TimeoutError', () => Effect.succeed('fallback data')),

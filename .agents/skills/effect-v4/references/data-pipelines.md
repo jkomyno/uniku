@@ -264,7 +264,7 @@ export const resilient = Stream.range(1, 50).pipe(
   Stream.mapEffect(
     (page) =>
       fetchBatch(page).pipe(
-        Effect.retry(Schedule.exponential('100 millis').pipe(Schedule.jittered, Schedule.take(3))),
+        Effect.retry(Schedule.exponential('100 millis').pipe(Schedule.jittered, Schedule.upTo({ times: 3 }))),
         Effect.catchTag('ApiError', () => Effect.succeed<ReadonlyArray<string>>([])),
       ),
     { concurrency: 4 },
@@ -274,7 +274,7 @@ export const resilient = Stream.range(1, 50).pipe(
 
 // Stream-level retry: re-runs the WHOLE stream from the start on each failure
 declare const flaky: Stream.Stream<string, ApiError>
-export const restarted = flaky.pipe(Stream.retry(Schedule.spaced('1 second').pipe(Schedule.take(5))))
+export const restarted = flaky.pipe(Stream.retry(Schedule.spaced('1 second').pipe(Schedule.upTo({ times: 5 }))))
 
 // Recovery: v3 Stream.catchAll → v4 Stream.catch
 export const recovered = flaky.pipe(Stream.catch(() => Stream.empty))
@@ -282,7 +282,7 @@ export const byTag = flaky.pipe(Stream.catchTag('ApiError', () => Stream.make('f
 ```
 
 - `Stream.retry` resubscribes from the beginning — elements already emitted are emitted again downstream. For paginated/effectful sources that is usually wrong; prefer per-element `Effect.retry`.
-- Compose schedules with `.pipe`: `Schedule.exponential(base)`, `Schedule.jittered`, `Schedule.take(n)` (limit attempts), `Schedule.both` (intersection).
+- Compose schedules with `.pipe`: `Schedule.exponential(base)`, `Schedule.jittered`, and `Schedule.upTo({ times })` to cap recurrences. Use `Schedule.max([...])` when several schedules must all continue and the slowest delay should win.
 - `Stream.catchTag` accepts a tag or a non-empty array of tags; `Stream.catchTags` takes a handler record. `Stream.orElseSucceed`/`orDie`/`ignore` also exist.
 
 ## Resource safety
@@ -443,7 +443,7 @@ export const runPipeline = Effect.fn('runPipeline')(function* (jobs: ReadonlyArr
     Stream.mapEffect(
       (job) =>
         processJob(job).pipe(
-          Effect.retry(Schedule.exponential('100 millis').pipe(Schedule.take(2))),
+          Effect.retry(Schedule.exponential('100 millis').pipe(Schedule.upTo({ times: 2 }))),
           Effect.catchTag('JobError', (error) => Queue.offer(dlq, { job, error })),
         ),
       { concurrency: 4 },
@@ -486,6 +486,6 @@ export const notifyAll = Effect.fn('notifyAll')(function* (recipients: ReadonlyA
 
 ## Deep dives
 
-- Stream/Sink/Queue source of truth: `repos/effect-smol/packages/effect/src/Stream.ts`, `Sink.ts`, `Queue.ts`
-- Runnable v4 examples: `repos/effect-smol/ai-docs/src/02_stream/`
-- Rename maps: `repos/effect-smol/migration/v3-to-v4.md`
+- Stream/Sink/Queue source of truth: `repos/effect/packages/effect/src/Stream.ts`, `Sink.ts`, `Queue.ts`
+- Runnable v4 examples: `repos/effect/ai-docs/src/02_stream/`
+- Rename maps: `repos/effect/migration/v3-to-v4.md`

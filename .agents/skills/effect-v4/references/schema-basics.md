@@ -1,6 +1,6 @@
 # Schema v4 Basics
 
-Fundamentals for Effect v4 Schema: defining schemas, decoding/encoding, constraints (checks), optional fields, arrays/tuples, unions, composition, recursion, and class-based schemas. Full migration map: `repos/effect-smol/migration/schema.md`.
+Fundamentals for Effect v4 Schema: defining schemas, decoding/encoding, constraints (checks), optional fields, arrays/tuples, unions, composition, recursion, and class-based schemas. Full migration map: `repos/effect/migration/schema.md`.
 
 ## Mental model: Type, Encoded, services
 
@@ -200,7 +200,7 @@ console.log(decoded.theme) // "light"
 
 - Helpers: `Schema.NullOr`, `Schema.UndefinedOr`, `Schema.NullishOr` (null | undefined).
 - Defaults family: `withDecodingDefaultType` (key absent or undefined, default is a `Type` value), `withDecodingDefaultTypeKey` (key absent only), `withDecodingDefault`/`withDecodingDefaultKey` (default given as the `Encoded` value). `withConstructorDefault` applies only to `Struct.make`, not decoding.
-- v3 → v4: `Schema.optionalWith(s, { exact: true })` → `Schema.optionalKey(s)`; `optionalWith(s, { default: () => x })` → `s.pipe(Schema.withDecodingDefaultType(Effect.succeed(x)))`. The nullable variants need `NullOr` + `decodeTo` (see `repos/effect-smol/migration/schema.md` § optionalWith).
+- v3 → v4: `Schema.optionalWith(s, { exact: true })` → `Schema.optionalKey(s)`; `optionalWith(s, { default: () => x })` → `s.pipe(Schema.withDecodingDefaultType(Effect.succeed(x)))`. The nullable variants need `NullOr` + `decodeTo` (see `repos/effect/migration/schema.md` § optionalWith).
 - v3 → v4: `Schema.partial`/`Schema.required(schema)` are gone as standalone combinators — see Composition below.
 - Making optional fields required again: `Schema.requiredKey` / `Schema.required` via `mapFields`.
 

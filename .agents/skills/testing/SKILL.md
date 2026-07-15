@@ -41,7 +41,7 @@ New production files should usually ship with sibling or package-local tests in 
 3. Mock at boundaries: clocks, random bytes, network, stdin/stdout/stderr, process env, browser globals, and external packages.
 4. Avoid mocking internal modules just to assert call plumbing.
 5. Keep unit tests deterministic. No live network, real timers, random data without a seeded generator, or process-wide state that leaks between tests.
-6. Expected failures are data. CLI tests run on `@effect/vitest` v4 (`it.effect`, `layer(...)`, `effect/testing/TestConsole`): read [effect-vitest.md](references/effect-vitest.md) and verify v4 APIs against `repos/effect-smol`.
+6. Expected failures are data. CLI tests run on `@effect/vitest` v4 (`it.effect`, `layer(...)`, `effect/testing/TestConsole`): read [effect-vitest.md](references/effect-vitest.md) and verify v4 APIs against `repos/effect`.
 7. Assert type-safely; never branch in a test body. An `if` wrapped around assertions silently skips them when its guard is false. For current Vitest tests, use assertions that narrow or fail immediately; for Effect v4 tests, use the narrowing helpers described in [effect-vitest.md](references/effect-vitest.md).
 8. After one or two failed fix attempts, reassess whether the test reveals a product bug, a stale assertion, or low-value coupling.
 

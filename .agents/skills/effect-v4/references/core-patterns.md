@@ -7,7 +7,7 @@ Canonical patterns for Effect v4: generators, `Effect.fn`, services, layers, tag
 - Import from `"effect"` (one package: `Effect`, `Layer`, `Context`, `Schema`, `Match`, `Config`, `Stream`, `Queue`, `Schedule`, ...). There is **no `@effect/platform`** in v4; Node-specific layers (`NodeRuntime`, `NodeFileSystem`, `NodePath`, `NodeServices`, ...) come from `"@effect/platform-node"`. Pre-stable modules live under `"effect/unstable/*"` (`effect/unstable/http`, `effect/unstable/sql`, ...).
 - Gone in v4: `Either` → `Result` (`Result.succeed` / `Result.fail`; `Option` remains), `FiberRef` → `Context.Reference` (built-ins in the `References` module), `Runtime<R>` → `ManagedRuntime` for integration plus `NodeRuntime.runMain` / `Layer.launch` for entrypoints.
 - No `async`/`await`, no `try`/`catch` in Effect code. No `Date.now()` (use `Clock`), no `process.env` outside config/adapters (use `Config`).
-- Schema v4 is a full rewrite — never assume a v3 Schema API survived; check `repos/effect-smol/migration/schema.md` first.
+- Schema v4 is a full rewrite — never assume a v3 Schema API survived; check `repos/effect/migration/schema.md` first.
 
 ## Effect.gen + yield\*
 
@@ -464,4 +464,4 @@ export const submitJob = Effect.fn('submitJob')(function* (payload: string) {
 - **`(x) => Effect.gen(function* () {...})`.** Use `Effect.fn("Name")(function* (x) {...})` — you get a span and better stack traces for free.
 - **Reading `process.env` (or `Date.now`) outside adapters.** Use `Config.*` inside layers and `Clock` for time; domain code receives values via services.
 - **Non-exhaustive error mapping at boundaries.** A `Match.orElse` fallback (or a `default` branch) hides new error tags; end domain-union matchers with `Match.exhaustive`.
-- **v3 API muscle memory.** `Effect.catchAll`, `Context.Tag`, `Effect.Service` + `.Default`, `Either.*`, `FiberRef.*`, `Layer.scoped`, `@effect/platform` imports — all gone or renamed. When unsure, check `repos/effect-smol/migration/v3-to-v4.md`.
+- **v3 API muscle memory.** `Effect.catchAll`, `Context.Tag`, `Effect.Service` + `.Default`, `Either.*`, `FiberRef.*`, `Layer.scoped`, `@effect/platform` imports — all gone or renamed. When unsure, check `repos/effect/migration/v3-to-v4.md`.

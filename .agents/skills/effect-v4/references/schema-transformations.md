@@ -1,6 +1,6 @@
 # Schema v4: Transformations, Validation Depth, and Decode Errors
 
-How to transform data while decoding in Effect v4: encode/decode symmetry, branded types, custom messages, effectful checks, and decode failure handling (`SchemaIssue` model, formatters, recovery, all-vs-first collection). Full migration map: `repos/effect-smol/migration/schema.md`.
+How to transform data while decoding in Effect v4: encode/decode symmetry, branded types, custom messages, effectful checks, and decode failure handling (`SchemaIssue` model, formatters, recovery, all-vs-first collection). Full migration map: `repos/effect/migration/schema.md`.
 
 ## Transforming during decode: `decodeTo` + `SchemaTransformation`
 
@@ -334,6 +334,6 @@ const recovered = parsePayload({}).pipe(
 
 ## Deep dives
 
-- `repos/effect-smol/migration/schema.md` — full v3 → v4 Schema API map (optionals, `optionalWith` decision tree, `extend`, `pick/omit` via `mapFields`).
-- `repos/effect-smol/packages/effect/src/SchemaGetter.ts` / `SchemaTransformation.ts` — every built-in getter/transformation.
-- `repos/effect-smol/packages/effect/src/SchemaIssue.ts` — issue tree variants and formatter hooks.
+- `repos/effect/migration/schema.md` — full v3 → v4 Schema API map (optionals, `optionalWith` decision tree, `extend`, `pick/omit` via `mapFields`).
+- `repos/effect/packages/effect/src/SchemaGetter.ts` / `SchemaTransformation.ts` — every built-in getter/transformation.
+- `repos/effect/packages/effect/src/SchemaIssue.ts` — issue tree variants and formatter hooks.

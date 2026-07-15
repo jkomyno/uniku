@@ -1,6 +1,6 @@
 # Effect v3 → v4: What Changed
 
-The core model (Effect, Layer, Stream, Schema) survives, but package layout, many high-traffic API names, services, errors, and Schema changed substantially — and several behaviors changed silently. Skim the tables when translating v3 habits; read the "Top traps" code blocks before writing any service, error, fiber, or Promise-interop code. Deep dives: `repos/effect-smol/MIGRATION.md` and `repos/effect-smol/migration/*.md`.
+The core model (Effect, Layer, Stream, Schema) survives, but package layout, many high-traffic API names, services, errors, and Schema changed substantially — and several behaviors changed silently. Skim the tables when translating v3 habits; read the "Top traps" code blocks before writing any service, error, fiber, or Promise-interop code. Deep dives: `repos/effect/MIGRATION.md` and `repos/effect/migration/*.md`.
 
 ## Package consolidation and import paths
 
@@ -369,7 +369,7 @@ const usesRetries = Effect.gen(function* () {
 
 ## Schema v4 is a rewrite — do not assume any v3 Schema API survived
 
-Schema changed more than any other module. Always check before emitting Schema code; see the dedicated Schema reference files in this skill (start with [schema-basics.md](schema-basics.md)), and `repos/effect-smol/migration/schema.md` for the full v3 → v4 map. The highest-traffic changes:
+Schema changed more than any other module. Always check before emitting Schema code; see the dedicated Schema reference files in this skill (start with [schema-basics.md](schema-basics.md)), and `repos/effect/migration/schema.md` for the full v3 → v4 map. The highest-traffic changes:
 
 | v3                                                         | v4                                                                                                       |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
