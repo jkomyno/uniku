@@ -1,6 +1,20 @@
 name: 'Setup Node.js'
 description: 'Setup Node.js and pnpm with caching'
 
+outputs:
+  node-version:
+    description: 'Default Node.js version from mise.toml'
+    value: ${{ steps.runtime-versions.outputs.node-version }}
+  node-compat-version:
+    description: 'Minimum compatible Node.js version from mise.toml'
+    value: ${{ steps.runtime-versions.outputs.node-compat-version }}
+  bun-test-version:
+    description: 'Bun test channel from mise.toml'
+    value: ${{ steps.runtime-versions.outputs.bun-test-version }}
+  deno-version:
+    description: 'Deno version from mise.toml'
+    value: ${{ steps.runtime-versions.outputs.deno-version }}
+
 runs:
   using: 'composite'
   steps:
@@ -22,19 +36,26 @@ runs:
         cache: false
         install: false
 
-    - name: Resolve Node.js version
-      id: node-version
+    - name: Resolve runtime versions
+      id: runtime-versions
       shell: bash
       run: |
-        node_version="$(mise config get tools.node)"
+        node_version="$(mise config get -f mise.toml tools.node)"
+        node_compat_version="$(mise config get -f mise.toml vars.node_compat)"
+        bun_test_version="$(mise config get -f mise.toml vars.bun_test)"
+        deno_version="$(mise config get -f mise.toml tools.deno)"
+
         echo "node-version=$node_version" >> "$GITHUB_OUTPUT"
+        echo "node-compat-version=$node_compat_version" >> "$GITHUB_OUTPUT"
+        echo "bun-test-version=$bun_test_version" >> "$GITHUB_OUTPUT"
+        echo "deno-version=$deno_version" >> "$GITHUB_OUTPUT"
 
     - name: Setup Node.js
       uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
       with:
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
-        node-version: ${{ steps.node-version.outputs.node-version }}
+        node-version: ${{ steps.runtime-versions.outputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
 
     - name: Install dependencies

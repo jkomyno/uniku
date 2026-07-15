@@ -4,9 +4,8 @@ Thanks for your interest in contributing to uniku.
 
 ## Prerequisites
 
-- [mise](https://mise.jdx.dev/) for the Node.js version pinned in `mise.toml`
+- [mise](https://mise.jdx.dev/) for the runtime versions pinned in `mise.toml`
 - pnpm via Corepack, pinned by `package.json`
-- Bun (optional, for `pnpm bench:summary`)
 
 ## Getting Started
 
@@ -57,10 +56,12 @@ pnpm test:e2e
 pnpm test:e2e:cloudflare
 ```
 
-CI's Node-version matrix runs `npm run test:ci:node-matrix` so package tests
-execute on the target Node version without invoking pnpm under unsupported Node
-versions. Add package-local `test:unit` or `test:integration` scripts there
-when new packages need matrix coverage.
+CI resolves its runtime versions from `mise.toml`. The package test suite runs on
+the pinned latest Node.js 25.x version and the exact supported minimum without
+invoking pnpm under the older runtime. Bun canary and the pinned latest Deno
+exercise the library runtime smokes. Add package-local `test:unit` or
+`test:integration` scripts to `scripts/ci-node-matrix-tests.sh` when new
+packages need Node.js matrix coverage.
 
 ### Benchmarks
 
