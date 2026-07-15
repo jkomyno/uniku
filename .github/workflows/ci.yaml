@@ -51,34 +51,67 @@ jobs:
       - name: Lint
         run: pnpm lint:ci
 
-  test:
-    name: Test (Node.js ${{ matrix.node-version }})
+  runtime:
+    name: Runtime (${{ matrix.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22, 24]
+        include:
+          - name: Node.js latest 25.x
+            runtime: node-current
+          - name: Node.js minimum
+            runtime: node-compat
+          - name: Bun canary
+            runtime: bun
+          - name: Deno latest
+            runtime: deno
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Install dependencies
+        id: toolchain
         uses: ./.github/actions/setup-node
 
-      - name: Build
+      - name: Build library
         run: pnpm --filter uniku build
 
-      - name: Setup test Node.js
+      - name: Setup minimum Node.js
+        if: matrix.runtime == 'node-compat'
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ steps.toolchain.outputs.node-compat-version }}
 
-      - name: Unit tests
+      - name: Setup Bun canary
+        if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2.1.2
+        with:
+          bun-version: ${{ steps.toolchain.outputs.bun-test-version }}
+
+      - name: Setup Deno
+        if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: ${{ steps.toolchain.outputs.deno-version }}
+
+      - name: Test on Node.js
+        if: startsWith(matrix.runtime, 'node-')
         env:
           npm_config_loglevel: "error"
           npm_config_update_notifier: "false"
         run: npm run test:ci:node-matrix
+
+      - name: Test Bun runtimes
+        if: matrix.runtime == 'bun'
+        run: |
+          pnpm --filter uniku smoke:runtime:bun
+          pnpm --filter uniku smoke:runtime:browser
+
+      - name: Test Deno runtime
+        if: matrix.runtime == 'deno'
+        run: pnpm --filter uniku smoke:runtime:deno
 
   coverage:
     name: Library Coverage
@@ -93,68 +126,6 @@ jobs:
 
       - name: Coverage gate
         run: pnpm test:coverage
-
-  smoke-bun:
-    name: Bun Smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-
-      - name: Setup Node.js
-        uses: ./.github/actions/setup-node
-
-      - name: Setup Bun
-        uses: ./.github/actions/setup-bun
-
-      - name: Build
-        run: pnpm build
-
-      - name: Runtime smoke
-        run: pnpm --filter uniku smoke:runtime:bun
-
-  smoke-deno:
-    name: Deno Smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-
-      - name: Setup Node.js
-        uses: ./.github/actions/setup-node
-
-      - name: Setup Deno
-        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
-        with:
-          deno-version: v2.x
-
-      - name: Build
-        run: pnpm build
-
-      - name: Runtime smoke
-        run: pnpm --filter uniku smoke:runtime:deno
-
-  smoke-browser:
-    name: Chromium Smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-
-      - name: Setup Node.js
-        uses: ./.github/actions/setup-node
-
-      - name: Setup Bun
-        uses: ./.github/actions/setup-bun
-
-      - name: Build library
-        run: pnpm --filter uniku build
-
-      - name: Browser runtime smoke
-        run: pnpm --filter uniku smoke:runtime:browser
 
   e2e-cloudflare:
     name: Cloudflare Workers E2E
@@ -229,7 +200,7 @@ jobs:
     name: Preview Release
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: [check, test, coverage, smoke-bun, smoke-deno, smoke-browser, e2e-cloudflare, build]
+    needs: [check, runtime, coverage, e2e-cloudflare, build]
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
