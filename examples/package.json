@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "check": "pnpm run typecheck && pnpm run test",
+    "check": "pnpm --filter uniku build && pnpm run typecheck && pnpm run test",
     "example:drizzle": "node --conditions=@jkomyno/source --import tsx drizzle-ulid.ts",
     "example:effect": "node --conditions=@jkomyno/source --import tsx effect-typeid.ts",
     "example:hono": "node --conditions=@jkomyno/source --import tsx hono-nanoid.ts",
