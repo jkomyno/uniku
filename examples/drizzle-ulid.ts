@@ -33,6 +33,7 @@ test('generates and stores a binary ULID with Drizzle', async () => {
     if (!event) throw new Error('The inserted event was not returned')
 
     const restoredId = ulid.fromBytes(event.id)
+    // Example: restoredId = '01KXJMQ2CN69EPDB5V8716Y3XJ'
 
     expect(event.id).toBeInstanceOf(Uint8Array)
     expect(event.id).toHaveLength(16)

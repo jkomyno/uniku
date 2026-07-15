@@ -13,6 +13,7 @@ app.use(
 )
 
 app.get('/', (context) => context.json({ requestId: context.get('requestId') }))
+// Example: requestId = '_2DECPU7LD9yGaCxNoR1P'
 
 test('uses a Nanoid as the Hono request ID', async () => {
   const response = await app.request('/')
