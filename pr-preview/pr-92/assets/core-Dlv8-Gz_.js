@@ -1,0 +1,1 @@
+import{O as e}from"./dist-CmtGe0mz.js";export{e as isSpecialLang};
