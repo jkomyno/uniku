@@ -122,6 +122,22 @@ function isValid(id: unknown): id is string {
 }
 ```
 
+## Errors
+
+Throw `InvalidInputError`, `ParseError`, or `BufferError` from `uniku/errors`.
+Error codes are strategy-agnostic and shared across generators — timestamp option
+validation uses `TIMESTAMP_OUT_OF_RANGE` everywhere. Pass the generator's
+`IdGenerator` name via the options bag so callers can attribute the failure:
+
+```typescript
+throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'Timestamp must be ...', { strategy: 'ulid' })
+```
+
+Do not introduce strategy-prefixed codes (e.g. `ULID_TIMESTAMP_OUT_OF_RANGE`) —
+legacy prefixes are being consolidated before v1. The `_tag` class discriminant
+already separates caller-input failures (`InvalidInputError`) from ID-string
+parse failures (`ParseError`); the same code may appear under both tags.
+
 ## Entry Point
 
 Each generator has its own entry point (no barrel exports):

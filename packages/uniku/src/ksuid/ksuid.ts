@@ -100,11 +100,15 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
   const secs = options?.secs
   if (secs !== undefined) {
     if (!Number.isInteger(secs) || secs < KSUID_EPOCH) {
-      throw new InvalidInputError('KSUID_TIMESTAMP_TOO_LOW', 'Timestamp must be >= KSUID epoch')
+      throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'Timestamp must be >= KSUID epoch', {
+        strategy: 'ksuid',
+      })
     }
 
     if (secs > KSUID_MAX_SECS) {
-      throw new InvalidInputError('KSUID_TIMESTAMP_TOO_HIGH', 'Timestamp must be <= maximum KSUID timestamp')
+      throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'Timestamp must be <= maximum KSUID timestamp', {
+        strategy: 'ksuid',
+      })
     }
 
     timestamp = secs - KSUID_EPOCH

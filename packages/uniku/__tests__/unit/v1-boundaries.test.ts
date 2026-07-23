@@ -1,9 +1,10 @@
 import { describe, expect, it, test } from 'vitest'
 import { cuidv2 } from '@/src/cuid/v2'
-import { BufferError, InvalidInputError } from '@/src/errors'
+import { BufferError, InvalidInputError, ParseError } from '@/src/errors'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { objectid } from '@/src/objectid/objectid'
 import { tsid } from '@/src/tsid/tsid'
+import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
@@ -90,6 +91,86 @@ describe('v1 public boundary contract', () => {
 
     it('UUID v7 accepts the maximum unsigned 32-bit sequence', () => {
       expect(() => uuidv7({ msecs: 0, random: zeroes(16), seq: 0xffffffff })).not.toThrow()
+    })
+  })
+
+  describe('timestamp error codes', () => {
+    const KSUID_MAX_SECS = 1_400_000_000 + 0xffffffff
+
+    const cases: ReadonlyArray<{
+      readonly name: string
+      readonly strategy: string
+      readonly generate: () => unknown
+    }> = [
+      {
+        name: 'UUID v7 rejects out-of-range timestamps',
+        strategy: 'uuid',
+        generate: () => uuidv7({ msecs: -1 }),
+      },
+      {
+        name: 'ULID rejects out-of-range timestamps',
+        strategy: 'ulid',
+        generate: () => ulid({ msecs: 2 ** 48 }),
+      },
+      {
+        name: 'TypeID attributes timestamp failures to the typeid boundary',
+        strategy: 'typeid',
+        generate: () => typeid('user', { msecs: -1 }),
+      },
+      {
+        name: 'KSUID rejects timestamps below its epoch',
+        strategy: 'ksuid',
+        generate: () => ksuid({ secs: 0 }),
+      },
+      {
+        name: 'KSUID rejects timestamps above its maximum',
+        strategy: 'ksuid',
+        generate: () => ksuid({ secs: KSUID_MAX_SECS + 1 }),
+      },
+      {
+        name: 'ObjectID rejects out-of-range timestamps',
+        strategy: 'objectid',
+        generate: () => objectid({ secs: -1 }),
+      },
+      {
+        name: 'XID rejects out-of-range timestamps',
+        strategy: 'xid',
+        generate: () => xid({ secs: 2 ** 32 }),
+      },
+      {
+        name: 'TSID rejects non-integer timestamps',
+        strategy: 'tsid',
+        generate: () => tsid({ msecs: 1.5 }),
+      },
+      {
+        name: 'TSID rejects timestamps outside its epoch window',
+        strategy: 'tsid',
+        generate: () => tsid({ msecs: 0 }),
+      },
+    ]
+
+    test.each(cases)('$name', ({ generate, strategy }) => {
+      let error: unknown
+      try {
+        generate()
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'TIMESTAMP_OUT_OF_RANGE', strategy })
+    })
+
+    it('ULID decode-time overflow reports the same code as a ParseError', () => {
+      let error: unknown
+      try {
+        ulid.timestamp('8ZZZZZZZZZZZZZZZZZZZZZZZZZ')
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(ParseError)
+      expect(error).toMatchObject({ code: 'TIMESTAMP_OUT_OF_RANGE', strategy: 'ulid' })
     })
   })
 

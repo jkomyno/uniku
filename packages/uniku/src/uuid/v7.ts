@@ -106,10 +106,9 @@ function v7WithOptions<TBuf extends Uint8Array = Uint8Array>(
 ): string | TBuf {
   const optMsecs = options.msecs
   if (optMsecs !== undefined && !isIntegerInRange(optMsecs, 0, MAX_MSECS)) {
-    throw new InvalidInputError(
-      'UUID_TIMESTAMP_OUT_OF_RANGE',
-      `Timestamp must be an integer between 0 and ${MAX_MSECS}`,
-    )
+    throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', `Timestamp must be an integer between 0 and ${MAX_MSECS}`, {
+      strategy: 'uuid',
+    })
   }
   const optSeq = options.seq
   if (optSeq !== undefined && !isIntegerInRange(optSeq, 0, MAX_SEQ)) {

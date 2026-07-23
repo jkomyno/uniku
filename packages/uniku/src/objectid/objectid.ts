@@ -146,7 +146,9 @@ function objectIdFn<TBuf extends Uint8Array = Uint8Array>(
 
     const optSecs = options.secs
     if (optSecs !== undefined && !isIntegerInRange(optSecs, 0, MAX_SECS)) {
-      throw new InvalidInputError('OBJECTID_TIMESTAMP_OUT_OF_RANGE', `Timestamp must be between 0 and ${MAX_SECS}`)
+      throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', `Timestamp must be between 0 and ${MAX_SECS}`, {
+        strategy: 'objectid',
+      })
     }
 
     const optCounter = options.counter

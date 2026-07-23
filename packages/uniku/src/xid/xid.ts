@@ -89,7 +89,9 @@ function validateOptions(options: XidOptions): void {
     throw new InvalidInputError('XID_PROCESS_ID_OUT_OF_RANGE', `Process ID must be between 0 and ${MAX_PROCESS_ID}`)
   }
   if (options.secs !== undefined && !isIntegerInRange(options.secs, 0, MAX_SECS)) {
-    throw new InvalidInputError('XID_TIMESTAMP_OUT_OF_RANGE', `Timestamp must be between 0 and ${MAX_SECS}`)
+    throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', `Timestamp must be between 0 and ${MAX_SECS}`, {
+      strategy: 'xid',
+    })
   }
   if (options.counter !== undefined && !isIntegerInRange(options.counter, 0, MAX_COUNTER)) {
     throw new InvalidInputError('XID_COUNTER_OUT_OF_RANGE', `Counter must be between 0 and ${MAX_COUNTER}`)
