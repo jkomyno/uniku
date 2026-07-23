@@ -29,7 +29,7 @@ function invalidCharError(str: string, index: number): ParseError {
 }
 
 function timestampOverflowError(): ParseError {
-  return new ParseError('ULID_TIMESTAMP_OVERFLOW', 'ULID timestamp exceeds 48 bits')
+  return new ParseError('TIMESTAMP_OUT_OF_RANGE', 'ULID timestamp exceeds 48 bits', { strategy: 'ulid' })
 }
 
 function decodeTimeChars(str: string): number {

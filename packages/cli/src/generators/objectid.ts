@@ -13,7 +13,7 @@ export function generateObjectid(options: ObjectidGenerateOptions): Effect.Effec
     try: () => {
       const ids: string[] = []
       for (let i = 0; i < options.count; i++) {
-        const objectidOpts = options.timestamp != null ? { secs: options.timestamp } : undefined
+        const objectidOpts = options.timestamp != null ? { msecs: options.timestamp } : undefined
         ids.push(objectid(objectidOpts))
       }
       return ids

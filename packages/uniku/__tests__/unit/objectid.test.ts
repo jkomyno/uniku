@@ -25,20 +25,20 @@ describe('objectid', () => {
 
   it('produces a specific hand-computed hex string for fixed inputs (test vector)', () => {
     const random = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05])
-    const id = objectid({ secs: 1_700_000_000, random, counter: 0x010203 })
+    const id = objectid({ msecs: 1_700_000_000_000, random, counter: 0x010203 })
     expect(id).toBe('6553f1000102030405010203')
   })
 
   it('embeds the given timestamp exactly', () => {
-    const secs = 1_702_387_456
-    const id = objectid({ secs, random: new Uint8Array(5), counter: 0 })
-    expect(objectid.timestamp(id)).toBe(secs * 1000)
+    const msecs = 1_702_387_456_000
+    const id = objectid({ msecs, random: new Uint8Array(5), counter: 0 })
+    expect(objectid.timestamp(id)).toBe(msecs)
   })
 
   it('supports buffer output at a given offset', () => {
     const buffer = new Uint8Array(32)
     const offset = 8
-    const options = { secs: 1_702_387_456, random: new Uint8Array([1, 2, 3, 4, 5]), counter: 0xabcdef }
+    const options = { msecs: 1_702_387_456_000, random: new Uint8Array([1, 2, 3, 4, 5]), counter: 0xabcdef }
 
     const result = objectid(options, buffer, offset)
     expect(result).toBe(buffer)
@@ -52,16 +52,16 @@ describe('objectid', () => {
   describe('boundary values', () => {
     it('round-trips counter at 0 and 0xFFFFFF', () => {
       for (const counter of [0, 0xffffff]) {
-        const id = objectid({ secs: 1_700_000_000, random: new Uint8Array(5), counter })
+        const id = objectid({ msecs: 1_700_000_000_000, random: new Uint8Array(5), counter })
         const bytes = objectid.toBytes(id)
         expect(objectid.fromBytes(bytes)).toBe(id)
       }
     })
 
-    it('round-trips secs at 0 and 0xFFFFFFFF', () => {
-      for (const secs of [0, 0xffffffff]) {
-        const id = objectid({ secs, random: new Uint8Array(5), counter: 0 })
-        expect(objectid.timestamp(id)).toBe(secs * 1000)
+    it('round-trips timestamps at 0 and the unsigned 32-bit second boundary', () => {
+      for (const msecs of [0, 0xffffffff * 1000]) {
+        const id = objectid({ msecs, random: new Uint8Array(5), counter: 0 })
+        expect(objectid.timestamp(id)).toBe(msecs)
       }
     })
   })
@@ -77,9 +77,9 @@ describe('objectid', () => {
       expect(() => objectid({ random: new Uint8Array(16) })).not.toThrow()
     })
 
-    it('throws when secs is outside the unsigned 32-bit range', () => {
-      expect(() => objectid({ secs: -1 })).toThrow(InvalidInputError)
-      expect(() => objectid({ secs: 0x100000000 })).toThrow(InvalidInputError)
+    it('throws when msecs is outside the unsigned 32-bit second range', () => {
+      expect(() => objectid({ msecs: -1 })).toThrow(InvalidInputError)
+      expect(() => objectid({ msecs: 0x100000000 * 1000 })).toThrow(InvalidInputError)
     })
 
     it('throws when counter is outside the unsigned 24-bit range', () => {
@@ -103,6 +103,31 @@ describe('objectid', () => {
     })
   })
 
+  describe('deprecated secs alias', () => {
+    // TODO(v1-rc): remove this block together with the `secs` option.
+    it('accepts whole seconds until v1-rc', () => {
+      const id = objectid({ secs: 1_700_000_000, random: new Uint8Array(5), counter: 0 })
+      expect(objectid.timestamp(id)).toBe(1_700_000_000_000)
+    })
+
+    it('validates the seconds range', () => {
+      expect(() => objectid({ secs: -1 })).toThrow(InvalidInputError)
+      expect(() => objectid({ secs: 0x100000000 })).toThrow(InvalidInputError)
+    })
+
+    it('rejects passing both msecs and secs', () => {
+      let error: unknown
+      try {
+        objectid({ msecs: 1_700_000_000_000, secs: 1_700_000_000 })
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'objectid' })
+    })
+  })
+
   describe('round-trips', () => {
     it('round-trips through byte helpers for a hot-path generated id', () => {
       const id = objectid()
@@ -110,7 +135,7 @@ describe('objectid', () => {
     })
 
     it('round-trips through byte helpers for a deterministic-path generated id', () => {
-      const id = objectid({ secs: 1_700_000_000, random: new Uint8Array([9, 8, 7, 6, 5]), counter: 42 })
+      const id = objectid({ msecs: 1_700_000_000_000, random: new Uint8Array([9, 8, 7, 6, 5]), counter: 42 })
       expect(objectid.fromBytes(objectid.toBytes(id))).toBe(id)
     })
   })
@@ -121,15 +146,15 @@ describe('objectid', () => {
     // counter) could refill that same pool before the view was consumed, silently
     // aliasing the embedded random bytes with whatever the pool held after refill.
     // Interleaving with other generators maximizes pool-refill pressure between the
-    // random draw and the counter draw on each objectid({ secs }) call.
-    const secs = 1_700_000_000
+    // random draw and the counter draw on each objectid({ msecs }) call.
+    const msecs = 1_700_000_000_000
     expectDistinctRandomSamples({
       count: 5_000,
       randomBits: 40,
       generate: () => {
         ulid()
         ksuid()
-        return objectid({ secs })
+        return objectid({ msecs })
       },
     })
   })

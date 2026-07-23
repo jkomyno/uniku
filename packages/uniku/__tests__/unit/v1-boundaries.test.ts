@@ -1,9 +1,10 @@
 import { describe, expect, it, test } from 'vitest'
 import { cuidv2 } from '@/src/cuid/v2'
-import { BufferError, InvalidInputError } from '@/src/errors'
+import { BufferError, InvalidInputError, ParseError } from '@/src/errors'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { objectid } from '@/src/objectid/objectid'
 import { tsid } from '@/src/tsid/tsid'
+import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
@@ -48,19 +49,19 @@ describe('v1 public boundary contract', () => {
       },
       {
         name: 'KSUID rejects NaN timestamps',
-        generate: () => ksuid({ secs: Number.NaN, random: zeroes(16) }),
+        generate: () => ksuid({ msecs: Number.NaN, random: zeroes(16) }),
       },
       {
         name: 'KSUID rejects fractional timestamps',
-        generate: () => ksuid({ secs: 1_500_000_000.5, random: zeroes(16) }),
+        generate: () => ksuid({ msecs: 1_500_000_000_000.5, random: zeroes(16) }),
       },
       {
         name: 'ObjectID rejects NaN timestamps',
-        generate: () => objectid({ secs: Number.NaN, random: zeroes(5), counter: 0 }),
+        generate: () => objectid({ msecs: Number.NaN, random: zeroes(5), counter: 0 }),
       },
       {
         name: 'ObjectID rejects fractional counters',
-        generate: () => objectid({ secs: 0, random: zeroes(5), counter: 1.5 }),
+        generate: () => objectid({ msecs: 0, random: zeroes(5), counter: 1.5 }),
       },
       {
         name: 'XID rejects fractional process IDs',
@@ -90,6 +91,86 @@ describe('v1 public boundary contract', () => {
 
     it('UUID v7 accepts the maximum unsigned 32-bit sequence', () => {
       expect(() => uuidv7({ msecs: 0, random: zeroes(16), seq: 0xffffffff })).not.toThrow()
+    })
+  })
+
+  describe('timestamp error codes', () => {
+    const KSUID_MAX_SECS = 1_400_000_000 + 0xffffffff
+
+    const cases: ReadonlyArray<{
+      readonly name: string
+      readonly strategy: string
+      readonly generate: () => unknown
+    }> = [
+      {
+        name: 'UUID v7 rejects out-of-range timestamps',
+        strategy: 'uuid',
+        generate: () => uuidv7({ msecs: -1 }),
+      },
+      {
+        name: 'ULID rejects out-of-range timestamps',
+        strategy: 'ulid',
+        generate: () => ulid({ msecs: 2 ** 48 }),
+      },
+      {
+        name: 'TypeID attributes timestamp failures to the typeid boundary',
+        strategy: 'typeid',
+        generate: () => typeid('user', { msecs: -1 }),
+      },
+      {
+        name: 'KSUID rejects timestamps below its epoch',
+        strategy: 'ksuid',
+        generate: () => ksuid({ msecs: 0 }),
+      },
+      {
+        name: 'KSUID rejects timestamps above its maximum',
+        strategy: 'ksuid',
+        generate: () => ksuid({ msecs: (KSUID_MAX_SECS + 1) * 1000 }),
+      },
+      {
+        name: 'ObjectID rejects out-of-range timestamps',
+        strategy: 'objectid',
+        generate: () => objectid({ msecs: -1 }),
+      },
+      {
+        name: 'XID rejects out-of-range timestamps',
+        strategy: 'xid',
+        generate: () => xid({ msecs: 2 ** 32 * 1000 }),
+      },
+      {
+        name: 'TSID rejects non-integer timestamps',
+        strategy: 'tsid',
+        generate: () => tsid({ msecs: 1.5 }),
+      },
+      {
+        name: 'TSID rejects timestamps outside its epoch window',
+        strategy: 'tsid',
+        generate: () => tsid({ msecs: 0 }),
+      },
+    ]
+
+    test.each(cases)('$name', ({ generate, strategy }) => {
+      let error: unknown
+      try {
+        generate()
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'TIMESTAMP_OUT_OF_RANGE', strategy })
+    })
+
+    it('ULID decode-time overflow reports the same code as a ParseError', () => {
+      let error: unknown
+      try {
+        ulid.timestamp('8ZZZZZZZZZZZZZZZZZZZZZZZZZ')
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(ParseError)
+      expect(error).toMatchObject({ code: 'TIMESTAMP_OUT_OF_RANGE', strategy: 'ulid' })
     })
   })
 
@@ -146,15 +227,15 @@ describe('v1 public boundary contract', () => {
       },
       {
         name: 'KSUID rejects fractional offsets',
-        generate: () => ksuid({ secs: 1_500_000_000, random: zeroes(16) }, zeroes(32), 0.5),
+        generate: () => ksuid({ msecs: 1_500_000_000_000, random: zeroes(16) }, zeroes(32), 0.5),
       },
       {
         name: 'ObjectID rejects fractional offsets',
-        generate: () => objectid({ secs: 0, random: zeroes(5), counter: 0 }, zeroes(32), 0.5),
+        generate: () => objectid({ msecs: 0, random: zeroes(5), counter: 0 }, zeroes(32), 0.5),
       },
       {
         name: 'XID rejects fractional offsets',
-        generate: () => xid({ secs: 0, machineId: zeroes(3), processId: 0, counter: 0 }, zeroes(32), 0.5),
+        generate: () => xid({ msecs: 0, machineId: zeroes(3), processId: 0, counter: 0 }, zeroes(32), 0.5),
       },
       {
         name: 'TSID rejects fractional offsets',

@@ -1,3 +1,4 @@
+import { isIntegerInRange } from '../common/validation'
 import { InvalidInputError, ParseError } from '../errors'
 import type { UuidV7Options } from '../uuid/v7'
 import { uuidv7 } from '../uuid/v7'
@@ -27,6 +28,10 @@ export type Typeid = {
 
 const TYPEID_SUFFIX_LENGTH = 26
 const TYPEID_UUID_BYTE_LENGTH = 16
+// 48-bit UUID v7 timestamp capacity, mirrored from uuid/v7 so timestamp
+// validation is attributed to the typeid boundary instead of leaking
+// `strategy: 'uuid'` through delegation.
+const MAX_MSECS = 0xffffffffffff
 const TYPEID_ALPHABET = '0123456789abcdefghjkmnpqrstvwxyz'
 
 const BASE32_DECODE: number[] = Array.from({ length: 128 }, () => -1)
@@ -214,6 +219,13 @@ function timestampFromUuidV7Bytes(bytes: Uint8Array): number {
 }
 
 function typeidFn(prefix: string, options?: TypeidOptions): string {
+  const msecs = options?.msecs
+  if (msecs !== undefined && !isIntegerInRange(msecs, 0, MAX_MSECS)) {
+    throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', `Timestamp must be an integer between 0 and ${MAX_MSECS}`, {
+      strategy: 'typeid',
+    })
+  }
+
   const bytes = uuidv7(options, new Uint8Array(TYPEID_UUID_BYTE_LENGTH))
   return formatTypeidFromUuidV7Bytes(prefix, bytes)
 }

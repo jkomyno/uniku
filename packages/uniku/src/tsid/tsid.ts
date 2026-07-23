@@ -150,14 +150,13 @@ function resolveTsidOptions(options: TsidOptions): ResolvedTsidOptions {
   }
   const msecs = options.msecs ?? Date.now()
   if (!Number.isInteger(msecs)) {
-    throw new InvalidInputError('TSID_TIMESTAMP_INVALID', 'msecs must be a finite integer')
+    throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'msecs must be a finite integer', { strategy: 'tsid' })
   }
   const msecsDiff = BigInt(msecs) - BigInt(epoch)
   if (msecsDiff < 0n || msecsDiff > MAX_TIMESTAMP_DIFF) {
-    throw new InvalidInputError(
-      'TSID_TIMESTAMP_OUT_OF_RANGE',
-      `msecs - epoch must be between 0 and ${MAX_TIMESTAMP_DIFF}`,
-    )
+    throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', `msecs - epoch must be between 0 and ${MAX_TIMESTAMP_DIFF}`, {
+      strategy: 'tsid',
+    })
   }
 
   return {

@@ -53,7 +53,10 @@ Generators support two modes via overloads:
 Define an options type with these optional fields:
 
 - `random?: Uint8Array` — Custom random bytes for deterministic tests
-- `msecs?: number` — Custom timestamp in milliseconds (time-ordered generators)
+- `msecs?: number` — Custom timestamp in milliseconds since the Unix epoch (time-ordered
+  generators). Second-precision formats (ksuid, objectid, xid) truncate sub-second
+  precision via `Math.floor(msecs / 1000)`; their pre-v1 `secs` aliases are deprecated
+  and tracked for removal at v1-rc (see `docs/STABILITY.md`).
 - `seq?: number` — Sequence number (only for uuidv7)
 
 ## Monotonic State (Time-Ordered Generators)
@@ -121,6 +124,22 @@ function isValid(id: unknown): id is string {
   return typeof id === 'string' && REGEX.test(id)
 }
 ```
+
+## Errors
+
+Throw `InvalidInputError`, `ParseError`, or `BufferError` from `uniku/errors`.
+Error codes are strategy-agnostic and shared across generators — timestamp option
+validation uses `TIMESTAMP_OUT_OF_RANGE` everywhere. Pass the generator's
+`IdGenerator` name via the options bag so callers can attribute the failure:
+
+```typescript
+throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'Timestamp must be ...', { strategy: 'ulid' })
+```
+
+Do not introduce strategy-prefixed codes (e.g. `ULID_TIMESTAMP_OUT_OF_RANGE`) —
+legacy prefixes are being consolidated before v1. The `_tag` class discriminant
+already separates caller-input failures (`InvalidInputError`) from ID-string
+parse failures (`ParseError`); the same code may appear under both tags.
 
 ## Entry Point
 

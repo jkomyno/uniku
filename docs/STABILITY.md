@@ -43,6 +43,21 @@ import { cuidv2 } from 'uniku/cuid/v2'
 After v1, deprecated APIs remain available for the rest of their current major
 version and are removed only in the next major version.
 
+### v1-rc cleanup checklist
+
+The following deprecated surfaces must be removed before tagging the v1
+release candidate. Code-level reminders live in `TODO(v1-rc)` comments next to
+each deprecated surface.
+
+- `uniku/cuid2` entry point (see CUID2 migration above).
+- `secs` timestamp options in `uniku/ksuid`, `uniku/objectid`, and `uniku/xid`
+  once the unified `msecs` option lands there; retire the seconds-based
+  `--timestamp` parsing in `@uniku/cli` at the same time.
+- Any remaining strategy-prefixed error codes (e.g. `ULID_INVALID_CHAR`,
+  `KSUID_BYTES_INVALID_LENGTH`) if the consolidation into unified codes with
+  `strategy` attribution — started with `TIMESTAMP_OUT_OF_RANGE` — has not
+  finished by then.
+
 ## Runtime support
 
 The library is ESM-only and targets ES2023 plus the Web Crypto API.

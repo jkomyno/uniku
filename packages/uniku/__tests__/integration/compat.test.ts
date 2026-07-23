@@ -148,9 +148,9 @@ describe('Cross-Validation: KSUID', () => {
   })
 
   it('timestamp extraction matches between implementations', () => {
-    // Use a fixed timestamp for reproducibility (in seconds)
-    const secs = Math.floor(Date.now() / 1000)
-    const unikuId = ksuid({ secs })
+    // Use a fixed timestamp for reproducibility (whole seconds in milliseconds)
+    const msecs = Math.floor(Date.now() / 1000) * 1000
+    const unikuId = ksuid({ msecs })
     const unikuTimestamp = ksuid.timestamp(unikuId)
 
     const parsed = npmKsuid.parse(unikuId)
@@ -191,9 +191,9 @@ describe('Cross-Validation: ObjectID', () => {
   })
 
   it('timestamp extraction matches between implementations', () => {
-    // Use a fixed timestamp for reproducibility (in seconds)
-    const secs = Math.floor(Date.now() / 1000)
-    const unikuId = objectid({ secs })
+    // Use a fixed timestamp for reproducibility (whole seconds in milliseconds)
+    const msecs = Math.floor(Date.now() / 1000) * 1000
+    const unikuId = objectid({ msecs })
     const unikuTimestamp = objectid.timestamp(unikuId)
 
     const npmTimestamp = new npmObjectId(unikuId).getTimestamp().getTime()

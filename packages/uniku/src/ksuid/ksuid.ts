@@ -1,5 +1,6 @@
 import { writeTimestamp32 } from '../common/bytes'
 import { rng } from '../common/random'
+import { resolveTimestampSecs } from '../common/timestamp'
 import { isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
 import { decodeBase62, encodeBase62 } from './base62'
@@ -37,10 +38,17 @@ export type KsuidOptions = {
    */
   random?: Uint8Array
   /**
-   * Timestamp in seconds since Unix epoch.
-   * Defaults to Math.floor(Date.now() / 1000).
-   * KSUID natively uses second precision.
+   * Timestamp in milliseconds since the Unix epoch.
+   * Defaults to Date.now().
+   * KSUID stores whole seconds, so sub-second precision is truncated.
    */
+  msecs?: number
+  /**
+   * Timestamp in seconds since the Unix epoch.
+   *
+   * @deprecated Use `msecs` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
   secs?: number
 }
 
@@ -97,16 +105,8 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
   }
 
   let timestamp: number
-  const secs = options?.secs
+  const secs = options === undefined ? undefined : resolveTimestampSecs(options, KSUID_EPOCH, KSUID_MAX_SECS, 'ksuid')
   if (secs !== undefined) {
-    if (!Number.isInteger(secs) || secs < KSUID_EPOCH) {
-      throw new InvalidInputError('KSUID_TIMESTAMP_TOO_LOW', 'Timestamp must be >= KSUID epoch')
-    }
-
-    if (secs > KSUID_MAX_SECS) {
-      throw new InvalidInputError('KSUID_TIMESTAMP_TOO_HIGH', 'Timestamp must be <= maximum KSUID timestamp')
-    }
-
     timestamp = secs - KSUID_EPOCH
   } else {
     /**

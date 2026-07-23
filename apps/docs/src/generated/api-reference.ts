@@ -667,7 +667,13 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "Uint8Array"
             },
             {
-              "description": "Timestamp in seconds since Unix epoch. Defaults to Math.floor(Date.now() / 1000). KSUID natively uses second precision.",
+              "description": "Timestamp in milliseconds since the Unix epoch. Defaults to Date.now(). KSUID stores whole seconds, so sub-second precision is truncated.",
+              "name": "msecs",
+              "optional": true,
+              "type": "number"
+            },
+            {
+              "description": "Timestamp in seconds since the Unix epoch.",
               "name": "secs",
               "optional": true,
               "type": "number"
@@ -789,7 +795,13 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "Uint8Array"
             },
             {
-              "description": "Timestamp in seconds since Unix epoch. Defaults to Math.floor(Date.now() / 1000).",
+              "description": "Timestamp in milliseconds since the Unix epoch. Defaults to Date.now(). ObjectID stores whole seconds, so sub-second precision is truncated.",
+              "name": "msecs",
+              "optional": true,
+              "type": "number"
+            },
+            {
+              "description": "Timestamp in seconds since the Unix epoch.",
               "name": "secs",
               "optional": true,
               "type": "number"
@@ -1089,7 +1101,13 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Unix timestamp in seconds. Defaults to the current second.",
+              "description": "Unix timestamp in milliseconds. Defaults to Date.now(). XID stores whole seconds, so sub-second precision is truncated.",
+              "name": "msecs",
+              "optional": true,
+              "type": "number"
+            },
+            {
+              "description": "Unix timestamp in seconds.",
               "name": "secs",
               "optional": true,
               "type": "number"

@@ -198,7 +198,7 @@ const cuidSubcommand = Command.make(
 // ── KSUID subcommand ────────────────────────────────────────────────
 
 const ksuidTimestampFlag = Flag.string('timestamp').pipe(
-  Flag.withDescription('Unix timestamp in seconds (or "now")'),
+  Flag.withDescription('Unix timestamp in milliseconds (or "now")'),
   Flag.optional,
 )
 
@@ -212,7 +212,7 @@ const ksuidSubcommand = Command.make(
   Effect.fn('cli.generate.ksuid')(function* ({ count, json, timestamp: timestampOpt }) {
     const output = yield* OutputService
     const timestampInput = Option.getOrUndefined(timestampOpt)
-    const timestamp = timestampInput !== undefined ? yield* parseTimestampSecs(timestampInput) : undefined
+    const timestamp = timestampInput !== undefined ? yield* parseTimestampMs(timestampInput) : undefined
     const ids = yield* generateKsuid({ count, timestamp })
     yield* output.write(idsOutput(ids), { json })
   }),
@@ -220,14 +220,17 @@ const ksuidSubcommand = Command.make(
   Command.withDescription('Generate KSUIDs'),
   Command.withExamples([
     { command: 'uniku ksuid -n 5 --json', description: 'Generate 5 KSUIDs as a JSON array' },
-    { command: 'uniku ksuid --timestamp 1720000000', description: 'Generate a KSUID for a fixed Unix timestamp (s)' },
+    {
+      command: 'uniku ksuid --timestamp 1720000000000',
+      description: 'Generate a KSUID for a fixed Unix timestamp (ms)',
+    },
   ]),
 )
 
 // ── ObjectID subcommand ─────────────────────────────────────────────
 
 const objectidTimestampFlag = Flag.string('timestamp').pipe(
-  Flag.withDescription('Unix timestamp in seconds (or "now")'),
+  Flag.withDescription('Unix timestamp in milliseconds (or "now")'),
   Flag.optional,
 )
 
@@ -241,7 +244,7 @@ const objectidSubcommand = Command.make(
   Effect.fn('cli.generate.objectid')(function* ({ count, json, timestamp: timestampOpt }) {
     const output = yield* OutputService
     const timestampInput = Option.getOrUndefined(timestampOpt)
-    const timestamp = timestampInput !== undefined ? yield* parseTimestampSecs(timestampInput) : undefined
+    const timestamp = timestampInput !== undefined ? yield* parseTimestampMs(timestampInput) : undefined
     const ids = yield* generateObjectid({ count, timestamp })
     yield* output.write(idsOutput(ids), { json })
   }),
@@ -250,8 +253,8 @@ const objectidSubcommand = Command.make(
   Command.withExamples([
     { command: 'uniku objectid -n 5 --json', description: 'Generate 5 ObjectIDs as a JSON array' },
     {
-      command: 'uniku objectid --timestamp 1720000000',
-      description: 'Generate an ObjectID for a fixed Unix timestamp (s)',
+      command: 'uniku objectid --timestamp 1720000000000',
+      description: 'Generate an ObjectID for a fixed Unix timestamp (ms)',
     },
   ]),
 )
@@ -259,7 +262,7 @@ const objectidSubcommand = Command.make(
 // ── XID subcommand ──────────────────────────────────────────────────
 
 const xidTimestampFlag = Flag.string('timestamp').pipe(
-  Flag.withDescription('Unix timestamp in seconds (or "now")'),
+  Flag.withDescription('Unix timestamp in milliseconds (or "now")'),
   Flag.optional,
 )
 
@@ -273,7 +276,7 @@ const xidSubcommand = Command.make(
   Effect.fn('cli.generate.xid')(function* ({ count, json, timestamp: timestampOpt }) {
     const output = yield* OutputService
     const timestampInput = Option.getOrUndefined(timestampOpt)
-    const timestamp = timestampInput !== undefined ? yield* parseTimestampSecs(timestampInput) : undefined
+    const timestamp = timestampInput !== undefined ? yield* parseTimestampMs(timestampInput) : undefined
     const ids = yield* generateXid({ count, timestamp })
     yield* output.write(idsOutput(ids), { json })
   }),
@@ -281,7 +284,7 @@ const xidSubcommand = Command.make(
   Command.withDescription('Generate XIDs'),
   Command.withExamples([
     { command: 'uniku xid -n 5 --json', description: 'Generate 5 XIDs as a JSON array' },
-    { command: 'uniku xid --timestamp 1720000000', description: 'Generate an XID for a fixed Unix timestamp (s)' },
+    { command: 'uniku xid --timestamp 1720000000000', description: 'Generate an XID for a fixed Unix timestamp (ms)' },
   ]),
 )
 
@@ -398,9 +401,6 @@ const parseTimestamp = Effect.fn('cli.generate.parseTimestamp')(function* (
 
 const parseTimestampMs = (input: string): Effect.Effect<number, CliError> =>
   parseTimestamp(input, (millis) => millis, 'Provide a Unix timestamp in milliseconds or "now"')
-
-const parseTimestampSecs = (input: string): Effect.Effect<number, CliError> =>
-  parseTimestamp(input, (millis) => Math.floor(millis / 1000), 'Provide a Unix timestamp in seconds or "now"')
 
 const parseNonNegativeInt = Effect.fn('cli.generate.parseNonNegativeInt')(function* (
   input: string,

@@ -1,4 +1,4 @@
-import { BufferError, ksuid } from '@/src/ksuid/ksuid'
+import { BufferError, InvalidInputError, ksuid } from '@/src/ksuid/ksuid'
 import { expectValidTypeGuard } from '../helpers/assertions'
 import { expectDistinctRandomSamples } from '../helpers/randomness'
 
@@ -62,10 +62,10 @@ describe('ksuid', () => {
   })
 
   it('encodes the timestamp in the first 4 bytes', () => {
-    const secs = 1_702_387_456 // Unix timestamp in seconds
-    const expectedKsuidSecs = secs - 1400000000 // KSUID epoch
+    const msecs = 1_702_387_456_000 // Unix timestamp in milliseconds
+    const expectedKsuidSecs = 1_702_387_456 - 1400000000 // KSUID epoch
 
-    const bytes = ksuid.toBytes(ksuid({ secs, random: new Uint8Array(16) }))
+    const bytes = ksuid.toBytes(ksuid({ msecs, random: new Uint8Array(16) }))
 
     const decoded = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0
 
@@ -73,9 +73,9 @@ describe('ksuid', () => {
   })
 
   it('extracts timestamp correctly', () => {
-    const secs = 1_702_387_456 // Unix timestamp in seconds
-    const id = ksuid({ secs, random: new Uint8Array(16) })
-    expect(ksuid.timestamp(id)).toBe(secs * 1000) // timestamp() returns milliseconds
+    const msecs = 1_702_387_456_000 // Unix timestamp in milliseconds
+    const id = ksuid({ msecs, random: new Uint8Array(16) })
+    expect(ksuid.timestamp(id)).toBe(msecs) // timestamp() returns milliseconds
   })
 
   it('round-trips through byte helpers', () => {
@@ -84,15 +84,15 @@ describe('ksuid', () => {
   })
 
   it('supports custom timestamp option', () => {
-    const secs = 1_500_000_000
-    const id = ksuid({ secs })
-    expect(ksuid.timestamp(id)).toBe(secs * 1000) // timestamp() returns milliseconds
+    const msecs = 1_500_000_000_000
+    const id = ksuid({ msecs })
+    expect(ksuid.timestamp(id)).toBe(msecs) // timestamp() returns milliseconds
   })
 
   it('supports custom random option', () => {
     const random = new Uint8Array(16).fill(42)
-    const id1 = ksuid({ secs: 1_500_000_000, random })
-    const id2 = ksuid({ secs: 1_500_000_000, random })
+    const id1 = ksuid({ msecs: 1_500_000_000_000, random })
+    const id2 = ksuid({ msecs: 1_500_000_000_000, random })
     expect(id1).toBe(id2)
   })
 
@@ -116,10 +116,10 @@ describe('ksuid', () => {
     const buffer = new Uint8Array(32)
     const offset = 8
 
-    const result = ksuid({ secs: 1_702_387_456, random: new Uint8Array(16) }, buffer, offset)
+    const result = ksuid({ msecs: 1_702_387_456_000, random: new Uint8Array(16) }, buffer, offset)
     expect(result).toBe(buffer)
 
-    const fromString = ksuid.toBytes(ksuid({ secs: 1_702_387_456, random: new Uint8Array(16) }))
+    const fromString = ksuid.toBytes(ksuid({ msecs: 1_702_387_456_000, random: new Uint8Array(16) }))
     for (let i = 0; i < fromString.length; i += 1) {
       expect(buffer[offset + i]).toBe(fromString[i])
     }
@@ -196,9 +196,9 @@ describe('ksuid', () => {
   describe('timestamp edge cases', () => {
     it('handles KSUID epoch boundary', () => {
       // KSUID epoch: May 13, 2014 (1400000000 seconds since Unix epoch)
-      const epochSecs = KSUID_EPOCH
-      const id = ksuid({ secs: epochSecs, random: new Uint8Array(16) })
-      expect(ksuid.timestamp(id)).toBe(epochSecs * 1000) // timestamp() returns milliseconds
+      const epochMsecs = KSUID_EPOCH * 1000
+      const id = ksuid({ msecs: epochMsecs, random: new Uint8Array(16) })
+      expect(ksuid.timestamp(id)).toBe(epochMsecs) // timestamp() returns milliseconds
       // First 4 bytes should be 0 at the epoch
       const bytes = ksuid.toBytes(id)
       expect(bytes[0]).toBe(0)
@@ -209,39 +209,77 @@ describe('ksuid', () => {
 
     it('handles timestamp well after epoch', () => {
       // A timestamp well into the future from KSUID epoch
-      const secs = 2000000000 // ~2033
-      const id = ksuid({ secs, random: new Uint8Array(16) })
-      expect(ksuid.timestamp(id)).toBe(secs * 1000) // timestamp() returns milliseconds
+      const msecs = 2_000_000_000_000 // ~2033
+      const id = ksuid({ msecs, random: new Uint8Array(16) })
+      expect(ksuid.timestamp(id)).toBe(msecs) // timestamp() returns milliseconds
+    })
+
+    it('truncates sub-second precision to whole seconds', () => {
+      const id = ksuid({ msecs: 1_500_000_000_999, random: new Uint8Array(16) })
+      expect(ksuid.timestamp(id)).toBe(1_500_000_000_000)
     })
 
     it('does not mutate reusable timestamp options', () => {
-      const secs = 1_700_000_000
-      const options = { secs, random: new Uint8Array(16).fill(7) }
+      const msecs = 1_700_000_000_000
+      const options = { msecs, random: new Uint8Array(16).fill(7) }
 
       const first = ksuid(options)
       const second = ksuid(options)
 
-      expect(options.secs).toBe(secs)
+      expect(options.msecs).toBe(msecs)
       expect(second).toBe(first)
-      expect(ksuid.timestamp(second)).toBe(secs * 1000)
+      expect(ksuid.timestamp(second)).toBe(msecs)
     })
 
     it('throws for Unix epoch timestamp before KSUID epoch', () => {
-      expect(() => ksuid({ secs: 0, random: new Uint8Array(16) })).toThrow('Timestamp must be >= KSUID epoch')
+      expect(() => ksuid({ msecs: 0, random: new Uint8Array(16) })).toThrow(
+        `Timestamp must be an integer between ${KSUID_EPOCH * 1000} and ${KSUID_MAX_SECS * 1000 + 999} milliseconds`,
+      )
     })
 
     it('accepts the maximum 32-bit KSUID timestamp', () => {
-      const id = ksuid({ secs: KSUID_MAX_SECS, random: new Uint8Array(16) })
+      const id = ksuid({ msecs: KSUID_MAX_SECS * 1000, random: new Uint8Array(16) })
       const bytes = ksuid.toBytes(id)
 
       expect(ksuid.timestamp(id)).toBe(KSUID_MAX_SECS * 1000)
       expect(Array.from(bytes.subarray(0, 4))).toEqual([0xff, 0xff, 0xff, 0xff])
     })
 
+    it('accepts sub-second precision at the maximum 32-bit KSUID timestamp', () => {
+      const id = ksuid({ msecs: KSUID_MAX_SECS * 1000 + 999, random: new Uint8Array(16) })
+      expect(ksuid.timestamp(id)).toBe(KSUID_MAX_SECS * 1000)
+    })
+
     it('throws for timestamps above the 32-bit KSUID range', () => {
-      expect(() => ksuid({ secs: KSUID_MAX_SECS + 1, random: new Uint8Array(16) })).toThrow(
-        'Timestamp must be <= maximum KSUID timestamp',
+      expect(() => ksuid({ msecs: (KSUID_MAX_SECS + 1) * 1000, random: new Uint8Array(16) })).toThrow(
+        `Timestamp must be an integer between ${KSUID_EPOCH * 1000} and ${KSUID_MAX_SECS * 1000 + 999} milliseconds`,
       )
+    })
+  })
+
+  describe('deprecated secs alias', () => {
+    // TODO(v1-rc): remove this block together with the `secs` option.
+    it('accepts whole seconds until v1-rc', () => {
+      const id = ksuid({ secs: 1_500_000_000, random: new Uint8Array(16) })
+      expect(ksuid.timestamp(id)).toBe(1_500_000_000_000)
+    })
+
+    it('validates the seconds range', () => {
+      expect(() => ksuid({ secs: 0 })).toThrow(
+        `Timestamp must be an integer between ${KSUID_EPOCH} and ${KSUID_MAX_SECS} seconds`,
+      )
+    })
+
+    it('rejects passing both msecs and secs', () => {
+      let error: unknown
+      try {
+        ksuid({ msecs: 1_500_000_000_000, secs: 1_500_000_000 })
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'ksuid' })
     })
   })
 

@@ -110,10 +110,9 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
     // Explicit options provided - use them directly without monotonic state
     const optMsecs = options.msecs
     if (optMsecs !== undefined && !isIntegerInRange(optMsecs, 0, MAX_MSECS)) {
-      throw new InvalidInputError(
-        'ULID_TIMESTAMP_OUT_OF_RANGE',
-        `Timestamp must be an integer between 0 and ${MAX_MSECS}`,
-      )
+      throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', `Timestamp must be an integer between 0 and ${MAX_MSECS}`, {
+        strategy: 'ulid',
+      })
     }
     time = optMsecs ?? Date.now()
     const optRandom = options.random

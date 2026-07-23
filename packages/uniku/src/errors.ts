@@ -1,15 +1,34 @@
+import type { IdGenerator } from './generators'
+
+/**
+ * Extra context carried by every uniku error.
+ */
+export type UniqueIdErrorOptions = {
+  /**
+   * The ID strategy whose public boundary raised the error.
+   * Error codes are strategy-agnostic (e.g. `TIMESTAMP_OUT_OF_RANGE`), so this
+   * field attributes the failure to the generator that produced it.
+   */
+  readonly strategy?: IdGenerator
+}
+
 /**
  * Base error for all uniku errors.
- * Provides `_tag` for discriminated matching (compatible with Effect's `catchTag`)
- * and `code` for machine-readable error identification.
+ * Provides `_tag` for discriminated matching (compatible with Effect's `catchTag`),
+ * `code` for machine-readable error identification, and `strategy` to attribute
+ * unified codes to the ID generator that raised them.
  */
 export abstract class UniqueIdError extends Error {
   abstract readonly _tag: string
   abstract readonly code: string
 
-  constructor(message: string) {
+  /** The ID strategy whose public boundary raised the error. */
+  readonly strategy?: IdGenerator
+
+  constructor(message: string, options?: UniqueIdErrorOptions) {
     super(message)
     this.name = this.constructor.name
+    this.strategy = options?.strategy
   }
 }
 
@@ -22,8 +41,9 @@ export class InvalidInputError extends UniqueIdError {
   constructor(
     readonly code: string,
     message: string,
+    options?: UniqueIdErrorOptions,
   ) {
-    super(message)
+    super(message, options)
   }
 }
 
@@ -36,8 +56,9 @@ export class ParseError extends UniqueIdError {
   constructor(
     readonly code: string,
     message: string,
+    options?: UniqueIdErrorOptions,
   ) {
-    super(message)
+    super(message, options)
   }
 }
 
@@ -50,7 +71,8 @@ export class BufferError extends UniqueIdError {
   constructor(
     readonly code: string,
     message: string,
+    options?: UniqueIdErrorOptions,
   ) {
-    super(message)
+    super(message, options)
   }
 }

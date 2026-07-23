@@ -1,5 +1,6 @@
 import { writeTimestamp32 } from '../common/bytes'
 import { randomBytes, randomUint32 } from '../common/random'
+import { resolveTimestampSecs } from '../common/timestamp'
 import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
 import { decodeBase32Hex, encodeBase32Hex, encodeCounterSuffix } from './base32hex'
@@ -19,7 +20,17 @@ export type XidOptions = {
   machineId?: Uint8Array
   /** 16-bit process identity. */
   processId?: number
-  /** Unix timestamp in seconds. Defaults to the current second. */
+  /**
+   * Unix timestamp in milliseconds. Defaults to Date.now().
+   * XID stores whole seconds, so sub-second precision is truncated.
+   */
+  msecs?: number
+  /**
+   * Unix timestamp in seconds.
+   *
+   * @deprecated Use `msecs` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
   secs?: number
   /** 24-bit counter. Explicit values do not consume shared state. */
   counter?: number
@@ -88,9 +99,6 @@ function validateOptions(options: XidOptions): void {
   if (options.processId !== undefined && !isIntegerInRange(options.processId, 0, MAX_PROCESS_ID)) {
     throw new InvalidInputError('XID_PROCESS_ID_OUT_OF_RANGE', `Process ID must be between 0 and ${MAX_PROCESS_ID}`)
   }
-  if (options.secs !== undefined && !isIntegerInRange(options.secs, 0, MAX_SECS)) {
-    throw new InvalidInputError('XID_TIMESTAMP_OUT_OF_RANGE', `Timestamp must be between 0 and ${MAX_SECS}`)
-  }
   if (options.counter !== undefined && !isIntegerInRange(options.counter, 0, MAX_COUNTER)) {
     throw new InvalidInputError('XID_COUNTER_OUT_OF_RANGE', `Counter must be between 0 and ${MAX_COUNTER}`)
   }
@@ -113,7 +121,8 @@ function xidFn<TBuf extends Uint8Array = Uint8Array>(options?: XidOptions, buf?:
 
   if (options !== undefined) validateOptions(options)
 
-  const secs = options?.secs ?? Math.floor(Date.now() / 1000)
+  const resolvedSecs = options === undefined ? undefined : resolveTimestampSecs(options, 0, MAX_SECS, 'xid')
+  const secs = resolvedSecs ?? Math.floor(Date.now() / 1000)
   if (options?.machineId === undefined || options.processId === undefined) {
     initializeIdentity()
   }

@@ -1,5 +1,6 @@
 import { writeTimestamp32 } from '../common/bytes'
 import { randomBytes, randomUint32 } from '../common/random'
+import { resolveTimestampSecs } from '../common/timestamp'
 import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
 import { decodeObjectIdHex, encodeObjectIdHex } from './hex'
@@ -31,9 +32,17 @@ export type ObjectIdOptions = {
    */
   random?: Uint8Array
   /**
-   * Timestamp in seconds since Unix epoch.
-   * Defaults to Math.floor(Date.now() / 1000).
+   * Timestamp in milliseconds since the Unix epoch.
+   * Defaults to Date.now().
+   * ObjectID stores whole seconds, so sub-second precision is truncated.
    */
+  msecs?: number
+  /**
+   * Timestamp in seconds since the Unix epoch.
+   *
+   * @deprecated Use `msecs` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
   secs?: number
   /**
    * 24-bit counter value (0 to 0xFFFFFF).
@@ -74,7 +83,7 @@ type ObjectIdState = {
  * - In serverless/edge functions with warm starts, state persists between invocations.
  *   Unlike ULID/UUIDv7's per-timestamp sequence reset, the counter continuing to climb
  *   across warm starts is exactly the anti-collision behavior the ObjectID spec intends.
- * - For isolated state, pass explicit `random`, `secs`, or `counter` via options.
+ * - For isolated state, pass explicit `random`, `msecs`, or `counter` via options.
  * - Tests should mock Date.now() or provide explicit options for deterministic behavior.
  */
 const state: ObjectIdState = {
@@ -144,10 +153,7 @@ function objectIdFn<TBuf extends Uint8Array = Uint8Array>(
       )
     }
 
-    const optSecs = options.secs
-    if (optSecs !== undefined && !isIntegerInRange(optSecs, 0, MAX_SECS)) {
-      throw new InvalidInputError('OBJECTID_TIMESTAMP_OUT_OF_RANGE', `Timestamp must be between 0 and ${MAX_SECS}`)
-    }
+    const optSecs = resolveTimestampSecs(options, 0, MAX_SECS, 'objectid')
 
     const optCounter = options.counter
     if (optCounter !== undefined && !isIntegerInRange(optCounter, 0, MAX_COUNTER)) {

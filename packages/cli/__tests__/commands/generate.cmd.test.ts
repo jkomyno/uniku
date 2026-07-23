@@ -90,7 +90,7 @@ describe('CLI: uniku generate xid', () => {
     it.effect('[Given] count, JSON, and a timestamp [Then] generates canonical XIDs', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
-        yield* cli(['generate', 'xid', '--count', '2', '--timestamp', '1720000000', '--json'])
+        yield* cli(['generate', 'xid', '--count', '2', '--timestamp', '1720000000000', '--json'])
         const output = yield* MockOutput.getStdout
         const ids = JSON.parse(output[0]) as string[]
         expect(ids).toHaveLength(2)
@@ -287,7 +287,7 @@ describe('CLI: uniku generate ksuid', () => {
         assertInstanceOf(error, CliError)
         expect(error.code).toBe('INVALID_TIMESTAMP')
         expect(error.message).toBe('Invalid timestamp: "abc"')
-        expect(error.hint).toBe('Provide a Unix timestamp in seconds or "now"')
+        expect(error.hint).toBe('Provide a Unix timestamp in milliseconds or "now"')
       }),
     )
   })
@@ -316,15 +316,17 @@ describe('CLI: uniku generate objectid', () => {
       }),
     )
 
-    it.effect('[Given] generate objectid --timestamp <secs> [Then] embeds the given timestamp', () =>
+    it.effect('[Given] generate objectid --timestamp <ms> [Then] embeds the given timestamp', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
-        const secs = 1_720_000_000
-        yield* cli(['generate', 'objectid', '--timestamp', String(secs)])
+        const msecs = 1_720_000_000_000
+        yield* cli(['generate', 'objectid', '--timestamp', String(msecs)])
         const output = yield* MockOutput.getStdout
         expect(output).toHaveLength(1)
         // Timestamp is the first 8 hex chars, big-endian seconds.
-        const expectedPrefix = secs.toString(16).padStart(8, '0')
+        const expectedPrefix = Math.floor(msecs / 1000)
+          .toString(16)
+          .padStart(8, '0')
         expect(output[0].slice(0, 8)).toBe(expectedPrefix)
       }),
     )
@@ -336,7 +338,7 @@ describe('CLI: uniku generate objectid', () => {
         assertInstanceOf(error, CliError)
         expect(error.code).toBe('INVALID_TIMESTAMP')
         expect(error.message).toBe('Invalid timestamp: "abc"')
-        expect(error.hint).toBe('Provide a Unix timestamp in seconds or "now"')
+        expect(error.hint).toBe('Provide a Unix timestamp in milliseconds or "now"')
       }),
     )
   })

@@ -55,6 +55,10 @@ describe('small-timeframe collision contract', () => {
   it('keeps IID collision assertions separate from stateful time-bucket assertions', () => {
     expectIidDuplicateRatio({ count: 5_000, possibleValues: 2 ** 122, generate: uuidv4 })
     expectIidDuplicateRatio({ count: 5_000, possibleValues: 64 ** 21, generate: nanoid })
-    expectIidDuplicateRatio({ count: 5_000, possibleValues: 2 ** 128, generate: () => ksuid({ secs: 1_700_000_000 }) })
+    expectIidDuplicateRatio({
+      count: 5_000,
+      possibleValues: 2 ** 128,
+      generate: () => ksuid({ msecs: 1_700_000_000_000 }),
+    })
   })
 })
