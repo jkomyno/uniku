@@ -49,19 +49,19 @@ describe('v1 public boundary contract', () => {
       },
       {
         name: 'KSUID rejects NaN timestamps',
-        generate: () => ksuid({ secs: Number.NaN, random: zeroes(16) }),
+        generate: () => ksuid({ msecs: Number.NaN, random: zeroes(16) }),
       },
       {
         name: 'KSUID rejects fractional timestamps',
-        generate: () => ksuid({ secs: 1_500_000_000.5, random: zeroes(16) }),
+        generate: () => ksuid({ msecs: 1_500_000_000_000.5, random: zeroes(16) }),
       },
       {
         name: 'ObjectID rejects NaN timestamps',
-        generate: () => objectid({ secs: Number.NaN, random: zeroes(5), counter: 0 }),
+        generate: () => objectid({ msecs: Number.NaN, random: zeroes(5), counter: 0 }),
       },
       {
         name: 'ObjectID rejects fractional counters',
-        generate: () => objectid({ secs: 0, random: zeroes(5), counter: 1.5 }),
+        generate: () => objectid({ msecs: 0, random: zeroes(5), counter: 1.5 }),
       },
       {
         name: 'XID rejects fractional process IDs',
@@ -120,22 +120,22 @@ describe('v1 public boundary contract', () => {
       {
         name: 'KSUID rejects timestamps below its epoch',
         strategy: 'ksuid',
-        generate: () => ksuid({ secs: 0 }),
+        generate: () => ksuid({ msecs: 0 }),
       },
       {
         name: 'KSUID rejects timestamps above its maximum',
         strategy: 'ksuid',
-        generate: () => ksuid({ secs: KSUID_MAX_SECS + 1 }),
+        generate: () => ksuid({ msecs: (KSUID_MAX_SECS + 1) * 1000 }),
       },
       {
         name: 'ObjectID rejects out-of-range timestamps',
         strategy: 'objectid',
-        generate: () => objectid({ secs: -1 }),
+        generate: () => objectid({ msecs: -1 }),
       },
       {
         name: 'XID rejects out-of-range timestamps',
         strategy: 'xid',
-        generate: () => xid({ secs: 2 ** 32 }),
+        generate: () => xid({ msecs: 2 ** 32 * 1000 }),
       },
       {
         name: 'TSID rejects non-integer timestamps',
@@ -227,15 +227,15 @@ describe('v1 public boundary contract', () => {
       },
       {
         name: 'KSUID rejects fractional offsets',
-        generate: () => ksuid({ secs: 1_500_000_000, random: zeroes(16) }, zeroes(32), 0.5),
+        generate: () => ksuid({ msecs: 1_500_000_000_000, random: zeroes(16) }, zeroes(32), 0.5),
       },
       {
         name: 'ObjectID rejects fractional offsets',
-        generate: () => objectid({ secs: 0, random: zeroes(5), counter: 0 }, zeroes(32), 0.5),
+        generate: () => objectid({ msecs: 0, random: zeroes(5), counter: 0 }, zeroes(32), 0.5),
       },
       {
         name: 'XID rejects fractional offsets',
-        generate: () => xid({ secs: 0, machineId: zeroes(3), processId: 0, counter: 0 }, zeroes(32), 0.5),
+        generate: () => xid({ msecs: 0, machineId: zeroes(3), processId: 0, counter: 0 }, zeroes(32), 0.5),
       },
       {
         name: 'TSID rejects fractional offsets',

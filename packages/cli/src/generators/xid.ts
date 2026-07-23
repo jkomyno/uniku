@@ -12,7 +12,7 @@ export function generateXid(options: XidGenerateOptions): Effect.Effect<string[]
   return Effect.try({
     try: () => {
       const ids: string[] = []
-      const xidOptions = options.timestamp != null ? { secs: options.timestamp } : undefined
+      const xidOptions = options.timestamp != null ? { msecs: options.timestamp } : undefined
       for (let i = 0; i < options.count; i++) {
         ids.push(xid(xidOptions))
       }

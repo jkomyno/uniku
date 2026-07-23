@@ -13,7 +13,7 @@ export function generateKsuid(options: KsuidGenerateOptions): Effect.Effect<stri
     try: () => {
       const ids: string[] = []
       for (let i = 0; i < options.count; i++) {
-        const ksuidOpts = options.timestamp != null ? { secs: options.timestamp } : undefined
+        const ksuidOpts = options.timestamp != null ? { msecs: options.timestamp } : undefined
         ids.push(ksuid(ksuidOpts))
       }
       return ids

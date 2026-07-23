@@ -53,7 +53,10 @@ Generators support two modes via overloads:
 Define an options type with these optional fields:
 
 - `random?: Uint8Array` — Custom random bytes for deterministic tests
-- `msecs?: number` — Custom timestamp in milliseconds (time-ordered generators)
+- `msecs?: number` — Custom timestamp in milliseconds since the Unix epoch (time-ordered
+  generators). Second-precision formats (ksuid, objectid, xid) truncate sub-second
+  precision via `Math.floor(msecs / 1000)`; their pre-v1 `secs` aliases are deprecated
+  and tracked for removal at v1-rc (see `docs/STABILITY.md`).
 - `seq?: number` — Sequence number (only for uuidv7)
 
 ## Monotonic State (Time-Ordered Generators)

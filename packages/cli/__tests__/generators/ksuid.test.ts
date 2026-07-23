@@ -22,8 +22,8 @@ describe('generateKsuid', () => {
 
   it.effect('generates KSUID with explicit timestamp', () =>
     Effect.gen(function* () {
-      const secs = Math.floor(Date.now() / 1000)
-      const ids = yield* generateKsuid({ count: 1, timestamp: secs })
+      const msecs = Date.now()
+      const ids = yield* generateKsuid({ count: 1, timestamp: msecs })
       expect(ids).toHaveLength(1)
       expect(ids[0].length).toBe(27)
     }),

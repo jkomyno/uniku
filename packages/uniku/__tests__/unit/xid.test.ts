@@ -58,7 +58,7 @@ describe('xid', () => {
 
   it('uses supplied identity values while retaining the shared counter', async () => {
     const { xid: freshXid } = await importFreshXidModule()
-    const options = { secs: 1_700_000_000, machineId: new Uint8Array([1, 2, 3]), processId: 0x4567 }
+    const options = { msecs: 1_700_000_000_000, machineId: new Uint8Array([1, 2, 3]), processId: 0x4567 }
     const first = freshXid(options)
     const second = freshXid(options)
 
@@ -68,9 +68,9 @@ describe('xid', () => {
 
   it('keeps a partial supplied identity stable and explicit counters do not consume state', async () => {
     const { xid: freshXid } = await importFreshXidModule()
-    const first = freshXid({ secs: 1, machineId: new Uint8Array([1, 2, 3]) })
-    const second = freshXid({ secs: 1, machineId: new Uint8Array([1, 2, 3]), counter: 42 })
-    const third = freshXid({ secs: 1, machineId: new Uint8Array([1, 2, 3]) })
+    const first = freshXid({ msecs: 1000, machineId: new Uint8Array([1, 2, 3]) })
+    const second = freshXid({ msecs: 1000, machineId: new Uint8Array([1, 2, 3]), counter: 42 })
+    const third = freshXid({ msecs: 1000, machineId: new Uint8Array([1, 2, 3]) })
 
     expect(freshXid.toBytes(second).slice(4, 9)).toEqual(freshXid.toBytes(first).slice(4, 9))
     expect(counterOf(second, freshXid)).toBe(42)
@@ -79,8 +79,8 @@ describe('xid', () => {
 
   it('keeps a process ID-only partial identity stable', async () => {
     const { xid: freshXid } = await importFreshXidModule()
-    const first = freshXid({ secs: 1, processId: 0x4567 })
-    const second = freshXid({ secs: 1, processId: 0x4567 })
+    const first = freshXid({ msecs: 1000, processId: 0x4567 })
+    const second = freshXid({ msecs: 1000, processId: 0x4567 })
     const firstBytes = freshXid.toBytes(first)
     const secondBytes = freshXid.toBytes(second)
 
@@ -89,26 +89,31 @@ describe('xid', () => {
   })
 
   it('is deterministic when every field is supplied', () => {
-    const options = { secs: 0xffffffff, machineId: new Uint8Array([1, 2, 3]), processId: 0xabcd, counter: 0xffffff }
+    const options = {
+      msecs: 0xffffffff * 1000,
+      machineId: new Uint8Array([1, 2, 3]),
+      processId: 0xabcd,
+      counter: 0xffffff,
+    }
     expect(xid(options)).toBe(xid(options))
   })
 
   it('writes bytes to a caller-owned buffer', () => {
     const buffer = new Uint8Array(24)
-    const options = { secs: 1, machineId: new Uint8Array([1, 2, 3]), processId: 4, counter: 5 }
+    const options = { msecs: 1000, machineId: new Uint8Array([1, 2, 3]), processId: 4, counter: 5 }
 
     expect(xid(options, buffer, 6)).toBe(buffer)
     expect(buffer.slice(6, 18)).toEqual(xid.toBytes(xid(options)))
     expect(() => xid(options, buffer, 13)).toThrow(BufferError)
   })
 
-  it.each([0, 0xffffffff])('round-trips seconds boundary %i', (secs) => {
-    const id = xid({ secs, machineId: new Uint8Array(3), processId: 0, counter: 0 })
-    expect(xid.timestamp(id)).toBe(secs * 1000)
+  it.each([0, 0xffffffff * 1000])('round-trips timestamp boundary %i', (msecs) => {
+    const id = xid({ msecs, machineId: new Uint8Array(3), processId: 0, counter: 0 })
+    expect(xid.timestamp(id)).toBe(msecs)
   })
 
   it.each([0, 0xffffff])('round-trips counter boundary %i', (counter) => {
-    const id = xid({ secs: 0, machineId: new Uint8Array(3), processId: 0, counter })
+    const id = xid({ msecs: 0, machineId: new Uint8Array(3), processId: 0, counter })
     expect(xid.fromBytes(xid.toBytes(id))).toBe(id)
   })
 
@@ -118,8 +123,8 @@ describe('xid', () => {
       return array
     })
     const { xid: freshXid } = await importFreshXidModule()
-    const first = freshXid({ secs: 1 })
-    const second = freshXid({ secs: 1 })
+    const first = freshXid({ msecs: 1000 })
+    const second = freshXid({ msecs: 1000 })
 
     expect(counterOf(first, freshXid)).toBe(0)
     expect(counterOf(second, freshXid)).toBe(1)
@@ -128,9 +133,34 @@ describe('xid', () => {
   it('rejects invalid options and byte lengths with shared errors', () => {
     expect(() => xid({ machineId: new Uint8Array(2) })).toThrow(InvalidInputError)
     expect(() => xid({ processId: 0x10000 })).toThrow(InvalidInputError)
-    expect(() => xid({ secs: -1 })).toThrow(InvalidInputError)
+    expect(() => xid({ msecs: -1 })).toThrow(InvalidInputError)
     expect(() => xid({ counter: 0x1000000 })).toThrow(InvalidInputError)
     expect(() => xid.fromBytes(new Uint8Array(11))).toThrow(BufferError)
+  })
+
+  describe('deprecated secs alias', () => {
+    // TODO(v1-rc): remove this block together with the `secs` option.
+    it('accepts whole seconds until v1-rc', () => {
+      const id = xid({ secs: 1_700_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
+      expect(xid.timestamp(id)).toBe(1_700_000_000_000)
+    })
+
+    it('validates the seconds range', () => {
+      expect(() => xid({ secs: -1 })).toThrow(InvalidInputError)
+      expect(() => xid({ secs: 0x100000000 })).toThrow(InvalidInputError)
+    })
+
+    it('rejects passing both msecs and secs', () => {
+      let error: unknown
+      try {
+        xid({ msecs: 1_700_000_000_000, secs: 1_700_000_000 })
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'xid' })
+    })
   })
 
   it.each([
