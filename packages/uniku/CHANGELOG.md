@@ -1,5 +1,48 @@
 # uniku
 
+## 0.5.0
+
+### Minor Changes
+
+- 55b9e06: **Added:** unified `msecs` timestamp option for `uniku/ksuid`, `uniku/objectid`, and `uniku/xid`. Every time-ordered generator now takes milliseconds since the Unix epoch, matching `uuid/v7`, `ulid`, `tsid`, `typeid`, and the value returned by every `.timestamp()` reader. Second-precision formats truncate sub-second precision (`Math.floor(msecs / 1000)`), so the maximum expressible timestamp gains `+999ms` of headroom.
+
+  **Deprecated:** the `secs` option in those three generators. It keeps working unchanged until v1-rc, but passing both `msecs` and `secs` now throws `CONFLICTING_OPTIONS`. Migrate by multiplying existing values by 1000:
+
+  ```ts
+  // Before
+  ksuid({ secs: 1_500_000_000 });
+  // After
+  ksuid({ msecs: 1_500_000_000_000 });
+  ```
+
+  **Changed (`@uniku/cli`):** `--timestamp` for `ksuid`, `objectid`, and `xid` now expects milliseconds, consistent with `ulid` and `tsid` (`uniku ksuid --timestamp 1720000000000`). This is a behavioral break for CLI invocations that passed seconds.
+
+- 854a45a: **Breaking (pre-v1):** Consolidate all timestamp validation error codes into a single strategy-agnostic `TIMESTAMP_OUT_OF_RANGE` code. Replaced codes:
+
+  - `UUID_TIMESTAMP_OUT_OF_RANGE` (uuid/v7)
+  - `ULID_TIMESTAMP_OUT_OF_RANGE` (ulid options) and `ULID_TIMESTAMP_OVERFLOW` (ulid decoding)
+  - `KSUID_TIMESTAMP_TOO_LOW` / `KSUID_TIMESTAMP_TOO_HIGH` (merged into one code)
+  - `OBJECTID_TIMESTAMP_OUT_OF_RANGE`
+  - `XID_TIMESTAMP_OUT_OF_RANGE`
+  - `TSID_TIMESTAMP_INVALID` / `TSID_TIMESTAMP_OUT_OF_RANGE` (merged into one code)
+
+  Errors now carry a `strategy` field (e.g. `{ strategy: 'ksuid' }`) that attributes the unified code to the generator that raised it. `InvalidInputError`, `ParseError`, and `BufferError` accept an optional third constructor argument `{ strategy?: IdGenerator }`, exposed on `UniqueIdError` as `readonly strategy?: IdGenerator`. `typeid` validates `msecs` at its own boundary, so its timestamp failures report `strategy: 'typeid'` instead of leaking `strategy: 'uuid'` through delegation.
+
+  Match on `_tag` (input vs parse failure) plus `code`, and use `strategy` when the generator matters:
+
+  ```ts
+  try {
+    ksuid({ secs: 0 });
+  } catch (error) {
+    if (
+      error instanceof InvalidInputError &&
+      error.code === "TIMESTAMP_OUT_OF_RANGE"
+    ) {
+      console.error(error.strategy); // 'ksuid'
+    }
+  }
+  ```
+
 ## 0.4.3
 
 ### Patch Changes
