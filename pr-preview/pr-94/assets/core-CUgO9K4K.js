@@ -1,0 +1,1 @@
+import{O as e}from"./dist-qn3z-XDj.js";export{e as isSpecialLang};
