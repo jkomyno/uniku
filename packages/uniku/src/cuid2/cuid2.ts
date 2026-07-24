@@ -122,7 +122,9 @@ function getCryptoRandom(): number {
 function getRandomFn(random?: Uint8Array): () => number {
   if (random) {
     if (random.length === 0) {
-      throw new InvalidInputError('CUID2_RANDOM_BYTES_EMPTY', 'Random byte array cannot be empty')
+      throw new InvalidInputError('RANDOM_BYTES_TOO_SHORT', 'Random byte array cannot be empty', {
+        strategy: 'cuid',
+      })
     }
     let index = 0
     return () => {
@@ -144,8 +146,9 @@ function cuid2Fn(options?: Cuid2Options): string {
     (!Number.isInteger(requestedLength) || requestedLength < MIN_LENGTH || requestedLength > MAX_LENGTH)
   ) {
     throw new InvalidInputError(
-      'CUID2_LENGTH_OUT_OF_RANGE',
+      'LENGTH_OUT_OF_RANGE',
       `CUID2 length must be between ${MIN_LENGTH} and ${MAX_LENGTH}. Received: ${requestedLength}`,
+      { strategy: 'cuid' },
     )
   }
   const length = requestedLength ?? DEFAULT_LENGTH

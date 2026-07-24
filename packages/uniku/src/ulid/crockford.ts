@@ -25,7 +25,7 @@ const TIME_LEN = 10
 const ULID_LEN = 26
 
 function invalidCharError(str: string, index: number): ParseError {
-  return new ParseError('ULID_INVALID_CHAR', `Invalid ULID character: ${str[index]}`)
+  return new ParseError('INVALID_CHAR', `Invalid ULID character: ${str[index]}`, { strategy: 'ulid' })
 }
 
 function timestampOverflowError(): ParseError {
@@ -106,7 +106,7 @@ export function encodeRandom(bytes: Uint8Array): string {
  */
 export function decodeTime(str: string): number {
   if (str.length !== TIME_LEN) {
-    throw new ParseError('ULID_INVALID_LENGTH', `ULID timestamp must be ${TIME_LEN} characters`)
+    throw new ParseError('INVALID_LENGTH', `ULID timestamp must be ${TIME_LEN} characters`, { strategy: 'ulid' })
   }
   return decodeTimeChars(str)
 }
@@ -116,7 +116,7 @@ export function decodeTime(str: string): number {
  */
 export function decodeUlidTime(str: string): number {
   if (str.length !== ULID_LEN) {
-    throw new ParseError('ULID_INVALID_LENGTH', `ULID string must be ${ULID_LEN} characters`)
+    throw new ParseError('INVALID_LENGTH', `ULID string must be ${ULID_LEN} characters`, { strategy: 'ulid' })
   }
   return decodeTimeChars(str)
 }
@@ -127,7 +127,7 @@ export function decodeUlidTime(str: string): number {
  */
 export function decodeToBytes(str: string): Uint8Array {
   if (str.length !== ULID_LEN) {
-    throw new ParseError('ULID_INVALID_LENGTH', `ULID string must be ${ULID_LEN} characters`)
+    throw new ParseError('INVALID_LENGTH', `ULID string must be ${ULID_LEN} characters`, { strategy: 'ulid' })
   }
 
   const bytes = new Uint8Array(16)
@@ -232,7 +232,9 @@ export function decodeToBytes(str: string): Uint8Array {
  */
 export function bytesToUlid(bytes: Uint8Array): string {
   if (bytes.length !== 16) {
-    throw new BufferError('ULID_BYTES_INVALID_LENGTH', `ULID bytes must be exactly 16 bytes, got ${bytes.length}`)
+    throw new BufferError('BYTES_INVALID_LENGTH', `ULID bytes must be exactly 16 bytes, got ${bytes.length}`, {
+      strategy: 'ulid',
+    })
   }
 
   // Timestamp: bytes 0-5 -> 10 characters

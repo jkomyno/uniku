@@ -2,6 +2,7 @@ import { describe, expect, it, test } from 'vitest'
 import { cuidv2 } from '@/src/cuid/v2'
 import { BufferError, InvalidInputError, ParseError } from '@/src/errors'
 import { ksuid } from '@/src/ksuid/ksuid'
+import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
 import { tsid } from '@/src/tsid/tsid'
 import { typeid } from '@/src/typeid/typeid'
@@ -174,77 +175,455 @@ describe('v1 public boundary contract', () => {
     })
   })
 
+  describe('unified error codes', () => {
+    type UnifiedCase = {
+      readonly name: string
+      readonly code: string
+      readonly strategy: string
+      readonly errorClass: new (...args: never[]) => Error
+      readonly run: () => unknown
+    }
+
+    const cases: ReadonlyArray<UnifiedCase> = [
+      // Parse failures: INVALID_CHAR
+      {
+        name: 'UUID reports INVALID_CHAR',
+        code: 'INVALID_CHAR',
+        strategy: 'uuid',
+        errorClass: ParseError,
+        run: () => uuidv4.toBytes('zzzzzzzz-0000-4000-8000-000000000000'),
+      },
+      {
+        name: 'ULID reports INVALID_CHAR',
+        code: 'INVALID_CHAR',
+        strategy: 'ulid',
+        errorClass: ParseError,
+        run: () => ulid.toBytes(`!${'0'.repeat(25)}`),
+      },
+      {
+        name: 'KSUID reports INVALID_CHAR',
+        code: 'INVALID_CHAR',
+        strategy: 'ksuid',
+        errorClass: ParseError,
+        run: () => ksuid.toBytes('!'.repeat(27)),
+      },
+      {
+        name: 'ObjectID reports INVALID_CHAR',
+        code: 'INVALID_CHAR',
+        strategy: 'objectid',
+        errorClass: ParseError,
+        run: () => objectid.toBytes('g'.repeat(24)),
+      },
+      {
+        name: 'XID reports INVALID_CHAR',
+        code: 'INVALID_CHAR',
+        strategy: 'xid',
+        errorClass: ParseError,
+        run: () => xid.toBytes('w'.repeat(20)),
+      },
+      {
+        name: 'TSID reports INVALID_CHAR',
+        code: 'INVALID_CHAR',
+        strategy: 'tsid',
+        errorClass: ParseError,
+        run: () => tsid.fromString('!'.repeat(13)),
+      },
+      {
+        name: 'TypeID reports INVALID_CHAR',
+        code: 'INVALID_CHAR',
+        strategy: 'typeid',
+        errorClass: ParseError,
+        run: () => typeid.toBytes(`user_${'!'.repeat(26)}`),
+      },
+      // Parse failures: INVALID_LENGTH
+      {
+        name: 'UUID reports INVALID_LENGTH',
+        code: 'INVALID_LENGTH',
+        strategy: 'uuid',
+        errorClass: ParseError,
+        run: () => uuidv4.toBytes('abc'),
+      },
+      {
+        name: 'ULID reports INVALID_LENGTH',
+        code: 'INVALID_LENGTH',
+        strategy: 'ulid',
+        errorClass: ParseError,
+        run: () => ulid.toBytes('abc'),
+      },
+      {
+        name: 'KSUID reports INVALID_LENGTH',
+        code: 'INVALID_LENGTH',
+        strategy: 'ksuid',
+        errorClass: ParseError,
+        run: () => ksuid.toBytes('abc'),
+      },
+      {
+        name: 'ObjectID reports INVALID_LENGTH',
+        code: 'INVALID_LENGTH',
+        strategy: 'objectid',
+        errorClass: ParseError,
+        run: () => objectid.toBytes('abc'),
+      },
+      {
+        name: 'XID reports INVALID_LENGTH',
+        code: 'INVALID_LENGTH',
+        strategy: 'xid',
+        errorClass: ParseError,
+        run: () => xid.toBytes('abc'),
+      },
+      {
+        name: 'TSID reports INVALID_LENGTH',
+        code: 'INVALID_LENGTH',
+        strategy: 'tsid',
+        errorClass: ParseError,
+        run: () => tsid.fromString('abc'),
+      },
+      {
+        name: 'TypeID reports INVALID_LENGTH',
+        code: 'INVALID_LENGTH',
+        strategy: 'typeid',
+        errorClass: ParseError,
+        run: () => typeid.toBytes('user_abc'),
+      },
+      // Parse failures: structural
+      {
+        name: 'UUID reports INVALID_FORMAT for bad separators',
+        code: 'INVALID_FORMAT',
+        strategy: 'uuid',
+        errorClass: ParseError,
+        run: () => uuidv4.toBytes('00000000_0000-4000-8000-000000000000'),
+      },
+      {
+        name: 'TypeID reports INVALID_FORMAT for a leading underscore',
+        code: 'INVALID_FORMAT',
+        strategy: 'typeid',
+        errorClass: ParseError,
+        run: () => typeid.toBytes(`_${'0'.repeat(26)}`),
+      },
+      {
+        name: 'KSUID reports VALUE_OUT_OF_RANGE above 160 bits',
+        code: 'VALUE_OUT_OF_RANGE',
+        strategy: 'ksuid',
+        errorClass: ParseError,
+        run: () => ksuid.toBytes('z'.repeat(27)),
+      },
+      {
+        name: 'TSID reports VALUE_OUT_OF_RANGE for an overflowing leading character',
+        code: 'VALUE_OUT_OF_RANGE',
+        strategy: 'tsid',
+        errorClass: ParseError,
+        run: () => tsid.fromString(`G${'0'.repeat(12)}`),
+      },
+      {
+        name: 'TypeID reports VALUE_OUT_OF_RANGE above 128 bits',
+        code: 'VALUE_OUT_OF_RANGE',
+        strategy: 'typeid',
+        errorClass: ParseError,
+        run: () => typeid.toBytes(`user_8${'z'.repeat(25)}`),
+      },
+      {
+        name: 'XID reports NON_CANONICAL for non-canonical trailing bits',
+        code: 'NON_CANONICAL',
+        strategy: 'xid',
+        errorClass: ParseError,
+        run: () => xid.toBytes(`${'0'.repeat(19)}1`),
+      },
+      // Option failures: random bytes
+      {
+        name: 'UUID v4 reports RANDOM_BYTES_TOO_SHORT',
+        code: 'RANDOM_BYTES_TOO_SHORT',
+        strategy: 'uuid',
+        errorClass: InvalidInputError,
+        run: () => uuidv4({ random: zeroes(15) }),
+      },
+      {
+        name: 'ULID reports RANDOM_BYTES_TOO_SHORT',
+        code: 'RANDOM_BYTES_TOO_SHORT',
+        strategy: 'ulid',
+        errorClass: InvalidInputError,
+        run: () => ulid({ msecs: 0, random: zeroes(9) }),
+      },
+      {
+        name: 'KSUID reports RANDOM_BYTES_TOO_SHORT',
+        code: 'RANDOM_BYTES_TOO_SHORT',
+        strategy: 'ksuid',
+        errorClass: InvalidInputError,
+        run: () => ksuid({ random: zeroes(15) }),
+      },
+      {
+        name: 'ObjectID reports RANDOM_BYTES_TOO_SHORT',
+        code: 'RANDOM_BYTES_TOO_SHORT',
+        strategy: 'objectid',
+        errorClass: InvalidInputError,
+        run: () => objectid({ random: zeroes(4) }),
+      },
+      {
+        name: 'Nanoid reports RANDOM_BYTES_TOO_SHORT',
+        code: 'RANDOM_BYTES_TOO_SHORT',
+        strategy: 'nanoid',
+        errorClass: InvalidInputError,
+        run: () => nanoid({ size: 21, random: zeroes(20) }),
+      },
+      {
+        name: 'CUID2 reports RANDOM_BYTES_TOO_SHORT',
+        code: 'RANDOM_BYTES_TOO_SHORT',
+        strategy: 'cuid',
+        errorClass: InvalidInputError,
+        run: () => cuidv2({ random: zeroes(0) }),
+      },
+      // Option failures: numeric fields
+      {
+        name: 'UUID v7 reports SEQUENCE_OUT_OF_RANGE',
+        code: 'SEQUENCE_OUT_OF_RANGE',
+        strategy: 'uuid',
+        errorClass: InvalidInputError,
+        run: () => uuidv7({ seq: -1 }),
+      },
+      {
+        name: 'ObjectID reports COUNTER_OUT_OF_RANGE',
+        code: 'COUNTER_OUT_OF_RANGE',
+        strategy: 'objectid',
+        errorClass: InvalidInputError,
+        run: () => objectid({ counter: -1 }),
+      },
+      {
+        name: 'XID reports COUNTER_OUT_OF_RANGE',
+        code: 'COUNTER_OUT_OF_RANGE',
+        strategy: 'xid',
+        errorClass: InvalidInputError,
+        run: () => xid({ counter: -1 }),
+      },
+      {
+        name: 'TSID reports COUNTER_OUT_OF_RANGE',
+        code: 'COUNTER_OUT_OF_RANGE',
+        strategy: 'tsid',
+        errorClass: InvalidInputError,
+        run: () => tsid({ counter: -1 }),
+      },
+      {
+        name: 'TSID reports NODE_OUT_OF_RANGE',
+        code: 'NODE_OUT_OF_RANGE',
+        strategy: 'tsid',
+        errorClass: InvalidInputError,
+        run: () => tsid({ node: -1 }),
+      },
+      {
+        name: 'TSID reports NODE_BITS_OUT_OF_RANGE',
+        code: 'NODE_BITS_OUT_OF_RANGE',
+        strategy: 'tsid',
+        errorClass: InvalidInputError,
+        run: () => tsid({ nodeBits: -1 }),
+      },
+      {
+        name: 'TSID reports EPOCH_INVALID',
+        code: 'EPOCH_INVALID',
+        strategy: 'tsid',
+        errorClass: InvalidInputError,
+        run: () => tsid({ epoch: 1.5 }),
+      },
+      {
+        name: 'TSID reports VALUE_OUT_OF_RANGE for negative values',
+        code: 'VALUE_OUT_OF_RANGE',
+        strategy: 'tsid',
+        errorClass: InvalidInputError,
+        run: () => tsid.toBytes(-1n),
+      },
+      {
+        name: 'XID reports PROCESS_ID_OUT_OF_RANGE',
+        code: 'PROCESS_ID_OUT_OF_RANGE',
+        strategy: 'xid',
+        errorClass: InvalidInputError,
+        run: () => xid({ processId: 0x10000 }),
+      },
+      {
+        name: 'XID reports MACHINE_ID_BYTES_TOO_SHORT',
+        code: 'MACHINE_ID_BYTES_TOO_SHORT',
+        strategy: 'xid',
+        errorClass: InvalidInputError,
+        run: () => xid({ machineId: zeroes(2) }),
+      },
+      // Option failures: TypeID prefix and UUID wrapping
+      {
+        name: 'TypeID reports PREFIX_TOO_LONG',
+        code: 'PREFIX_TOO_LONG',
+        strategy: 'typeid',
+        errorClass: InvalidInputError,
+        run: () => typeid('a'.repeat(64)),
+      },
+      {
+        name: 'TypeID reports PREFIX_INVALID_CHAR',
+        code: 'PREFIX_INVALID_CHAR',
+        strategy: 'typeid',
+        errorClass: InvalidInputError,
+        run: () => typeid('User'),
+      },
+      {
+        name: 'TypeID reports PREFIX_INVALID_BOUNDARY',
+        code: 'PREFIX_INVALID_BOUNDARY',
+        strategy: 'typeid',
+        errorClass: InvalidInputError,
+        run: () => typeid('_user'),
+      },
+      {
+        name: 'TypeID reports UUID_NOT_V7 when wrapping a UUID v4',
+        code: 'UUID_NOT_V7',
+        strategy: 'typeid',
+        errorClass: InvalidInputError,
+        run: () => typeid.fromUuid('user', uuidv4({ random: zeroes(16) })),
+      },
+      // Option failures: string-native shapes
+      {
+        name: 'Nanoid reports ALPHABET_OUT_OF_RANGE',
+        code: 'ALPHABET_OUT_OF_RANGE',
+        strategy: 'nanoid',
+        errorClass: InvalidInputError,
+        run: () => nanoid({ alphabet: 'a' }),
+      },
+      {
+        name: 'Nanoid reports ALPHABET_DUPLICATE',
+        code: 'ALPHABET_DUPLICATE',
+        strategy: 'nanoid',
+        errorClass: InvalidInputError,
+        run: () => nanoid({ alphabet: 'aa' }),
+      },
+      {
+        name: 'Nanoid reports ALPHABET_INVALID_CHAR',
+        code: 'ALPHABET_INVALID_CHAR',
+        strategy: 'nanoid',
+        errorClass: InvalidInputError,
+        run: () => nanoid({ alphabet: 'a\u20ac' }),
+      },
+      {
+        name: 'Nanoid reports SIZE_OUT_OF_RANGE',
+        code: 'SIZE_OUT_OF_RANGE',
+        strategy: 'nanoid',
+        errorClass: InvalidInputError,
+        run: () => nanoid(-1),
+      },
+      {
+        name: 'CUID2 reports LENGTH_OUT_OF_RANGE',
+        code: 'LENGTH_OUT_OF_RANGE',
+        strategy: 'cuid',
+        errorClass: InvalidInputError,
+        run: () => cuidv2({ length: 1 }),
+      },
+    ]
+
+    test.each(cases)('$name', ({ run, code, strategy, errorClass }) => {
+      let error: unknown
+      try {
+        run()
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(errorClass)
+      expect(error).toMatchObject({ code, strategy })
+    })
+  })
+
   describe('canonical byte lengths', () => {
-    const cases: ReadonlyArray<{ readonly name: string; readonly decode: () => unknown }> = [
+    const cases: ReadonlyArray<{ readonly name: string; readonly strategy: string; readonly decode: () => unknown }> = [
       {
         name: 'UUID v4 rejects short byte arrays',
+        strategy: 'uuid',
         decode: () => uuidv4.fromBytes(zeroes(15)),
       },
       {
         name: 'UUID v4 rejects oversized byte arrays',
+        strategy: 'uuid',
         decode: () => uuidv4.fromBytes(zeroes(17)),
       },
       {
         name: 'UUID v7 rejects oversized byte arrays',
+        strategy: 'uuid',
         decode: () => uuidv7.fromBytes(zeroes(17)),
       },
       {
         name: 'ULID rejects oversized byte arrays',
+        strategy: 'ulid',
         decode: () => ulid.fromBytes(zeroes(17)),
       },
       {
         name: 'KSUID rejects oversized byte arrays',
+        strategy: 'ksuid',
         decode: () => ksuid.fromBytes(zeroes(21)),
       },
       {
         name: 'ObjectID rejects oversized byte arrays',
+        strategy: 'objectid',
         decode: () => objectid.fromBytes(zeroes(13)),
       },
       {
         name: 'XID rejects oversized byte arrays',
+        strategy: 'xid',
         decode: () => xid.fromBytes(zeroes(13)),
       },
     ]
 
-    test.each(cases)('$name', ({ decode }) => {
-      expect(decode).toThrow(BufferError)
+    test.each(cases)('$name', ({ decode, strategy }) => {
+      let error: unknown
+      try {
+        decode()
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(BufferError)
+      expect(error).toMatchObject({ code: 'BYTES_INVALID_LENGTH', strategy })
     })
   })
 
   describe('buffer offsets', () => {
-    const cases: ReadonlyArray<{ readonly name: string; readonly generate: () => unknown }> = [
-      {
-        name: 'UUID v4 rejects fractional offsets',
-        generate: () => uuidv4({ random: zeroes(16) }, zeroes(32), 0.5),
-      },
-      {
-        name: 'UUID v7 rejects fractional offsets',
-        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 0 }, zeroes(32), 0.5),
-      },
-      {
-        name: 'ULID rejects fractional offsets',
-        generate: () => ulid({ msecs: 0, random: zeroes(10) }, zeroes(32), 0.5),
-      },
-      {
-        name: 'KSUID rejects fractional offsets',
-        generate: () => ksuid({ msecs: 1_500_000_000_000, random: zeroes(16) }, zeroes(32), 0.5),
-      },
-      {
-        name: 'ObjectID rejects fractional offsets',
-        generate: () => objectid({ msecs: 0, random: zeroes(5), counter: 0 }, zeroes(32), 0.5),
-      },
-      {
-        name: 'XID rejects fractional offsets',
-        generate: () => xid({ msecs: 0, machineId: zeroes(3), processId: 0, counter: 0 }, zeroes(32), 0.5),
-      },
-      {
-        name: 'TSID rejects fractional offsets',
-        generate: () => tsid({ msecs: 1_700_000_000_000, node: 0, counter: 0 }, zeroes(16), 0.5),
-      },
-    ]
+    const cases: ReadonlyArray<{ readonly name: string; readonly strategy: string; readonly generate: () => unknown }> =
+      [
+        {
+          name: 'UUID v4 rejects fractional offsets',
+          strategy: 'uuid',
+          generate: () => uuidv4({ random: zeroes(16) }, zeroes(32), 0.5),
+        },
+        {
+          name: 'UUID v7 rejects fractional offsets',
+          strategy: 'uuid',
+          generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 0 }, zeroes(32), 0.5),
+        },
+        {
+          name: 'ULID rejects fractional offsets',
+          strategy: 'ulid',
+          generate: () => ulid({ msecs: 0, random: zeroes(10) }, zeroes(32), 0.5),
+        },
+        {
+          name: 'KSUID rejects fractional offsets',
+          strategy: 'ksuid',
+          generate: () => ksuid({ msecs: 1_500_000_000_000, random: zeroes(16) }, zeroes(32), 0.5),
+        },
+        {
+          name: 'ObjectID rejects fractional offsets',
+          strategy: 'objectid',
+          generate: () => objectid({ msecs: 0, random: zeroes(5), counter: 0 }, zeroes(32), 0.5),
+        },
+        {
+          name: 'XID rejects fractional offsets',
+          strategy: 'xid',
+          generate: () => xid({ msecs: 0, machineId: zeroes(3), processId: 0, counter: 0 }, zeroes(32), 0.5),
+        },
+        {
+          name: 'TSID rejects fractional offsets',
+          strategy: 'tsid',
+          generate: () => tsid({ msecs: 1_700_000_000_000, node: 0, counter: 0 }, zeroes(16), 0.5),
+        },
+      ]
 
-    test.each(cases)('$name', ({ generate }) => {
-      expect(generate).toThrow(BufferError)
+    test.each(cases)('$name', ({ generate, strategy }) => {
+      let error: unknown
+      try {
+        generate()
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(BufferError)
+      expect(error).toMatchObject({ code: 'BUFFER_OUT_OF_BOUNDS', strategy })
     })
   })
 

@@ -409,7 +409,7 @@ describe('CLI: uniku generate tsid', () => {
         const error = yield* cli(['generate', 'tsid', '--node-bits', '25']).pipe(Effect.flip)
 
         assertInstanceOf(error, CliError)
-        expect(error.code).toBe('TSID_NODE_BITS_OUT_OF_RANGE')
+        expect(error.code).toBe('NODE_BITS_OUT_OF_RANGE')
       }),
     )
   })

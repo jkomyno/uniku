@@ -92,8 +92,9 @@ function writeV7BytesUnchecked(rnds: Uint8Array, msecs: number, seq: number, buf
 function writeV7Bytes(rnds: Uint8Array, msecs: number, seq: number, buf: Uint8Array, offset: number): void {
   if (!isWritableRange(buf, offset, UUID_BYTES)) {
     throw new BufferError(
-      'UUID_BUFFER_OUT_OF_BOUNDS',
+      'BUFFER_OUT_OF_BOUNDS',
       `UUID byte range ${offset}:${offset + UUID_BYTES - 1} is out of buffer bounds`,
+      { strategy: 'uuid' },
     )
   }
   writeV7BytesUnchecked(rnds, msecs, seq, buf, offset)
@@ -112,11 +113,15 @@ function v7WithOptions<TBuf extends Uint8Array = Uint8Array>(
   }
   const optSeq = options.seq
   if (optSeq !== undefined && !isIntegerInRange(optSeq, 0, MAX_SEQ)) {
-    throw new InvalidInputError('UUID_SEQUENCE_OUT_OF_RANGE', `Sequence must be an integer between 0 and ${MAX_SEQ}`)
+    throw new InvalidInputError('SEQUENCE_OUT_OF_RANGE', `Sequence must be an integer between 0 and ${MAX_SEQ}`, {
+      strategy: 'uuid',
+    })
   }
   const optRandom = options.random
   if (optRandom && optRandom.length < UUID_BYTES) {
-    throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', `Random bytes length must be >= ${UUID_BYTES}`)
+    throw new InvalidInputError('RANDOM_BYTES_TOO_SHORT', `Random bytes length must be >= ${UUID_BYTES}`, {
+      strategy: 'uuid',
+    })
   }
 
   const rnds = optRandom ?? rng()

@@ -40,8 +40,9 @@ for (let i = 0; i < BASE62_ALPHABET.length; i += 1) {
 export function encodeBase62(bytes: Uint8Array): string {
   if (bytes.length < KSUID_BYTES) {
     throw new BufferError(
-      'KSUID_BYTES_TOO_SHORT',
+      'BYTES_INVALID_LENGTH',
       `KSUID bytes must be at least ${KSUID_BYTES} bytes, got ${bytes.length}`,
+      { strategy: 'ksuid' },
     )
   }
 
@@ -72,10 +73,9 @@ export function encodeBase62(bytes: Uint8Array): string {
  */
 export function decodeBase62(str: string): Uint8Array {
   if (str.length !== KSUID_STRING_LEN) {
-    throw new ParseError(
-      'KSUID_INVALID_LENGTH',
-      `KSUID string must be ${KSUID_STRING_LEN} characters, got ${str.length}`,
-    )
+    throw new ParseError('INVALID_LENGTH', `KSUID string must be ${KSUID_STRING_LEN} characters, got ${str.length}`, {
+      strategy: 'ksuid',
+    })
   }
 
   // Convert Base62 string to BigInt
@@ -83,13 +83,13 @@ export function decodeBase62(str: string): Uint8Array {
   for (let i = 0; i < KSUID_STRING_LEN; i += 1) {
     const value = DECODING[str.charCodeAt(i)]
     if (value === 255) {
-      throw new ParseError('KSUID_INVALID_CHAR', `Invalid KSUID character: ${str[i]}`)
+      throw new ParseError('INVALID_CHAR', `Invalid KSUID character: ${str[i]}`, { strategy: 'ksuid' })
     }
     num = num * BASE + BigInt(value)
   }
 
   if (num > MAX_KSUID_VALUE) {
-    throw new ParseError('KSUID_OVERFLOW', 'KSUID string exceeds 160-bit range')
+    throw new ParseError('VALUE_OUT_OF_RANGE', 'KSUID string exceeds 160-bit range', { strategy: 'ksuid' })
   }
 
   // Convert BigInt to bytes (big-endian)

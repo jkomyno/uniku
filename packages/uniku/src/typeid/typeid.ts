@@ -51,7 +51,9 @@ function assertValidPrefix(prefix: string): void {
   }
 
   if (prefix.length > 63) {
-    throw new InvalidInputError('TYPEID_PREFIX_TOO_LONG', 'TypeID prefix must be at most 63 characters')
+    throw new InvalidInputError('PREFIX_TOO_LONG', 'TypeID prefix must be at most 63 characters', {
+      strategy: 'typeid',
+    })
   }
 
   for (let i = 0; i < prefix.length; i += 1) {
@@ -61,13 +63,16 @@ function assertValidPrefix(prefix: string): void {
 
     if (!isLowercaseLetter && !isUnderscore) {
       throw new InvalidInputError(
-        'TYPEID_PREFIX_INVALID_CHARACTER',
+        'PREFIX_INVALID_CHAR',
         'TypeID prefix must contain only lowercase ASCII letters and underscores',
+        { strategy: 'typeid' },
       )
     }
 
     if ((i === 0 || i === prefix.length - 1) && !isLowercaseLetter) {
-      throw new InvalidInputError('TYPEID_PREFIX_INVALID_BOUNDARY', 'TypeID prefix must start and end with a-z')
+      throw new InvalidInputError('PREFIX_INVALID_BOUNDARY', 'TypeID prefix must start and end with a-z', {
+        strategy: 'typeid',
+      })
     }
   }
 }
@@ -77,10 +82,9 @@ function decodeSuffixValue(suffix: string, index: number): number {
   const value = code < BASE32_DECODE.length ? BASE32_DECODE[code] : -1
 
   if (value === -1) {
-    throw new ParseError(
-      'TYPEID_SUFFIX_INVALID_CHARACTER',
-      `TypeID suffix contains invalid character at position ${index}`,
-    )
+    throw new ParseError('INVALID_CHAR', `TypeID suffix contains invalid character at position ${index}`, {
+      strategy: 'typeid',
+    })
   }
 
   return value
@@ -88,17 +92,23 @@ function decodeSuffixValue(suffix: string, index: number): number {
 
 function assertValidSuffixShape(suffix: string): void {
   if (suffix.length !== TYPEID_SUFFIX_LENGTH) {
-    throw new ParseError('TYPEID_SUFFIX_INVALID_LENGTH', `TypeID suffix must be 26 characters, got ${suffix.length}`)
+    throw new ParseError('INVALID_LENGTH', `TypeID suffix must be 26 characters, got ${suffix.length}`, {
+      strategy: 'typeid',
+    })
   }
 
   if (suffix[0] > '7') {
-    throw new ParseError('TYPEID_SUFFIX_OVERFLOW', 'TypeID suffix must encode a 128-bit value')
+    throw new ParseError('VALUE_OUT_OF_RANGE', 'TypeID suffix must encode a 128-bit value', {
+      strategy: 'typeid',
+    })
   }
 }
 
 function encodeBytesToSuffix(bytes: Uint8Array): string {
   if (bytes.length !== TYPEID_UUID_BYTE_LENGTH) {
-    throw new InvalidInputError('TYPEID_UUID_BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`)
+    throw new InvalidInputError('BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`, {
+      strategy: 'typeid',
+    })
   }
 
   return (
@@ -162,11 +172,15 @@ function decodeSuffixToBytes(suffix: string): Uint8Array {
 
 function assertUuidV7Bytes(bytes: Uint8Array): void {
   if (bytes.length !== TYPEID_UUID_BYTE_LENGTH) {
-    throw new InvalidInputError('TYPEID_UUID_BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`)
+    throw new InvalidInputError('BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`, {
+      strategy: 'typeid',
+    })
   }
 
   if (bytes[6] >> 4 !== 7 || (bytes[8] & 0xc0) !== 0x80) {
-    throw new InvalidInputError('TYPEID_UUID_NOT_V7', 'TypeID UUID bytes must encode a UUID v7 value')
+    throw new InvalidInputError('UUID_NOT_V7', 'TypeID UUID bytes must encode a UUID v7 value', {
+      strategy: 'typeid',
+    })
   }
 }
 
@@ -178,7 +192,7 @@ function uuidV7BytesFromSuffix(suffix: string): Uint8Array {
 
 function uuidV7BytesFromUuid(uuid: string): Uint8Array {
   if (!uuidv7.isValid(uuid)) {
-    throw new InvalidInputError('TYPEID_UUID_NOT_V7', 'TypeID can only wrap UUID v7 values')
+    throw new InvalidInputError('UUID_NOT_V7', 'TypeID can only wrap UUID v7 values', { strategy: 'typeid' })
   }
 
   return uuidv7.toBytes(uuid)
@@ -188,7 +202,7 @@ function parseTypeid(id: string): ParsedTypeid {
   const separatorIndex = id.lastIndexOf('_')
 
   if (separatorIndex === 0) {
-    throw new ParseError('TYPEID_INVALID_FORMAT', 'TypeID must not start with "_"')
+    throw new ParseError('INVALID_FORMAT', 'TypeID must not start with "_"', { strategy: 'typeid' })
   }
 
   const prefix = separatorIndex === -1 ? '' : id.slice(0, separatorIndex)
