@@ -69,14 +69,17 @@ function _v4<TBuf extends Uint8Array = Uint8Array>(
 ): string | TBuf {
   const random = options?.random
   if (random && random.length < UUID_BYTES) {
-    throw new InvalidInputError('UUID_RANDOM_BYTES_TOO_SHORT', `Random bytes length must be >= ${UUID_BYTES}`)
+    throw new InvalidInputError('RANDOM_BYTES_TOO_SHORT', `Random bytes length must be >= ${UUID_BYTES}`, {
+      strategy: 'uuid',
+    })
   }
 
   const outputOffset = buf ? (offset ?? 0) : 0
   if (buf && !isWritableRange(buf, outputOffset, UUID_BYTES)) {
     throw new BufferError(
-      'UUID_BUFFER_OUT_OF_BOUNDS',
+      'BUFFER_OUT_OF_BOUNDS',
       `UUID byte range ${outputOffset}:${outputOffset + UUID_BYTES - 1} is out of buffer bounds`,
+      { strategy: 'uuid' },
     )
   }
 

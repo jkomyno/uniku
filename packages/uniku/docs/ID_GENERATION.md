@@ -128,18 +128,42 @@ function isValid(id: unknown): id is string {
 ## Errors
 
 Throw `InvalidInputError`, `ParseError`, or `BufferError` from `uniku/errors`.
-Error codes are strategy-agnostic and shared across generators — timestamp option
-validation uses `TIMESTAMP_OUT_OF_RANGE` everywhere. Pass the generator's
-`IdGenerator` name via the options bag so callers can attribute the failure:
+Error codes are strategy-agnostic and shared across generators. Pass the
+generator's `IdGenerator` name via the options bag so callers can attribute the
+failure:
 
 ```typescript
 throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'Timestamp must be ...', { strategy: 'ulid' })
 ```
 
-Do not introduce strategy-prefixed codes (e.g. `ULID_TIMESTAMP_OUT_OF_RANGE`) —
-legacy prefixes are being consolidated before v1. The `_tag` class discriminant
-already separates caller-input failures (`InvalidInputError`) from ID-string
-parse failures (`ParseError`); the same code may appear under both tags.
+Never introduce strategy-prefixed codes (e.g. `ULID_TIMESTAMP_OUT_OF_RANGE`) —
+attribution belongs in `strategy`, not in the code. The `_tag` class discriminant
+separates caller-input failures (`InvalidInputError`) from ID-string parse
+failures (`ParseError`); the same code may appear under both tags.
+
+Canonical codes and when to use them:
+
+| Code                                                                        | Thrown when                                                                                     |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `TIMESTAMP_OUT_OF_RANGE`                                                    | timestamp option is not an integer in the format's range, or a parsed ID's timestamp overflows   |
+| `CONFLICTING_OPTIONS`                                                       | mutually exclusive options are combined (e.g. `msecs` + deprecated `secs`)                       |
+| `SEQUENCE_OUT_OF_RANGE`, `COUNTER_OUT_OF_RANGE`                             | sequence/counter option exceeds its bit width                                                    |
+| `NODE_OUT_OF_RANGE`, `NODE_BITS_OUT_OF_RANGE`, `EPOCH_INVALID`              | Snowflake-style layout options are invalid (tsid)                                                |
+| `PROCESS_ID_OUT_OF_RANGE`, `MACHINE_ID_BYTES_TOO_SHORT`                     | identity options are invalid (xid)                                                               |
+| `RANDOM_BYTES_TOO_SHORT`                                                    | caller-provided random byte array is shorter than required                                       |
+| `RANDOM_OVERFLOW`                                                           | monotonic random component overflowed (ulid)                                                     |
+| `SIZE_OUT_OF_RANGE`, `LENGTH_OUT_OF_RANGE`                                  | output-size option is outside its range (nanoid, cuid2)                                          |
+| `ALPHABET_OUT_OF_RANGE`, `ALPHABET_INVALID_CHAR`, `ALPHABET_DUPLICATE`      | custom alphabet is invalid (nanoid)                                                              |
+| `PREFIX_TOO_LONG`, `PREFIX_INVALID_CHAR`, `PREFIX_INVALID_BOUNDARY`         | TypeID prefix constraints                                                                        |
+| `UUID_NOT_V7`                                                               | TypeID wraps a non-v7 UUID                                                                       |
+| `BYTES_INVALID_LENGTH`                                                      | byte input has a non-canonical length (`fromBytes`, codecs)                                      |
+| `BUFFER_OUT_OF_BOUNDS`                                                      | destination buffer range does not fit the ID                                                     |
+| `INVALID_CHAR`, `INVALID_LENGTH`, `INVALID_FORMAT`                          | ID string fails to parse                                                                         |
+| `NON_CANONICAL`                                                             | ID string parses but encodes non-canonical trailing bits (xid)                                   |
+| `VALUE_OUT_OF_RANGE`                                                        | parsed value exceeds the format's numeric range (may appear under either tag)                    |
+
+A code used by exactly one generator (e.g. `UUID_NOT_V7`) still omits the
+strategy prefix — `strategy` carries the attribution.
 
 ## Entry Point
 

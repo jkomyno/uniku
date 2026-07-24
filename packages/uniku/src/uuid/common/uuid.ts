@@ -95,8 +95,11 @@ const HEX_TABLE: string[] = Array.from({ length: 256 }, (_, i) => i.toString(16)
 export function formatUuid(bytes: Uint8Array): string {
   if (bytes.length !== UUID_BYTE_LENGTH) {
     throw new BufferError(
-      'UUID_BYTES_INVALID_LENGTH',
+      'BYTES_INVALID_LENGTH',
       `UUID bytes must be exactly ${UUID_BYTE_LENGTH} bytes, got ${bytes.length}`,
+      {
+        strategy: 'uuid',
+      },
     )
   }
 
@@ -133,14 +136,17 @@ export function formatUuidUnchecked(bytes: Uint8Array): string {
 
 export function parseUuid(value: string): Uint8Array {
   if (value.length !== UUID_STRING_LENGTH) {
-    throw new ParseError('UUID_INVALID_LENGTH', `UUID string must be 36 characters, got ${value.length}`)
+    throw new ParseError('INVALID_LENGTH', `UUID string must be 36 characters, got ${value.length}`, {
+      strategy: 'uuid',
+    })
   }
 
   // Validate separator positions directly (more efficient than full loop)
   if (value[8] !== '-' || value[13] !== '-' || value[18] !== '-' || value[23] !== '-') {
     throw new ParseError(
-      'UUID_INVALID_SEPARATORS',
+      'INVALID_FORMAT',
       `UUID string has invalid separators at positions 8, 13, 18, 23. Received: "${value}"`,
+      { strategy: 'uuid' },
     )
   }
 
@@ -154,7 +160,9 @@ export function parseUuid(value: string): Uint8Array {
 
     const nibble = hexValue(value.charCodeAt(i))
     if (nibble === -1) {
-      throw new ParseError('UUID_INVALID_HEX_CHAR', `UUID string contains invalid hex character at position ${i}`)
+      throw new ParseError('INVALID_CHAR', `UUID string contains invalid hex character at position ${i}`, {
+        strategy: 'uuid',
+      })
     }
 
     if (UUID_CHAR_IS_HIGH[i]) {

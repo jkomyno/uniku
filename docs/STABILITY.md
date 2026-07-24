@@ -53,10 +53,6 @@ each deprecated surface.
 - `secs` timestamp options in `uniku/ksuid`, `uniku/objectid`, and `uniku/xid`
   once the unified `msecs` option lands there; retire the seconds-based
   `--timestamp` parsing in `@uniku/cli` at the same time.
-- Any remaining strategy-prefixed error codes (e.g. `ULID_INVALID_CHAR`,
-  `KSUID_BYTES_INVALID_LENGTH`) if the consolidation into unified codes with
-  `strategy` attribution — started with `TIMESTAMP_OUT_OF_RANGE` — has not
-  finished by then.
 
 ## Runtime support
 

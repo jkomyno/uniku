@@ -75,22 +75,31 @@ export type Nanoid = {
  */
 function validateAlphabet(alphabet: string): void {
   if (alphabet.length < 2) {
-    throw new InvalidInputError('NANOID_ALPHABET_TOO_SHORT', 'Alphabet must contain at least 2 characters')
+    throw new InvalidInputError('ALPHABET_OUT_OF_RANGE', 'Alphabet must contain at least 2 characters', {
+      strategy: 'nanoid',
+    })
   }
   if (alphabet.length > 256) {
-    throw new InvalidInputError('NANOID_ALPHABET_TOO_LONG', 'Alphabet must not exceed 256 characters')
+    throw new InvalidInputError('ALPHABET_OUT_OF_RANGE', 'Alphabet must not exceed 256 characters', {
+      strategy: 'nanoid',
+    })
   }
   const seen = new Set<string>()
   for (const char of alphabet) {
     const code = char.charCodeAt(0)
     if (code < 32 || code > 126) {
       throw new InvalidInputError(
-        'NANOID_ALPHABET_INVALID_CHAR',
+        'ALPHABET_INVALID_CHAR',
         'Alphabet must contain only printable ASCII characters (32-126)',
+        {
+          strategy: 'nanoid',
+        },
       )
     }
     if (seen.has(char)) {
-      throw new InvalidInputError('NANOID_ALPHABET_DUPLICATE', `Duplicate character in alphabet: "${char}"`)
+      throw new InvalidInputError('ALPHABET_DUPLICATE', `Duplicate character in alphabet: "${char}"`, {
+        strategy: 'nanoid',
+      })
     }
     seen.add(char)
   }
@@ -101,10 +110,10 @@ function validateAlphabet(alphabet: string): void {
  */
 function validateSize(size: number): void {
   if (!Number.isInteger(size) || size < 0) {
-    throw new InvalidInputError('NANOID_SIZE_INVALID', 'Size must be a non-negative integer')
+    throw new InvalidInputError('SIZE_OUT_OF_RANGE', 'Size must be a non-negative integer', { strategy: 'nanoid' })
   }
   if (size > MAX_SIZE) {
-    throw new InvalidInputError('NANOID_SIZE_TOO_LARGE', `Size must not exceed ${MAX_SIZE}`)
+    throw new InvalidInputError('SIZE_OUT_OF_RANGE', `Size must not exceed ${MAX_SIZE}`, { strategy: 'nanoid' })
   }
 }
 
@@ -150,8 +159,9 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
     const mask = alphabetLen - 1
     if (randomBytes && randomBytes.length < size) {
       throw new InvalidInputError(
-        'NANOID_RANDOM_BYTES_INSUFFICIENT',
+        'RANDOM_BYTES_TOO_SHORT',
         `Insufficient random bytes: need ${size}, have ${randomBytes.length}`,
+        { strategy: 'nanoid' },
       )
     }
     const bytes = randomBytes?.subarray(0, size) ?? globalThis.crypto.getRandomValues(new Uint8Array(size))
@@ -176,8 +186,9 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
     if (randomBytes) {
       if (randomBytes.length - randomOffset < step) {
         throw new InvalidInputError(
-          'NANOID_RANDOM_BYTES_INSUFFICIENT',
+          'RANDOM_BYTES_TOO_SHORT',
           `Insufficient random bytes: need at least ${step} more, have ${randomBytes.length - randomOffset}`,
+          { strategy: 'nanoid' },
         )
       }
       bytes = randomBytes.subarray(randomOffset, randomOffset + step)
