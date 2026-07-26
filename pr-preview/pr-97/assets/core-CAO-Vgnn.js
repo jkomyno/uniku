@@ -1,0 +1,1 @@
+import{O as e}from"./dist-DEIG1zSd.js";export{e as isSpecialLang};
