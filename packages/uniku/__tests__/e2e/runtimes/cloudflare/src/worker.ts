@@ -825,7 +825,7 @@ app.get('/nanoid/generate-custom-alphabet', (c) => {
   try {
     const alphabet = c.req.query('alphabet') || '0123456789abcdef'
     const size = Number(c.req.query('size') || '12')
-    const id = nanoid({ alphabet, size })
+    const id = nanoid({ alphabet, length: size })
     const allCharsValid = [...id].every((char) => alphabet.includes(char))
     return c.json({
       success: true,

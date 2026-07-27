@@ -54,13 +54,6 @@ export type NanoidOptions = {
    * Length of generated ID. Default: 21. Maximum: 2048.
    */
   length?: number
-  /**
-   * Length of generated ID.
-   *
-   * @deprecated Use `length` instead. Will be removed at v1-rc.
-   */
-  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
-  size?: number
 }
 
 export type Nanoid = {
@@ -142,12 +135,7 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
   if (typeof sizeOrOptions === 'number') {
     size = sizeOrOptions
   } else {
-    if (sizeOrOptions.length !== undefined && sizeOrOptions.size !== undefined) {
-      throw new InvalidInputError('CONFLICTING_OPTIONS', 'Pass only one of `length` or `size`, not both', {
-        strategy: 'nanoid',
-      })
-    }
-    size = sizeOrOptions.length ?? sizeOrOptions.size ?? DEFAULT_SIZE
+    size = sizeOrOptions.length ?? DEFAULT_SIZE
     alphabet = sizeOrOptions.alphabet ?? URL_ALPHABET
     randomBytes = sizeOrOptions.random
     if (sizeOrOptions.alphabet !== undefined) {

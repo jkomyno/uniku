@@ -1,5 +1,5 @@
 import { afterEach } from 'vitest'
-import { InvalidInputError, uuidv7 } from '@/src/uuid/v7'
+import { uuidv7 } from '@/src/uuid/v7'
 import { expectValidTypeGuard } from '../helpers/assertions'
 
 async function importFreshUuidV7Module() {
@@ -149,39 +149,6 @@ describe('uuidv7', () => {
     for (let i = 0; i < fromString.length; i += 1) {
       expect(buffer[offset + i]).toBe(fromString[i])
     }
-  })
-
-  describe('deprecated seq alias', () => {
-    // TODO(v1-rc): remove this block together with the `seq` option.
-    it('produces the same output as counter until v1-rc', () => {
-      const msecs = 1_702_387_456_789
-      const random = new Uint8Array(16).fill(42)
-      expect(uuidv7({ msecs, seq: 0x12345678, random })).toBe(uuidv7({ msecs, counter: 0x12345678, random }))
-    })
-
-    it('validates the seq range', () => {
-      let error: unknown
-      try {
-        uuidv7({ seq: -1 })
-      } catch (caught) {
-        error = caught
-      }
-
-      expect(error).toBeInstanceOf(InvalidInputError)
-      expect(error).toMatchObject({ code: 'COUNTER_OUT_OF_RANGE', strategy: 'uuid' })
-    })
-
-    it('rejects passing both counter and seq', () => {
-      let error: unknown
-      try {
-        uuidv7({ counter: 1, seq: 1 })
-      } catch (caught) {
-        error = caught
-      }
-
-      expect(error).toBeInstanceOf(InvalidInputError)
-      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'uuid' })
-    })
   })
 
   describe('isValid', () => {

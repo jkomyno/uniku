@@ -78,7 +78,7 @@ describe('inspectId', () => {
   })
 
   it('inspects XID with second-precision timestamp and its tail bytes', () => {
-    const id = xid({ secs: 1_720_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
+    const id = xid({ msecs: 1_720_000_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
     const result = inspectId(id, 'xid')
     assertTrue(result !== null)
     expect(result).toMatchObject({ type: 'xid', timestamp_ms: 1_720_000_000_000, random: '0000000000000000' })

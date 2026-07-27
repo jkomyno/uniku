@@ -18,13 +18,6 @@ export type UuidV7Options = {
    * Unsigned 32-bit counter value.
    */
   counter?: number
-  /**
-   * Unsigned 32-bit sequence value.
-   *
-   * @deprecated Use `counter` instead. Will be removed at v1-rc.
-   */
-  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
-  seq?: number
 }
 
 export type UuidV7 = {
@@ -67,7 +60,7 @@ type V7State = {
  *
  * IMPORTANT: This state persists across all uuidv7() calls in the module's lifetime.
  * - In serverless/edge functions with warm starts, state persists between invocations.
- * - For isolated state, pass explicit `msecs` and `seq` via options.
+ * - For isolated state, pass explicit `msecs` and `counter` via options.
  * - Tests should mock Date.now() or provide explicit options for deterministic behavior.
  */
 const state: V7State = { msecs: -Infinity, seq: 0 }
@@ -118,13 +111,8 @@ function v7WithOptions<TBuf extends Uint8Array = Uint8Array>(
       strategy: 'uuid',
     })
   }
-  if (options.counter !== undefined && options.seq !== undefined) {
-    throw new InvalidInputError('CONFLICTING_OPTIONS', 'Pass only one of `counter` or `seq`, not both', {
-      strategy: 'uuid',
-    })
-  }
-  const optSeq = options.counter ?? options.seq
-  if (optSeq !== undefined && !isIntegerInRange(optSeq, 0, MAX_SEQ)) {
+  const counter = options.counter
+  if (counter !== undefined && !isIntegerInRange(counter, 0, MAX_SEQ)) {
     throw new InvalidInputError('COUNTER_OUT_OF_RANGE', `Counter must be an integer between 0 and ${MAX_SEQ}`, {
       strategy: 'uuid',
     })
@@ -139,7 +127,7 @@ function v7WithOptions<TBuf extends Uint8Array = Uint8Array>(
   const rnds = optRandom ?? rng()
   const msecs = optMsecs ?? Date.now()
   // Derive a 31-bit sequence if not provided by the caller, matching the default hot path.
-  const seq = optSeq ?? (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
+  const seq = counter ?? (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9]
 
   if (buf) {
     writeV7Bytes(rnds, msecs, seq, buf, offset)

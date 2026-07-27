@@ -1,4 +1,4 @@
-import { BufferError, InvalidInputError, ksuid } from '@/src/ksuid/ksuid'
+import { BufferError, ksuid } from '@/src/ksuid/ksuid'
 import { expectValidTypeGuard } from '../helpers/assertions'
 import { expectDistinctRandomSamples } from '../helpers/randomness'
 
@@ -254,32 +254,6 @@ describe('ksuid', () => {
       expect(() => ksuid({ msecs: (KSUID_MAX_SECS + 1) * 1000, random: new Uint8Array(16) })).toThrow(
         `Timestamp must be an integer between ${KSUID_EPOCH * 1000} and ${KSUID_MAX_SECS * 1000 + 999} milliseconds`,
       )
-    })
-  })
-
-  describe('deprecated secs alias', () => {
-    // TODO(v1-rc): remove this block together with the `secs` option.
-    it('accepts whole seconds until v1-rc', () => {
-      const id = ksuid({ secs: 1_500_000_000, random: new Uint8Array(16) })
-      expect(ksuid.timestamp(id)).toBe(1_500_000_000_000)
-    })
-
-    it('validates the seconds range', () => {
-      expect(() => ksuid({ secs: 0 })).toThrow(
-        `Timestamp must be an integer between ${KSUID_EPOCH} and ${KSUID_MAX_SECS} seconds`,
-      )
-    })
-
-    it('rejects passing both msecs and secs', () => {
-      let error: unknown
-      try {
-        ksuid({ msecs: 1_500_000_000_000, secs: 1_500_000_000 })
-      } catch (caught) {
-        error = caught
-      }
-
-      expect(error).toBeInstanceOf(InvalidInputError)
-      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'ksuid' })
     })
   })
 
