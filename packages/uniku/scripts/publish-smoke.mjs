@@ -1,12 +1,15 @@
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ENTRYPOINTS } from './entrypoints.mjs'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const packageRoot = dirname(scriptDir)
+const workspaceRoot = dirname(dirname(packageRoot))
+const forbiddenSubpaths = ['./cuid2']
+const typeContractPath = join(packageRoot, '__tests__', 'types', 'v1-removals.type-test.ts')
 
 // Derived from the shared manifest so every published entry point — including
 // objectid, tsid, and generators — is covered here; nothing can be published
@@ -20,6 +23,7 @@ const expectedExports = Object.fromEntries(
 
 const runtimeSpecifiers = Object.keys(expectedExports).map((subpath) => `uniku${subpath.slice(1)}`)
 const sourceDir = join(packageRoot, 'src')
+const packageJsonPath = join(packageRoot, 'package.json')
 
 const fail = (message) => {
   console.error(message)
@@ -58,7 +62,17 @@ const containsSourceCondition = (value) => {
   return false
 }
 
+const assertForbiddenSubpaths = (exportsMap, label) => {
+  for (const subpath of forbiddenSubpaths) {
+    if (Object.hasOwn(exportsMap ?? {}, subpath)) {
+      fail(`${label} must not expose forbidden subpath ${subpath}.`)
+    }
+  }
+}
+
 const assertPackedExports = (packedPackageJson) => {
+  assertForbiddenSubpaths(packedPackageJson.exports, 'Packed exports')
+
   if (containsSourceCondition(packedPackageJson.exports)) {
     fail('Packed exports must not expose the @jkomyno/source condition.')
   }
@@ -105,9 +119,9 @@ const listTypeScriptSources = (dir) => {
   return files
 }
 
-const assertSourcesArePacked = (tarballPath) => {
-  const packedFiles = new Set(run('tar', ['-tf', tarballPath]).split(/\r?\n/))
+const listPackedFiles = (tarballPath) => new Set(run('tar', ['-tf', tarballPath]).split(/\r?\n/))
 
+const assertSourcesArePacked = (packedFiles) => {
   for (const sourcePath of listTypeScriptSources(sourceDir)) {
     const packedPath = `package/${relative(packageRoot, sourcePath)}`
 
@@ -117,12 +131,34 @@ const assertSourcesArePacked = (tarballPath) => {
   }
 }
 
-const assertRuntimeResolution = (tarballPath, tempDir) => {
-  const appDir = join(tempDir, 'app')
-  const packageDir = join(appDir, 'node_modules', 'uniku')
-  mkdirSync(packageDir, { recursive: true })
+const assertForbiddenTarEntries = (packedFiles) => {
+  for (const subpath of forbiddenSubpaths) {
+    const relativeSubpath = subpath.slice(2)
+    const forbiddenPrefixes = [`package/build/${relativeSubpath}/`, `package/src/${relativeSubpath}/`]
 
-  run('tar', ['-xzf', tarballPath, '-C', packageDir, '--strip-components=1'])
+    for (const packedFile of packedFiles) {
+      if (forbiddenPrefixes.some((prefix) => packedFile.startsWith(prefix))) {
+        fail(`Packed tarball contains forbidden legacy path ${packedFile}.`)
+      }
+    }
+  }
+}
+
+const assertInstalledConsumer = (tarballPath, tempDir) => {
+  const appDir = join(tempDir, 'app')
+  mkdirSync(appDir, { recursive: true })
+
+  writeFileSync(
+    join(appDir, 'package.json'),
+    JSON.stringify({
+      private: true,
+      type: 'module',
+      dependencies: {
+        uniku: `file:${tarballPath}`,
+      },
+    }),
+  )
+  run('pnpm', ['install', '--ignore-scripts'], { cwd: appDir })
 
   const resolutionScript = `
     const specifiers = ${JSON.stringify(runtimeSpecifiers)};
@@ -133,9 +169,19 @@ const assertRuntimeResolution = (tarballPath, tempDir) => {
       }
     }
 
-    const uuidv7 = await import('uniku/uuid/v7');
-    if (typeof uuidv7.uuidv7 !== 'function') {
-      throw new Error('uniku/uuid/v7 did not expose uuidv7.');
+    const canonicalCuid = await import('uniku/cuid/v2');
+    if (typeof canonicalCuid.cuidv2 !== 'function' || !canonicalCuid.cuidv2.isValid(canonicalCuid.cuidv2())) {
+      throw new Error('uniku/cuid/v2 did not expose a working cuidv2 generator.');
+    }
+
+    let legacyError;
+    try {
+      await import('uniku/cuid2');
+    } catch (error) {
+      legacyError = error;
+    }
+    if (legacyError?.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
+      throw new Error(\`uniku/cuid2 should fail with ERR_PACKAGE_PATH_NOT_EXPORTED, got \${legacyError?.code}\`);
     }
   `
 
@@ -147,27 +193,52 @@ const assertRuntimeResolution = (tarballPath, tempDir) => {
   })
 
   if (result.status !== 0) {
-    fail('Packed package failed to resolve under --conditions=@jkomyno/source.')
+    fail('Installed packed package failed its runtime export contract.')
   }
+
+  writeFileSync(join(appDir, 'v1-removals.type-test.ts'), readFileSync(typeContractPath, 'utf8'))
+  writeFileSync(
+    join(appDir, 'tsconfig.json'),
+    JSON.stringify({
+      compilerOptions: {
+        module: 'NodeNext',
+        moduleResolution: 'NodeNext',
+        noEmit: true,
+        strict: true,
+        target: 'ES2023',
+        types: [],
+      },
+      include: ['v1-removals.type-test.ts'],
+    }),
+  )
+  const tscPath = join(workspaceRoot, 'node_modules', 'typescript', 'bin', 'tsc')
+  run(process.execPath, [tscPath, '--project', join(appDir, 'tsconfig.json')], { cwd: appDir })
 }
+
+const sourcePackageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
+assertForbiddenSubpaths(sourcePackageJson.exports, 'Source exports')
+assertForbiddenSubpaths(sourcePackageJson.publishConfig?.exports, 'Publish exports')
 
 const tempDir = mkdtempSync(join(tmpdir(), 'uniku-publish-smoke-'))
 
 try {
   const packOutput = run('pnpm', ['pack', '--pack-destination', tempDir])
-  const tarballPath = packOutput
+  const packedTarballPath = packOutput
     .split(/\r?\n/)
     .map((line) => line.trim())
     .findLast((line) => line.endsWith('.tgz'))
 
-  if (!tarballPath) {
+  if (!packedTarballPath) {
     fail(`Could not find packed tarball path in pnpm pack output:\n${packOutput}`)
   }
 
+  const tarballPath = resolve(packageRoot, packedTarballPath)
   const packedPackageJson = JSON.parse(run('tar', ['-xOf', tarballPath, 'package/package.json']))
+  const packedFiles = listPackedFiles(tarballPath)
   assertPackedExports(packedPackageJson)
-  assertSourcesArePacked(tarballPath)
-  assertRuntimeResolution(tarballPath, tempDir)
+  assertSourcesArePacked(packedFiles)
+  assertForbiddenTarEntries(packedFiles)
+  assertInstalledConsumer(tarballPath, tempDir)
 } finally {
   rmSync(tempDir, { recursive: true, force: true })
 }
