@@ -165,6 +165,12 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
+              "description": "Unsigned 32-bit counter value.",
+              "name": "counter",
+              "optional": true,
+              "type": "number"
+            },
+            {
               "description": "Unsigned 32-bit sequence value.",
               "name": "seq",
               "optional": true,
@@ -415,6 +421,12 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
+              "description": "Unsigned 32-bit counter value.",
+              "name": "counter",
+              "optional": true,
+              "type": "number"
+            },
+            {
               "description": "Unsigned 32-bit sequence value.",
               "name": "seq",
               "optional": true,
@@ -427,6 +439,14 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
           {
             "description": "Generate a TypeID from a lowercase entity prefix and a UUID v7 suffix.",
             "text": "typeid(prefix: string, options?: TypeidOptions): string"
+          },
+          {
+            "description": "Generate a TypeID with explicit options or write its 16 canonical UUID v7 bytes into a caller-owned buffer.",
+            "text": "typeid<TBuf extends Uint8Array = Uint8Array>(\n    prefix: string,\n    options: TypeidOptions | undefined,\n    buf: TBuf,\n    offset?: number,\n  ): TBuf"
+          },
+          {
+            "description": "Generate a TypeID string with optional timestamp, counter, or random bytes.",
+            "text": "typeid(prefix: string, options?: TypeidOptions, buf?: undefined, offset?: number): string"
           }
         ]
       },
@@ -598,7 +618,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "options": {
           "fields": [
             {
-              "description": "Random bytes for deterministic output (testing). For power-of-2 alphabets (2, 4, 8, 16, 32, 64, 128, 256): exactly `size` bytes needed. For other alphabets: ~size * 2 bytes needed (rejection sampling).",
+              "description": "Random bytes for deterministic output (testing). For power-of-2 alphabets (2, 4, 8, 16, 32, 64, 128, 256): exactly `length` bytes needed. For other alphabets: ~length * 2 bytes needed (rejection sampling).",
               "name": "random",
               "optional": true,
               "type": "Uint8Array"
@@ -611,6 +631,12 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
             },
             {
               "description": "Length of generated ID. Default: 21. Maximum: 2048.",
+              "name": "length",
+              "optional": true,
+              "type": "number"
+            },
+            {
+              "description": "Length of generated ID.",
               "name": "size",
               "optional": true,
               "type": "number"

@@ -2,7 +2,7 @@ import * as Clock from 'effect/Clock'
 import * as Effect from 'effect/Effect'
 import * as Option from 'effect/Option'
 import { Command, Flag } from 'effect/unstable/cli'
-import { COUNT_DEFAULT, CUID_LENGTH_DEFAULT, NANOID_SIZE_DEFAULT, UUID_VERSION_DEFAULT } from '@/src/domain/constants'
+import { COUNT_DEFAULT, CUID_LENGTH_DEFAULT, NANOID_LENGTH_DEFAULT, UUID_VERSION_DEFAULT } from '@/src/domain/constants'
 import { CliError } from '@/src/domain/errors'
 import { generateCuid } from '@/src/generators/cuid'
 import { generateKsuid } from '@/src/generators/ksuid'
@@ -133,10 +133,10 @@ const ulidSubcommand = Command.make(
 
 // ── Nanoid subcommand ───────────────────────────────────────────────
 
-const sizeFlag = Flag.integer('size').pipe(
-  Flag.withAlias('s'),
+const nanoidLengthFlag = Flag.integer('length').pipe(
+  Flag.withAlias('l'),
   Flag.withDescription('Length of ID (1-256)'),
-  Flag.withDefault(NANOID_SIZE_DEFAULT),
+  Flag.withDefault(NANOID_LENGTH_DEFAULT),
 )
 
 const alphabetFlag = Flag.string('alphabet').pipe(
@@ -150,13 +150,13 @@ const nanoidSubcommand = Command.make(
   {
     count: countFlag,
     json: jsonFlag,
-    size: sizeFlag,
+    length: nanoidLengthFlag,
     alphabet: alphabetFlag,
   },
-  Effect.fn('cli.generate.nanoid')(function* ({ count, json, size, alphabet: alphabetOpt }) {
+  Effect.fn('cli.generate.nanoid')(function* ({ count, json, length, alphabet: alphabetOpt }) {
     const output = yield* OutputService
     const alphabet = Option.getOrUndefined(alphabetOpt)
-    const ids = yield* generateNanoid({ count, size, alphabet })
+    const ids = yield* generateNanoid({ count, length, alphabet })
     yield* output.write(idsOutput(ids), { json })
   }),
 ).pipe(

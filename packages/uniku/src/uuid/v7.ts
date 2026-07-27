@@ -15,8 +15,15 @@ export type UuidV7Options = {
    */
   msecs?: number
   /**
-   * Unsigned 32-bit sequence value.
+   * Unsigned 32-bit counter value.
    */
+  counter?: number
+  /**
+   * Unsigned 32-bit sequence value.
+   *
+   * @deprecated Use `counter` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
   seq?: number
 }
 
@@ -111,9 +118,14 @@ function v7WithOptions<TBuf extends Uint8Array = Uint8Array>(
       strategy: 'uuid',
     })
   }
-  const optSeq = options.seq
+  if (options.counter !== undefined && options.seq !== undefined) {
+    throw new InvalidInputError('CONFLICTING_OPTIONS', 'Pass only one of `counter` or `seq`, not both', {
+      strategy: 'uuid',
+    })
+  }
+  const optSeq = options.counter ?? options.seq
   if (optSeq !== undefined && !isIntegerInRange(optSeq, 0, MAX_SEQ)) {
-    throw new InvalidInputError('SEQUENCE_OUT_OF_RANGE', `Sequence must be an integer between 0 and ${MAX_SEQ}`, {
+    throw new InvalidInputError('COUNTER_OUT_OF_RANGE', `Counter must be an integer between 0 and ${MAX_SEQ}`, {
       strategy: 'uuid',
     })
   }
