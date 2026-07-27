@@ -1,10 +1,33 @@
 import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
 import * as Effect from 'effect/Effect'
+import * as TestClock from 'effect/testing/TestClock'
+import { ksuid } from 'uniku/ksuid'
+import { objectid } from 'uniku/objectid'
 import { tsid } from 'uniku/tsid'
+import { ulid } from 'uniku/ulid'
 import { xid } from 'uniku/xid'
 import { CliError } from '@/src/domain/errors'
 import { cli, MockOutput, TestConsole, TestLive } from '../__utils__'
+
+const TIMESTAMP_MSECS = 1_720_000_000_123
+const SECOND_PRECISION_TIMESTAMP_MSECS = 1_720_000_000_000
+
+const timestampCases: ReadonlyArray<{
+  readonly command: 'ulid' | 'ksuid' | 'objectid' | 'xid' | 'tsid'
+  readonly decodeTimestamp: (id: string) => number
+  readonly expectedTimestamp: number
+}> = [
+  { command: 'ulid', decodeTimestamp: ulid.timestamp, expectedTimestamp: TIMESTAMP_MSECS },
+  { command: 'ksuid', decodeTimestamp: ksuid.timestamp, expectedTimestamp: SECOND_PRECISION_TIMESTAMP_MSECS },
+  { command: 'objectid', decodeTimestamp: objectid.timestamp, expectedTimestamp: SECOND_PRECISION_TIMESTAMP_MSECS },
+  { command: 'xid', decodeTimestamp: xid.timestamp, expectedTimestamp: SECOND_PRECISION_TIMESTAMP_MSECS },
+  {
+    command: 'tsid',
+    decodeTimestamp: (id) => tsid.timestamp(tsid.fromString(id)),
+    expectedTimestamp: TIMESTAMP_MSECS,
+  },
+]
 
 const expectCliRejects = (args: ReadonlyArray<string>) =>
   Effect.gen(function* () {
@@ -15,6 +38,33 @@ const expectCliRejects = (args: ReadonlyArray<string>) =>
     )
     expect(didSucceed).toBe(false)
   })
+
+describe('CLI: timestamp semantics', () => {
+  layer(TestLive())((it) => {
+    for (const { command, decodeTimestamp, expectedTimestamp } of timestampCases) {
+      it.effect(`[Given] ${command} --timestamp <ms> [Then] embeds the documented instant`, () =>
+        Effect.gen(function* () {
+          yield* MockOutput.reset
+          yield* cli(['generate', command, '--timestamp', String(TIMESTAMP_MSECS)])
+          const output = yield* MockOutput.getStdout
+          expect(output).toHaveLength(1)
+          expect(decodeTimestamp(output[0])).toBe(expectedTimestamp)
+        }),
+      )
+    }
+
+    it.effect('[Given] --timestamp now [Then] uses the Effect clock in milliseconds', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* TestClock.setTime(TIMESTAMP_MSECS)
+        yield* cli(['generate', 'ulid', '--timestamp', 'now'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(ulid.timestamp(output[0])).toBe(TIMESTAMP_MSECS)
+      }),
+    )
+  })
+})
 
 describe('CLI: uniku generate uuid', () => {
   layer(TestLive())((it) => {

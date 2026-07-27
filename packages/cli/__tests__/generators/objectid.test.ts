@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@effect/vitest'
 import * as Effect from 'effect/Effect'
+import { objectid } from 'uniku/objectid'
 import { generateObjectid } from '@/src/generators/objectid'
 
 describe('generateObjectid', () => {
@@ -22,10 +23,10 @@ describe('generateObjectid', () => {
 
   it.effect('generates ObjectID with explicit timestamp', () =>
     Effect.gen(function* () {
-      const msecs = Date.now()
+      const msecs = 1_720_000_000_123
       const ids = yield* generateObjectid({ count: 1, timestamp: msecs })
       expect(ids).toHaveLength(1)
-      expect(ids[0].length).toBe(24)
+      expect(objectid.timestamp(ids[0])).toBe(1_720_000_000_000)
     }),
   )
 })

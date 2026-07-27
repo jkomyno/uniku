@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@effect/vitest'
 import * as Effect from 'effect/Effect'
+import { ksuid } from 'uniku/ksuid'
 import { generateKsuid } from '@/src/generators/ksuid'
 
 describe('generateKsuid', () => {
@@ -22,10 +23,10 @@ describe('generateKsuid', () => {
 
   it.effect('generates KSUID with explicit timestamp', () =>
     Effect.gen(function* () {
-      const msecs = Date.now()
+      const msecs = 1_720_000_000_123
       const ids = yield* generateKsuid({ count: 1, timestamp: msecs })
       expect(ids).toHaveLength(1)
-      expect(ids[0].length).toBe(27)
+      expect(ksuid.timestamp(ids[0])).toBe(1_720_000_000_000)
     }),
   )
 })

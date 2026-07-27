@@ -27,7 +27,7 @@ describe('generateTsid', () => {
 
   it.effect('generates TSID with explicit timestamp', () =>
     Effect.gen(function* () {
-      const msecs = 1_720_000_000_000
+      const msecs = 1_720_000_000_123
       const ids = yield* generateTsid({ count: 1, timestamp: msecs })
       expect(ids).toHaveLength(1)
       const value = tsid.fromString(ids[0])
