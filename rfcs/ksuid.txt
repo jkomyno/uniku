@@ -92,7 +92,7 @@ String: aWgEPTl1tmebfsQzFP4bxwgy80V
 ```typescript
 type KsuidOptions = {
   random?: Uint8Array  // 16 bytes for payload
-  secs?: number        // Unix timestamp in seconds
+  msecs?: number       // Unix timestamp in milliseconds
 }
 
 type Ksuid = {
@@ -123,7 +123,7 @@ Maintains monotonic ordering within the same second.
 ```
 ksuid(options) -> string
 ```
-Generate KSUID with optional custom timestamp (secs) and/or payload (random).
+Generate KSUID with optional custom timestamp (msecs) and/or payload (random).
 Bypasses monotonic state when options provided.
 
 ```
@@ -170,12 +170,12 @@ ksuid.MAX = "aWgEPTl1tmebfsQzFP4bxwgy80V"
 ### Timestamp Handling
 
 KSUID uses native second precision:
-- Options accept `secs` (seconds since Unix epoch)
+- Options accept `msecs` (milliseconds since Unix epoch) and truncate sub-second precision
 - timestamp() returns milliseconds for API consistency with ulid/uuidv7
 
 Example:
 ```typescript
-const id = ksuid({ secs: 1702387456 })
+const id = ksuid({ msecs: 1702387456000 })
 ksuid.timestamp(id) === 1702387456000  // Returns milliseconds
 ```
 
@@ -306,7 +306,7 @@ const restored = ksuid.fromBytes(bytes)
 
 ### Example 6: Timestamp Extraction
 ```typescript
-const id = ksuid({ secs: 1702387456 })
+const id = ksuid({ msecs: 1702387456000 })
 const ts = ksuid.timestamp(id)
 // ts === 1702387456000 (milliseconds for API consistency)
 ```
