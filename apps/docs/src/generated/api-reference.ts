@@ -189,7 +189,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
             "text": "uuidv7<TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf"
           },
           {
-            "description": "Generate a UUID v7 string with optional timestamp, sequence, or random bytes.",
+            "description": "Generate a UUID v7 string with optional timestamp, counter, or random bytes.",
             "text": "uuidv7(options?: UuidV7Options, buf?: undefined, offset?: number): string"
           }
         ]

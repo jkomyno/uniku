@@ -163,7 +163,7 @@ const nanoidSubcommand = Command.make(
   Command.withDescription('Generate Nanoids'),
   Command.withExamples([
     { command: 'uniku nanoid -n 5 --json', description: 'Generate 5 Nanoids as a JSON array' },
-    { command: 'uniku nanoid --size 10 --alphabet hex', description: 'Generate a 10-char ID from the hex preset' },
+    { command: 'uniku nanoid --length 10 --alphabet hex', description: 'Generate a 10-char ID from the hex preset' },
   ]),
 )
 

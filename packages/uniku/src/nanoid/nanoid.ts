@@ -250,7 +250,7 @@ function isValid(id: unknown): id is string {
  * // => "V1StGXR8_Z5jdHi6B-myT"
  * ```
  *
- * @example Custom size
+ * @example Custom length
  * ```ts
  * const shortId = nanoid(10)
  * // => "IRFa-VaY2b"
@@ -258,7 +258,7 @@ function isValid(id: unknown): id is string {
  *
  * @example Custom alphabet (hex)
  * ```ts
- * const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
+ * const hexId = nanoid({ alphabet: '0123456789abcdef', length: 12 })
  * // => "4f90d13a42bc"
  * ```
  *
@@ -273,7 +273,7 @@ function isValid(id: unknown): id is string {
  *
  * @throws {InvalidInputError} Length must be between 0 and 2048
  * @throws {InvalidInputError} Alphabet must contain 2-256 unique printable ASCII characters
- * @throws {InvalidInputError} Insufficient random bytes for requested size
+ * @throws {InvalidInputError} Insufficient random bytes for requested length
  */
 export const nanoid: Nanoid = Object.assign(nanoidFn, {
   isValid,
