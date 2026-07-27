@@ -1,6 +1,49 @@
 import type { IdGenerator } from './generators'
 
 /**
+ * The canonical, ordered list of machine-readable error codes emitted by
+ * uniku's public API.
+ *
+ * Codes describe the failure independently of an ID format. Use an error's
+ * `strategy` field when the generator that raised it matters.
+ */
+// Plain `as const` keeps declaration emit compatible with
+// `isolatedDeclarations`; every member is already a string literal.
+export const ERROR_CODES = [
+  'TIMESTAMP_OUT_OF_RANGE',
+  'CONFLICTING_OPTIONS',
+  'COUNTER_OUT_OF_RANGE',
+  'NODE_OUT_OF_RANGE',
+  'NODE_BITS_OUT_OF_RANGE',
+  'EPOCH_INVALID',
+  'PROCESS_ID_OUT_OF_RANGE',
+  'MACHINE_ID_BYTES_TOO_SHORT',
+  'RANDOM_BYTES_TOO_SHORT',
+  'RANDOM_OVERFLOW',
+  'LENGTH_OUT_OF_RANGE',
+  'ALPHABET_OUT_OF_RANGE',
+  'ALPHABET_INVALID_CHAR',
+  'ALPHABET_DUPLICATE',
+  'PREFIX_TOO_LONG',
+  'PREFIX_INVALID_CHAR',
+  'PREFIX_INVALID_BOUNDARY',
+  'UUID_NOT_V7',
+  'BYTES_INVALID_LENGTH',
+  'BUFFER_OUT_OF_BOUNDS',
+  'INVALID_CHAR',
+  'INVALID_LENGTH',
+  'INVALID_FORMAT',
+  'NON_CANONICAL',
+  'VALUE_OUT_OF_RANGE',
+] as const
+
+/**
+ * A machine-readable error code emitted by uniku, derived from
+ * {@link ERROR_CODES}.
+ */
+export type ErrorCode = (typeof ERROR_CODES)[number]
+
+/**
  * Extra context carried by every uniku error.
  */
 export type UniqueIdErrorOptions = {
@@ -20,7 +63,7 @@ export type UniqueIdErrorOptions = {
  */
 export abstract class UniqueIdError extends Error {
   abstract readonly _tag: string
-  abstract readonly code: string
+  abstract readonly code: ErrorCode
 
   /** The ID strategy whose public boundary raised the error. */
   readonly strategy?: IdGenerator
@@ -39,7 +82,7 @@ export class InvalidInputError extends UniqueIdError {
   readonly _tag = 'InvalidInputError' as const
 
   constructor(
-    readonly code: string,
+    readonly code: ErrorCode,
     message: string,
     options?: UniqueIdErrorOptions,
   ) {
@@ -54,7 +97,7 @@ export class ParseError extends UniqueIdError {
   readonly _tag = 'ParseError' as const
 
   constructor(
-    readonly code: string,
+    readonly code: ErrorCode,
     message: string,
     options?: UniqueIdErrorOptions,
   ) {
@@ -69,7 +112,7 @@ export class BufferError extends UniqueIdError {
   readonly _tag = 'BufferError' as const
 
   constructor(
-    readonly code: string,
+    readonly code: ErrorCode,
     message: string,
     options?: UniqueIdErrorOptions,
   ) {

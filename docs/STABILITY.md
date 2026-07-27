@@ -116,8 +116,9 @@ Public failures use `InvalidInputError`, `ParseError`, or `BufferError` from
 `uniku/errors`. Their `_tag` and `code` fields are machine-readable API. Error
 messages help people diagnose a failure but may be clarified in minor releases.
 
-Every documented error code is stable throughout `1.x`. New codes may be added
-for new APIs or newly rejected invalid inputs.
+`ERROR_CODES` is the authoritative runtime catalog, and `ErrorCode` is its
+derived string-literal union. Every catalogued error code is stable throughout
+`1.x`. New codes may be added for new APIs or newly rejected invalid inputs.
 
 ### Monotonic state
 

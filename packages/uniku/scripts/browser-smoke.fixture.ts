@@ -1,5 +1,5 @@
 import { cuidv2 } from 'uniku/cuid/v2'
-import { InvalidInputError } from 'uniku/errors'
+import { ERROR_CODES, InvalidInputError } from 'uniku/errors'
 import { ID_GENERATORS } from 'uniku/generators'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
@@ -25,8 +25,11 @@ try {
   if (typeof tsid() !== 'bigint') {
     throw new Error('TSID did not return a bigint.')
   }
-  if (!(new InvalidInputError('SMOKE', 'smoke') instanceof Error)) {
+  if (!(new InvalidInputError('LENGTH_OUT_OF_RANGE', 'smoke') instanceof Error)) {
     throw new Error('The public error class is not an Error.')
+  }
+  if (!ERROR_CODES.includes('LENGTH_OUT_OF_RANGE') || new Set(ERROR_CODES).size !== ERROR_CODES.length) {
+    throw new Error('The public error code catalog is incomplete or contains duplicates.')
   }
   if (!ID_GENERATORS.includes('uuid') || !ID_GENERATORS.includes('tsid') || !ID_GENERATORS.includes('xid')) {
     throw new Error('The generator manifest is incomplete.')

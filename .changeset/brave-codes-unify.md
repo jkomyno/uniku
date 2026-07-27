@@ -2,7 +2,7 @@
 'uniku': minor
 ---
 
-**Breaking (pre-v1):** Remove the strategy prefix from every remaining error code. Codes are now strategy-agnostic across the whole library; the generator that raised the error is reported via the `strategy` field added in the previous release. Migration is mechanical — match on `error.code` as before, and read `error.strategy` where the generator matters:
+**Breaking (pre-v1):** Remove the strategy prefix from every remaining error code. Codes are now strategy-agnostic across the whole library; the generator that raised the error is reported via the `strategy` field added in the previous release. `uniku/errors` now exports the authoritative `ERROR_CODES` runtime catalog and its derived `ErrorCode` union, and public error constructors accept only that union instead of arbitrary strings. Migration is mechanical — match on `error.code` as before, and read `error.strategy` where the generator matters:
 
 | Before | After |
 | --- | --- |
@@ -15,14 +15,14 @@
 | `UUID_BUFFER_OUT_OF_BOUNDS`, `ULID_BUFFER_OUT_OF_BOUNDS`, `KSUID_BUFFER_OUT_OF_BOUNDS`, `OBJECTID_BUFFER_OUT_OF_BOUNDS`, `XID_BUFFER_OUT_OF_BOUNDS`, `TSID_BUFFER_OUT_OF_BOUNDS` | `BUFFER_OUT_OF_BOUNDS` |
 | `UUID_RANDOM_BYTES_TOO_SHORT`, `ULID_RANDOM_BYTES_TOO_SHORT`, `KSUID_RANDOM_BYTES_TOO_SHORT`, `OBJECTID_RANDOM_BYTES_TOO_SHORT`, `NANOID_RANDOM_BYTES_INSUFFICIENT`, `CUID2_RANDOM_BYTES_EMPTY` | `RANDOM_BYTES_TOO_SHORT` |
 | `ULID_RANDOM_OVERFLOW` | `RANDOM_OVERFLOW` |
-| `UUID_SEQUENCE_OUT_OF_RANGE` | `SEQUENCE_OUT_OF_RANGE` |
+| `UUID_SEQUENCE_OUT_OF_RANGE` | `COUNTER_OUT_OF_RANGE` |
 | `OBJECTID_COUNTER_OUT_OF_RANGE`, `XID_COUNTER_OUT_OF_RANGE`, `TSID_COUNTER_OUT_OF_RANGE` | `COUNTER_OUT_OF_RANGE` |
 | `TSID_NODE_OUT_OF_RANGE`, `TSID_NODE_BITS_OUT_OF_RANGE`, `TSID_EPOCH_INVALID` | `NODE_OUT_OF_RANGE`, `NODE_BITS_OUT_OF_RANGE`, `EPOCH_INVALID` (prefix dropped) |
 | `XID_PROCESS_ID_OUT_OF_RANGE`, `XID_MACHINE_ID_BYTES_TOO_SHORT` | `PROCESS_ID_OUT_OF_RANGE`, `MACHINE_ID_BYTES_TOO_SHORT` (prefix dropped) |
 | `TYPEID_PREFIX_TOO_LONG`, `TYPEID_PREFIX_INVALID_CHARACTER`, `TYPEID_PREFIX_INVALID_BOUNDARY`, `TYPEID_UUID_NOT_V7` | `PREFIX_TOO_LONG`, `PREFIX_INVALID_CHAR`, `PREFIX_INVALID_BOUNDARY`, `UUID_NOT_V7` (prefix dropped) |
 | `NANOID_ALPHABET_TOO_SHORT` + `NANOID_ALPHABET_TOO_LONG` | `ALPHABET_OUT_OF_RANGE` (merged) |
 | `NANOID_ALPHABET_INVALID_CHAR`, `NANOID_ALPHABET_DUPLICATE` | `ALPHABET_INVALID_CHAR`, `ALPHABET_DUPLICATE` (prefix dropped) |
-| `NANOID_SIZE_INVALID` + `NANOID_SIZE_TOO_LARGE` | `SIZE_OUT_OF_RANGE` (merged) |
+| `NANOID_SIZE_INVALID` + `NANOID_SIZE_TOO_LARGE` | `LENGTH_OUT_OF_RANGE` (merged) |
 | `CUID2_LENGTH_OUT_OF_RANGE` | `LENGTH_OUT_OF_RANGE` |
 
 Every error message is unchanged. The `_tag` discriminant (`InvalidInputError` for caller-input failures, `ParseError` for ID-string parse failures, `BufferError` for byte/buffer issues) is unchanged as well, and a few codes (`VALUE_OUT_OF_RANGE`) intentionally appear under more than one tag. `v1-boundaries.test.ts` now pins the full code + `strategy` contract for every generator.

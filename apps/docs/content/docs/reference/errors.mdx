@@ -4,19 +4,25 @@ description: Typed, machine-readable errors for invalid input, malformed strings
 icon: TriangleAlert
 ---
 
-Every generator throws a typed error instead of a generic `Error`. Each one carries a `code` for programmatic handling and a `_tag` for discriminated matching, compatible with Effect's `catchTag`.
+Every generator throws a typed error instead of a generic `Error`. Each one carries:
+
+- `code: ErrorCode` for strategy-agnostic, programmatic handling;
+- `strategy?: IdGenerator` to identify the generator that raised it;
+- `_tag` for discriminated matching, compatible with Effect's `catchTag`.
 
 ```ts
 import { nanoid } from 'uniku/nanoid'
-import { InvalidInputError } from 'uniku/errors'
+import { InvalidInputError, type ErrorCode } from 'uniku/errors'
 
 try {
   nanoid(-1)
 } catch (error) {
   if (error instanceof InvalidInputError) {
-    error.code // 'NANOID_SIZE_INVALID'
+    const code: ErrorCode = error.code
+    code // 'LENGTH_OUT_OF_RANGE'
+    error.strategy // 'nanoid'
     error._tag // 'InvalidInputError'
-    error.message // 'Size must be a non-negative integer'
+    error.message // 'Length must be a non-negative integer'
   }
 }
 ```
@@ -32,9 +38,51 @@ try {
 | `ParseError` | `'ParseError'` | An ID string fails to parse or decode: wrong format or characters. |
 | `BufferError` | `'BufferError'` | A byte array or buffer is too short, or an offset is out of bounds. |
 
-`InvalidInputError`, `ParseError`, and `BufferError` each carry a `code: string`, a generator-prefixed constant such as `'UUID_RANDOM_BYTES_TOO_SHORT'` or `'TSID_NODE_OUT_OF_RANGE'`, plus the inherited `message: string`.
+`InvalidInputError`, `ParseError`, and `BufferError` each carry a typed `code`, an inherited `message`, and optional `strategy` attribution. Codes deliberately omit generator prefixes: match `error.code === 'INVALID_LENGTH'` and inspect `error.strategy` only when the format matters.
 
-Most generator modules re-export all four classes, so you rarely need to import from `uniku/errors` directly. Nanoid and CUID v2, which have no binary codec, only re-export `InvalidInputError` and `UniqueIdError`.
+Import from `uniku/errors` when code handles failures from more than one generator. Individual generator entry points may also re-export the error classes they use.
+
+## Error code catalog
+
+`ERROR_CODES` is the authoritative runtime list, and `ErrorCode` is its derived string-literal union:
+
+```ts
+import { ERROR_CODES, type ErrorCode } from 'uniku/errors'
+
+const handled = new Set<ErrorCode>(ERROR_CODES)
+```
+
+The following codes form the v1 public contract:
+
+| Code | Error class(es) | Strategies | Meaning |
+| --- | --- | --- | --- |
+| `TIMESTAMP_OUT_OF_RANGE` | `InvalidInputError`, `ParseError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | A timestamp option is not an integer in the format's range, or a decoded timestamp overflows. |
+| `CONFLICTING_OPTIONS` | `InvalidInputError` | `uuid`, `typeid`, `nanoid`, `ksuid`, `objectid`, `xid` | Mutually exclusive compatibility and canonical options were supplied together. |
+| `COUNTER_OUT_OF_RANGE` | `InvalidInputError` | `uuid`, `typeid`, `objectid`, `tsid`, `xid` | A counter option is outside the format's supported bit width. |
+| `NODE_OUT_OF_RANGE` | `InvalidInputError` | `tsid` | A TSID node value is outside the configured node-bit range. |
+| `NODE_BITS_OUT_OF_RANGE` | `InvalidInputError` | `tsid` | A TSID node-bit allocation is invalid. |
+| `EPOCH_INVALID` | `InvalidInputError` | `tsid` | A TSID epoch is not a finite integer. |
+| `PROCESS_ID_OUT_OF_RANGE` | `InvalidInputError` | `xid` | An XID process ID is outside its supported range. |
+| `MACHINE_ID_BYTES_TOO_SHORT` | `InvalidInputError` | `xid` | Caller-provided XID machine-ID bytes are too short. |
+| `RANDOM_BYTES_TOO_SHORT` | `InvalidInputError` | `uuid`, `ulid`, `typeid`, `nanoid`, `cuid`, `ksuid`, `objectid` | Caller-provided random bytes cannot satisfy the requested ID. |
+| `RANDOM_OVERFLOW` | `InvalidInputError` | `ulid` | A monotonic ULID random component overflowed. |
+| `LENGTH_OUT_OF_RANGE` | `InvalidInputError` | `nanoid`, `cuid` | A Nanoid or CUID v2 output length is outside its supported range. |
+| `ALPHABET_OUT_OF_RANGE` | `InvalidInputError` | `nanoid` | A Nanoid alphabet has fewer than 2 or more than 256 characters. |
+| `ALPHABET_INVALID_CHAR` | `InvalidInputError` | `nanoid` | A Nanoid alphabet contains a non-printable ASCII character. |
+| `ALPHABET_DUPLICATE` | `InvalidInputError` | `nanoid` | A Nanoid alphabet contains a duplicate character. |
+| `PREFIX_TOO_LONG` | `InvalidInputError` | `typeid` | A TypeID prefix exceeds 63 characters. |
+| `PREFIX_INVALID_CHAR` | `InvalidInputError` | `typeid` | A TypeID prefix contains a character outside `a-z` and `_`. |
+| `PREFIX_INVALID_BOUNDARY` | `InvalidInputError` | `typeid` | A TypeID prefix starts or ends with `_`. |
+| `UUID_NOT_V7` | `InvalidInputError` | `typeid` | A TypeID conversion received UUID bytes or text that are not UUID v7. |
+| `BYTES_INVALID_LENGTH` | `InvalidInputError`, `BufferError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | A byte input does not have the format's canonical length. |
+| `BUFFER_OUT_OF_BOUNDS` | `BufferError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | A destination buffer offset or range cannot contain the encoded ID. |
+| `INVALID_CHAR` | `ParseError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | An ID string contains a character outside the format's alphabet. |
+| `INVALID_LENGTH` | `ParseError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | An ID string does not have the format's canonical length. |
+| `INVALID_FORMAT` | `ParseError` | `uuid`, `typeid` | An ID string violates structural rules beyond its characters or length. |
+| `NON_CANONICAL` | `ParseError` | `xid` | An XID string has non-zero trailing bits and is not canonically encoded. |
+| `VALUE_OUT_OF_RANGE` | `InvalidInputError`, `ParseError` | `typeid`, `ksuid`, `tsid` | A parsed or supplied value exceeds the format's numeric range. |
+
+The same code can be used by more than one error class when the failure meaning is identical. For example, `TIMESTAMP_OUT_OF_RANGE` can describe an invalid generation option or an overflow discovered while parsing.
 
 ## Generator list
 
