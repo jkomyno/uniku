@@ -76,6 +76,8 @@ Every generator has a top-level shorthand (`uniku uuid`) that is equivalent to `
 | `--count` | `-n` | Number of IDs to generate (default: `1`) |
 | `--json` | | Output as a JSON array instead of one ID per line |
 
+Every generator-specific `--timestamp` option accepts a Unix timestamp in milliseconds, or `now`. ULID and TSID preserve millisecond precision. KSUID, ObjectID, and XID store whole seconds, so they discard any sub-second remainder from the millisecond input.
+
 ### uuid
 
 Generate UUIDs (v4 or v7).
@@ -173,13 +175,13 @@ Generate KSUIDs.
 ```sh
 uniku ksuid -n 5 --json
 
-uniku ksuid --timestamp 1720000000
-# a KSUID for a fixed Unix timestamp (s)
+uniku ksuid --timestamp 1720000000000
+# a KSUID for a fixed Unix timestamp (ms)
 ```
 
 | Option | Description |
 | --- | --- |
-| `--timestamp` | Unix timestamp in seconds, or `now` |
+| `--timestamp` | Unix timestamp in milliseconds, or `now` |
 
 ### objectid
 
@@ -189,9 +191,13 @@ Generate MongoDB ObjectIDs.
 uniku objectid
 # 66e1a8d3f1c2b3a4d5e6f7a8
 
-uniku objectid --timestamp 1720000000
-# an ObjectID for a fixed Unix timestamp (s)
+uniku objectid --timestamp 1720000000000
+# an ObjectID for a fixed Unix timestamp (ms)
 ```
+
+| Option | Description |
+| --- | --- |
+| `--timestamp` | Unix timestamp in milliseconds, or `now` |
 
 ### xid
 
@@ -200,13 +206,13 @@ Generate XIDs compatible with rs/xid.
 ```sh
 uniku xid
 
-uniku xid --timestamp 1720000000
-# an XID for a fixed Unix timestamp (s)
+uniku xid --timestamp 1720000000000
+# an XID for a fixed Unix timestamp (ms)
 ```
 
 | Option | Description |
 | --- | --- |
-| `--timestamp` | Unix timestamp in seconds, or `now` |
+| `--timestamp` | Unix timestamp in milliseconds, or `now` |
 
 ### tsid
 
@@ -217,7 +223,7 @@ uniku tsid
 # 0QXW2CK4XZM2A
 
 uniku tsid --timestamp 1720000000000
-# a TSID for a fixed Unix timestamp (ms) — note: milliseconds, unlike ksuid/objectid's seconds
+# a TSID for a fixed Unix timestamp (ms)
 
 uniku tsid --node 42 --node-bits 10
 # a TSID for a fixed node ID

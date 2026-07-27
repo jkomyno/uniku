@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@effect/vitest'
 import * as Effect from 'effect/Effect'
+import { ulid } from 'uniku/ulid'
 import { CliError } from '@/src/domain/errors'
 import { generateUlid } from '@/src/generators/ulid'
 
@@ -21,10 +22,10 @@ describe('generateUlid', () => {
 
   it.effect('generates ULID with explicit timestamp', () =>
     Effect.gen(function* () {
-      const ts = 1700000000000
-      const ids = yield* generateUlid({ count: 1, monotonic: false, timestamp: ts, lowercase: false })
+      const msecs = 1_720_000_000_123
+      const ids = yield* generateUlid({ count: 1, monotonic: false, timestamp: msecs, lowercase: false })
       expect(ids).toHaveLength(1)
-      expect(ids[0]).toMatch(/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i)
+      expect(ulid.timestamp(ids[0])).toBe(msecs)
     }),
   )
 
