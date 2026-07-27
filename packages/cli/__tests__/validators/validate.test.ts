@@ -1,4 +1,4 @@
-import { cuid2 } from 'uniku/cuid2'
+import { cuidv2 } from 'uniku/cuid/v2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
 import { objectid } from 'uniku/objectid'
@@ -105,7 +105,7 @@ describe('validateAs', () => {
   })
 
   it('validates a valid CUID', () => {
-    const id = cuid2()
+    const id = cuidv2()
     const result = validateAs(id, 'cuid')
     expect(result.valid).toBe(true)
     expect(result.type).toBe('cuid')
@@ -200,7 +200,7 @@ describe('validateAutoDetect', () => {
 
   it('auto-detects an ObjectID starting with a letter (a-f) as objectid, not cuid (KTD6/R9)', () => {
     // CUID2's default validation regex (/^[a-z][0-9a-z]+$/, length 24) would also
-    // accept this string if objectid were checked after cuid2 - see validateAutoDetect's
+    // accept this string if objectid were checked after CUID v2 - see validateAutoDetect's
     // ordering comment. This is a fixed known value, not a generated one, to guarantee
     // the first character is in a-f regardless of test run.
     const id = 'aabbccddeeff001122334455'
@@ -215,7 +215,7 @@ describe('validateAutoDetect', () => {
   })
 
   it('auto-detects CUID', () => {
-    const id = cuid2()
+    const id = cuidv2()
     const result = validateAutoDetect(id)
     expect(result.valid).toBe(true)
     expect(result.type).toBe('cuid')

@@ -4,7 +4,7 @@
  * and returns results as JSON for test assertions.
  */
 import { Hono } from 'hono'
-import { cuid2 } from 'uniku/cuid2'
+import { cuidv2 } from 'uniku/cuid/v2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid, URL_ALPHABET } from 'uniku/nanoid'
 import { objectid } from 'uniku/objectid'
@@ -735,7 +735,7 @@ app.get('/tsid/monotonic', (c) => {
 
 app.get('/cuid2/generate', (c) => {
   try {
-    const id = cuid2()
+    const id = cuidv2()
     return c.json({ success: true, id, length: id.length })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -745,7 +745,7 @@ app.get('/cuid2/generate', (c) => {
 app.get('/cuid2/generate-batch', (c) => {
   try {
     const count = Number(c.req.query('count') || '1000')
-    const ids = Array.from({ length: count }, () => cuid2())
+    const ids = Array.from({ length: count }, () => cuidv2())
     return c.json({ success: true, ids, count: ids.length })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
@@ -755,7 +755,7 @@ app.get('/cuid2/generate-batch', (c) => {
 app.get('/cuid2/generate-custom-length', (c) => {
   try {
     const length = Number(c.req.query('length') || '24')
-    const id = cuid2({ length })
+    const id = cuidv2({ length })
     return c.json({
       success: true,
       id,
@@ -770,12 +770,12 @@ app.get('/cuid2/generate-custom-length', (c) => {
 
 app.get('/cuid2/validate', (c) => {
   try {
-    const validId = cuid2()
+    const validId = cuidv2()
     return c.json({
       success: true,
       validId,
-      isValidGenerated: cuid2.isValid(validId),
-      isValidInvalid: cuid2.isValid('123invalid'),
+      isValidGenerated: cuidv2.isValid(validId),
+      isValidInvalid: cuidv2.isValid('123invalid'),
     })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)

@@ -8,7 +8,7 @@ import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
 import { beforeAll } from 'vitest'
 import { Xid as npmXid } from 'xid-ts'
-import { cuid2 } from '@/src/cuid2/cuid2'
+import { cuidv2 } from '@/src/cuid/v2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
@@ -95,14 +95,14 @@ describe('Cross-Validation: NanoID', () => {
 
 describe('Cross-Validation: CUID2', () => {
   it('uniku IDs pass npm validation', () => {
-    const ids = Array.from({ length: BATCH_SIZE }, () => cuid2())
+    const ids = Array.from({ length: BATCH_SIZE }, () => cuidv2())
     const invalid = ids.filter((id) => !npmIsCuid(id))
     expect(invalid).toHaveLength(0)
   })
 
   it('npm IDs pass uniku validation', () => {
     const ids = Array.from({ length: BATCH_SIZE }, () => npmCuid2())
-    const invalid = ids.filter((id) => !cuid2.isValid(id))
+    const invalid = ids.filter((id) => !cuidv2.isValid(id))
     expect(invalid).toHaveLength(0)
   })
 })
