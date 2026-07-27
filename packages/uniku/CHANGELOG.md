@@ -1,5 +1,11 @@
 # uniku
 
+## 1.0.0-rc.0
+
+### Major Changes
+
+- Finalize the v1 public API: use only `uniku/cuid/v2` with `cuidv2`, replace second-based `secs` options with millisecond-based `msecs`, replace UUID v7 and TypeID `seq` with `counter`, and use `length` for Nanoid's object-form option. Existing identifier data remains valid; see the v1 migration guide for mechanical before-and-after examples.
+
 ## 0.5.0
 
 ### Minor Changes
