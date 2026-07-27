@@ -1,4 +1,4 @@
-import { typeid } from '@/src/typeid/typeid'
+import { BufferError, InvalidInputError, typeid } from '@/src/typeid/typeid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv7 } from '@/src/uuid/v7'
 import { expectValidTypeGuard } from '../helpers/assertions'
@@ -18,8 +18,8 @@ describe('typeid', () => {
   })
 
   it('wraps UUID v7 using the TypeID base32 suffix', () => {
-    const uuid = uuidv7({ msecs: FIXED_MSECS, seq: 0, random: ZERO_RANDOM })
-    const id = typeid('user', { msecs: FIXED_MSECS, seq: 0, random: ZERO_RANDOM })
+    const uuid = uuidv7({ msecs: FIXED_MSECS, counter: 0, random: ZERO_RANDOM })
+    const id = typeid('user', { msecs: FIXED_MSECS, counter: 0, random: ZERO_RANDOM })
 
     expect(typeid.toUuid(id)).toBe(uuid)
     expect(typeid.fromUuid('user', uuid)).toBe(id)
@@ -32,27 +32,27 @@ describe('typeid', () => {
   })
 
   it('round-trips through byte helpers', () => {
-    const id = typeid('api_key', { msecs: FIXED_MSECS, seq: 0x12345678, random: ZERO_RANDOM })
+    const id = typeid('api_key', { msecs: FIXED_MSECS, counter: 0x12345678, random: ZERO_RANDOM })
 
     expect(typeid.fromBytes('api_key', typeid.toBytes(id))).toBe(id)
   })
 
   it('extracts timestamp from the wrapped UUID v7', () => {
-    const id = typeid('user', { msecs: FIXED_MSECS, seq: 0, random: ZERO_RANDOM })
+    const id = typeid('user', { msecs: FIXED_MSECS, counter: 0, random: ZERO_RANDOM })
 
     expect(typeid.timestamp(id)).toBe(FIXED_MSECS)
   })
 
   it('extracts prefix and suffix', () => {
-    const id = typeid('api_key', { msecs: FIXED_MSECS, seq: 0, random: ZERO_RANDOM })
+    const id = typeid('api_key', { msecs: FIXED_MSECS, counter: 0, random: ZERO_RANDOM })
 
     expect(typeid.prefix(id)).toBe('api_key')
     expect(typeid.suffix(id)).toHaveLength(26)
   })
 
   it('supports canonical empty-prefix TypeIDs', () => {
-    const uuid = uuidv7({ msecs: FIXED_MSECS, seq: 0, random: ZERO_RANDOM })
-    const id = typeid('', { msecs: FIXED_MSECS, seq: 0, random: ZERO_RANDOM })
+    const uuid = uuidv7({ msecs: FIXED_MSECS, counter: 0, random: ZERO_RANDOM })
+    const id = typeid('', { msecs: FIXED_MSECS, counter: 0, random: ZERO_RANDOM })
 
     expect(id).toMatch(/^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/)
     expect(typeid.isValid(id)).toBe(true)
@@ -65,10 +65,102 @@ describe('typeid', () => {
   })
 
   it('preserves lexicographic ordering within one prefix', () => {
-    const first = typeid('user', { msecs: FIXED_MSECS, seq: 1, random: ZERO_RANDOM })
-    const second = typeid('user', { msecs: FIXED_MSECS, seq: 2, random: ZERO_RANDOM })
+    const first = typeid('user', { msecs: FIXED_MSECS, counter: 1, random: ZERO_RANDOM })
+    const second = typeid('user', { msecs: FIXED_MSECS, counter: 2, random: ZERO_RANDOM })
 
     expect(first < second).toBe(true)
+  })
+
+  describe('buffer output', () => {
+    it('writes the canonical UUID v7 bytes into a caller-owned buffer', () => {
+      const buffer = new Uint8Array(32)
+      const offset = 8
+      const options = { msecs: FIXED_MSECS, counter: 0x12345678, random: ZERO_RANDOM }
+
+      const result = typeid('user', options, buffer, offset)
+      expect(result).toBe(buffer)
+
+      const fromString = typeid.toBytes(typeid('user', options))
+      for (let i = 0; i < fromString.length; i += 1) {
+        expect(buffer[offset + i]).toBe(fromString[i])
+      }
+    })
+
+    it('matches the bytes uuidv7 writes for the same options', () => {
+      const typeidBuffer = new Uint8Array(16)
+      const uuidBuffer = new Uint8Array(16)
+      const options = { msecs: FIXED_MSECS, counter: 3, random: ZERO_RANDOM }
+
+      typeid('user', options, typeidBuffer)
+      uuidv7(options, uuidBuffer)
+
+      expect(typeidBuffer).toEqual(uuidBuffer)
+    })
+
+    it('attributes buffer bounds failures to the typeid boundary', () => {
+      let error: unknown
+      try {
+        typeid('user', { msecs: FIXED_MSECS, counter: 0, random: ZERO_RANDOM }, new Uint8Array(10))
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(BufferError)
+      expect(error).toMatchObject({ code: 'BUFFER_OUT_OF_BOUNDS', strategy: 'typeid' })
+    })
+
+    it('validates the prefix in buffer mode', () => {
+      expect(() => typeid('User', undefined, new Uint8Array(16))).toThrow(
+        'TypeID prefix must contain only lowercase ASCII letters and underscores',
+      )
+    })
+  })
+
+  describe('option boundary attribution', () => {
+    it('attributes counter range failures to the typeid boundary', () => {
+      let error: unknown
+      try {
+        typeid('user', { counter: -1 })
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'COUNTER_OUT_OF_RANGE', strategy: 'typeid' })
+    })
+
+    it('attributes random-bytes failures to the typeid boundary', () => {
+      let error: unknown
+      try {
+        typeid('user', { random: new Uint8Array(15) })
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'RANDOM_BYTES_TOO_SHORT', strategy: 'typeid' })
+    })
+  })
+
+  describe('deprecated seq alias', () => {
+    // TODO(v1-rc): remove this block together with the `seq` option.
+    it('produces the same output as counter until v1-rc', () => {
+      const bySeq = typeid('user', { msecs: FIXED_MSECS, seq: 0x12345678, random: ZERO_RANDOM })
+      const byCounter = typeid('user', { msecs: FIXED_MSECS, counter: 0x12345678, random: ZERO_RANDOM })
+      expect(bySeq).toBe(byCounter)
+    })
+
+    it('rejects passing both counter and seq', () => {
+      let error: unknown
+      try {
+        typeid('user', { counter: 1, seq: 1 })
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'typeid' })
+    })
   })
 
   describe('prefix validation', () => {

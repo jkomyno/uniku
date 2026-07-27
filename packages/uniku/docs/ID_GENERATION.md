@@ -57,7 +57,8 @@ Define an options type with these optional fields:
   generators). Second-precision formats (ksuid, objectid, xid) truncate sub-second
   precision via `Math.floor(msecs / 1000)`; their pre-v1 `secs` aliases are deprecated
   and tracked for removal at v1-rc (see `docs/STABILITY.md`).
-- `seq?: number` — Sequence number (only for uuidv7)
+- `counter?: number` — Counter value (uuidv7, objectid, tsid, xid). uuidv7's pre-v1
+  `seq` alias is deprecated and tracked for removal at v1-rc.
 
 ## Monotonic State (Time-Ordered Generators)
 
@@ -147,12 +148,12 @@ Canonical codes and when to use them:
 | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `TIMESTAMP_OUT_OF_RANGE`                                                    | timestamp option is not an integer in the format's range, or a parsed ID's timestamp overflows   |
 | `CONFLICTING_OPTIONS`                                                       | mutually exclusive options are combined (e.g. `msecs` + deprecated `secs`)                       |
-| `SEQUENCE_OUT_OF_RANGE`, `COUNTER_OUT_OF_RANGE`                             | sequence/counter option exceeds its bit width                                                    |
+| `COUNTER_OUT_OF_RANGE`                                                      | counter option exceeds its bit width                                                             |
 | `NODE_OUT_OF_RANGE`, `NODE_BITS_OUT_OF_RANGE`, `EPOCH_INVALID`              | Snowflake-style layout options are invalid (tsid)                                                |
 | `PROCESS_ID_OUT_OF_RANGE`, `MACHINE_ID_BYTES_TOO_SHORT`                     | identity options are invalid (xid)                                                               |
 | `RANDOM_BYTES_TOO_SHORT`                                                    | caller-provided random byte array is shorter than required                                       |
 | `RANDOM_OVERFLOW`                                                           | monotonic random component overflowed (ulid)                                                     |
-| `SIZE_OUT_OF_RANGE`, `LENGTH_OUT_OF_RANGE`                                  | output-size option is outside its range (nanoid, cuid2)                                          |
+| `LENGTH_OUT_OF_RANGE`                                                       | output-length option is outside its range (nanoid, cuid2)                                        |
 | `ALPHABET_OUT_OF_RANGE`, `ALPHABET_INVALID_CHAR`, `ALPHABET_DUPLICATE`      | custom alphabet is invalid (nanoid)                                                              |
 | `PREFIX_TOO_LONG`, `PREFIX_INVALID_CHAR`, `PREFIX_INVALID_BOUNDARY`         | TypeID prefix constraints                                                                        |
 | `UUID_NOT_V7`                                                               | TypeID wraps a non-v7 UUID                                                                       |

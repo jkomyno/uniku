@@ -51,8 +51,12 @@ each deprecated surface.
 
 - `uniku/cuid2` entry point (see CUID2 migration above).
 - `secs` timestamp options in `uniku/ksuid`, `uniku/objectid`, and `uniku/xid`
-  once the unified `msecs` option lands there; retire the seconds-based
-  `--timestamp` parsing in `@uniku/cli` at the same time.
+  (superseded by the unified `msecs` option); the seconds-based `--timestamp`
+  parsing in `@uniku/cli` is already gone.
+- `seq` counter option in `uniku/uuid/v7` (superseded by `counter`, inherited
+  by `uniku/typeid`).
+- `size` length option in `uniku/nanoid` (superseded by `length`); the CLI's
+  `--size` flag was renamed to `--length` at the same time.
 
 ## Runtime support
 

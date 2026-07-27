@@ -373,11 +373,11 @@ describe('v1 public boundary contract', () => {
       },
       // Option failures: numeric fields
       {
-        name: 'UUID v7 reports SEQUENCE_OUT_OF_RANGE',
-        code: 'SEQUENCE_OUT_OF_RANGE',
+        name: 'UUID v7 reports COUNTER_OUT_OF_RANGE',
+        code: 'COUNTER_OUT_OF_RANGE',
         strategy: 'uuid',
         errorClass: InvalidInputError,
-        run: () => uuidv7({ seq: -1 }),
+        run: () => uuidv7({ counter: -1 }),
       },
       {
         name: 'ObjectID reports COUNTER_OUT_OF_RANGE',
@@ -494,8 +494,8 @@ describe('v1 public boundary contract', () => {
         run: () => nanoid({ alphabet: 'a\u20ac' }),
       },
       {
-        name: 'Nanoid reports SIZE_OUT_OF_RANGE',
-        code: 'SIZE_OUT_OF_RANGE',
+        name: 'Nanoid reports LENGTH_OUT_OF_RANGE',
+        code: 'LENGTH_OUT_OF_RANGE',
         strategy: 'nanoid',
         errorClass: InvalidInputError,
         run: () => nanoid(-1),

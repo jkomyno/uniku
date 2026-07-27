@@ -41,8 +41,8 @@ function defaultAlphabetFromPool(size: number): string {
 export type NanoidOptions = {
   /**
    * Random bytes for deterministic output (testing).
-   * For power-of-2 alphabets (2, 4, 8, 16, 32, 64, 128, 256): exactly `size` bytes needed.
-   * For other alphabets: ~size * 2 bytes needed (rejection sampling).
+   * For power-of-2 alphabets (2, 4, 8, 16, 32, 64, 128, 256): exactly `length` bytes needed.
+   * For other alphabets: ~length * 2 bytes needed (rejection sampling).
    */
   random?: Uint8Array
   /**
@@ -53,6 +53,13 @@ export type NanoidOptions = {
   /**
    * Length of generated ID. Default: 21. Maximum: 2048.
    */
+  length?: number
+  /**
+   * Length of generated ID.
+   *
+   * @deprecated Use `length` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
   size?: number
 }
 
@@ -106,14 +113,14 @@ function validateAlphabet(alphabet: string): void {
 }
 
 /**
- * Validate size parameter
+ * Validate length parameter
  */
-function validateSize(size: number): void {
+function validateLength(size: number): void {
   if (!Number.isInteger(size) || size < 0) {
-    throw new InvalidInputError('SIZE_OUT_OF_RANGE', 'Size must be a non-negative integer', { strategy: 'nanoid' })
+    throw new InvalidInputError('LENGTH_OUT_OF_RANGE', 'Length must be a non-negative integer', { strategy: 'nanoid' })
   }
   if (size > MAX_SIZE) {
-    throw new InvalidInputError('SIZE_OUT_OF_RANGE', `Size must not exceed ${MAX_SIZE}`, { strategy: 'nanoid' })
+    throw new InvalidInputError('LENGTH_OUT_OF_RANGE', `Length must not exceed ${MAX_SIZE}`, { strategy: 'nanoid' })
   }
 }
 
@@ -135,7 +142,12 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
   if (typeof sizeOrOptions === 'number') {
     size = sizeOrOptions
   } else {
-    size = sizeOrOptions.size ?? DEFAULT_SIZE
+    if (sizeOrOptions.length !== undefined && sizeOrOptions.size !== undefined) {
+      throw new InvalidInputError('CONFLICTING_OPTIONS', 'Pass only one of `length` or `size`, not both', {
+        strategy: 'nanoid',
+      })
+    }
+    size = sizeOrOptions.length ?? sizeOrOptions.size ?? DEFAULT_SIZE
     alphabet = sizeOrOptions.alphabet ?? URL_ALPHABET
     randomBytes = sizeOrOptions.random
     if (sizeOrOptions.alphabet !== undefined) {
@@ -143,7 +155,7 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
     }
   }
 
-  validateSize(size)
+  validateLength(size)
 
   if (size === 0) return ''
 
@@ -238,7 +250,7 @@ function isValid(id: unknown): id is string {
  * // => "V1StGXR8_Z5jdHi6B-myT"
  * ```
  *
- * @example Custom size
+ * @example Custom length
  * ```ts
  * const shortId = nanoid(10)
  * // => "IRFa-VaY2b"
@@ -246,7 +258,7 @@ function isValid(id: unknown): id is string {
  *
  * @example Custom alphabet (hex)
  * ```ts
- * const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
+ * const hexId = nanoid({ alphabet: '0123456789abcdef', length: 12 })
  * // => "4f90d13a42bc"
  * ```
  *
@@ -259,9 +271,9 @@ function isValid(id: unknown): id is string {
  * }
  * ```
  *
- * @throws {InvalidInputError} Size must be between 0 and 2048
+ * @throws {InvalidInputError} Length must be between 0 and 2048
  * @throws {InvalidInputError} Alphabet must contain 2-256 unique printable ASCII characters
- * @throws {InvalidInputError} Insufficient random bytes for requested size
+ * @throws {InvalidInputError} Insufficient random bytes for requested length
  */
 export const nanoid: Nanoid = Object.assign(nanoidFn, {
   isValid,

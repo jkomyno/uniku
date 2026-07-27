@@ -41,12 +41,37 @@ describe('nanoid', () => {
     expect(nanoid(50)).toHaveLength(50)
   })
 
-  it('generates custom size with options', () => {
-    expect(nanoid({ size: 10 })).toHaveLength(10)
+  it('generates custom length with options', () => {
+    expect(nanoid({ length: 10 })).toHaveLength(10)
+  })
+
+  describe('deprecated size alias', () => {
+    // TODO(v1-rc): remove this block together with the `size` option.
+    it('produces the same output as length until v1-rc', () => {
+      const random = new Uint8Array(32).fill(7)
+      expect(nanoid({ size: 10, random })).toBe(nanoid({ length: 10, random }))
+    })
+
+    it('validates the size range', () => {
+      expect(() => nanoid({ size: -1 })).toThrow(InvalidInputError)
+      expect(() => nanoid({ size: 3000 })).toThrow(InvalidInputError)
+    })
+
+    it('rejects passing both length and size', () => {
+      let error: unknown
+      try {
+        nanoid({ length: 10, size: 10 })
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'nanoid' })
+    })
   })
 
   it('generates with custom alphabet', () => {
-    const id = nanoid({ alphabet: '0123456789abcdef', size: 12 })
+    const id = nanoid({ alphabet: '0123456789abcdef', length: 12 })
     expect(id).toHaveLength(12)
     expect(id).toMatch(/^[0-9a-f]+$/)
   })
@@ -70,7 +95,7 @@ describe('nanoid', () => {
     expectIidDuplicateRatio({
       count: 20_000,
       possibleValues: 16 ** 4,
-      generate: () => nanoid({ alphabet: '0123456789abcdef', size: 4 }),
+      generate: () => nanoid({ alphabet: '0123456789abcdef', length: 4 }),
     })
   })
 
@@ -161,14 +186,14 @@ describe('nanoid', () => {
   describe('non-power-of-2 alphabet (rejection sampling)', () => {
     it('works with 26-char alphabet (letters only)', () => {
       const ALPHA_ONLY = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-      const id = nanoid({ alphabet: ALPHA_ONLY, size: 16 })
+      const id = nanoid({ alphabet: ALPHA_ONLY, length: 16 })
       expect(id).toHaveLength(16)
       expect(id).toMatch(/^[A-Z]+$/)
     })
 
     it('works with 10-char alphabet (digits only)', () => {
       const DIGITS_ONLY = '0123456789'
-      const id = nanoid({ alphabet: DIGITS_ONLY, size: 20 })
+      const id = nanoid({ alphabet: DIGITS_ONLY, length: 20 })
       expect(id).toHaveLength(20)
       expect(id).toMatch(/^[0-9]+$/)
     })
@@ -178,7 +203,7 @@ describe('nanoid', () => {
       expectDistinctRandomSamples({
         count: 10_000,
         randomBits: 94,
-        generate: () => nanoid({ alphabet: ALPHA_ONLY, size: 20 }),
+        generate: () => nanoid({ alphabet: ALPHA_ONLY, length: 20 }),
       })
     })
 
@@ -192,7 +217,7 @@ describe('nanoid', () => {
 
       // Generate many single-char IDs
       for (let i = 0; i < 10_000; i += 1) {
-        const id = nanoid({ alphabet: ALPHA, size: 1 })
+        const id = nanoid({ alphabet: ALPHA, length: 1 })
         counts[id] += 1
       }
 
@@ -208,14 +233,14 @@ describe('nanoid', () => {
   describe('power-of-2 alphabet fast path', () => {
     it('works with 16-char alphabet (hex)', () => {
       const HEX_ALPHABET = '0123456789abcdef'
-      const id = nanoid({ alphabet: HEX_ALPHABET, size: 12 })
+      const id = nanoid({ alphabet: HEX_ALPHABET, length: 12 })
       expect(id).toHaveLength(12)
       expect(id).toMatch(/^[0-9a-f]+$/)
     })
 
     it('works with 32-char alphabet (base32)', () => {
       const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-      const id = nanoid({ alphabet: BASE32_ALPHABET, size: 16 })
+      const id = nanoid({ alphabet: BASE32_ALPHABET, length: 16 })
       expect(id).toHaveLength(16)
       expect(id).toMatch(/^[A-Z2-7]+$/)
     })
@@ -246,7 +271,7 @@ describe('nanoid', () => {
       expectDistinctRandomSamples({
         count: 10_000,
         randomBits: 96,
-        generate: () => nanoid({ alphabet: HEX_ALPHABET, size: 24 }),
+        generate: () => nanoid({ alphabet: HEX_ALPHABET, length: 24 }),
       })
     })
   })

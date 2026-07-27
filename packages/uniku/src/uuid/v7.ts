@@ -15,8 +15,15 @@ export type UuidV7Options = {
    */
   msecs?: number
   /**
-   * Unsigned 32-bit sequence value.
+   * Unsigned 32-bit counter value.
    */
+  counter?: number
+  /**
+   * Unsigned 32-bit sequence value.
+   *
+   * @deprecated Use `counter` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
   seq?: number
 }
 
@@ -25,7 +32,7 @@ export type UuidV7 = {
   (): string
   /** Generate a UUID v7 with explicit options or write its 16 canonical bytes into a caller-owned buffer. */
   <TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf
-  /** Generate a UUID v7 string with optional timestamp, sequence, or random bytes. */
+  /** Generate a UUID v7 string with optional timestamp, counter, or random bytes. */
   (options?: UuidV7Options, buf?: undefined, offset?: number): string
   /** Convert a UUID v7 string to its canonical 16-byte representation. */
   toBytes(id: string): Uint8Array
@@ -111,9 +118,14 @@ function v7WithOptions<TBuf extends Uint8Array = Uint8Array>(
       strategy: 'uuid',
     })
   }
-  const optSeq = options.seq
+  if (options.counter !== undefined && options.seq !== undefined) {
+    throw new InvalidInputError('CONFLICTING_OPTIONS', 'Pass only one of `counter` or `seq`, not both', {
+      strategy: 'uuid',
+    })
+  }
+  const optSeq = options.counter ?? options.seq
   if (optSeq !== undefined && !isIntegerInRange(optSeq, 0, MAX_SEQ)) {
-    throw new InvalidInputError('SEQUENCE_OUT_OF_RANGE', `Sequence must be an integer between 0 and ${MAX_SEQ}`, {
+    throw new InvalidInputError('COUNTER_OUT_OF_RANGE', `Counter must be an integer between 0 and ${MAX_SEQ}`, {
       strategy: 'uuid',
     })
   }
