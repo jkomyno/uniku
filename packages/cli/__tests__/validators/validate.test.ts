@@ -210,7 +210,7 @@ describe('validateAutoDetect', () => {
   })
 
   it('auto-detects XID before CUID and Nanoid', () => {
-    const id = xid({ secs: 1, machineId: new Uint8Array(3), processId: 0, counter: 0 })
+    const id = xid({ msecs: 1000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
     expect(validateAutoDetect(id)).toMatchObject({ valid: true, type: 'xid' })
   })
 

@@ -78,7 +78,7 @@ describe('ID Generation', () => {
   bench(
     'nanoid({ alphabet: hex })',
     () => {
-      nanoid({ alphabet: '0123456789abcdef', size: 12 })
+      nanoid({ alphabet: '0123456789abcdef', length: 12 })
     },
     benchOptions,
   )
