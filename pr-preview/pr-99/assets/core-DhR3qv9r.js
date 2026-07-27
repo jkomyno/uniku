@@ -1,0 +1,1 @@
+import{O as e}from"./dist-WGTKtrz0.js";export{e as isSpecialLang};
