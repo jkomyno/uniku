@@ -255,7 +255,12 @@ function validateTypeidOptions(options: TypeidOptions): void {
     })
   }
 
-  const counter = options.counter
+  if (options.counter !== undefined && options.seq !== undefined) {
+    throw new InvalidInputError('CONFLICTING_OPTIONS', 'Pass only one of `counter` or `seq`, not both', {
+      strategy: 'typeid',
+    })
+  }
+  const counter = options.counter ?? options.seq
   if (counter !== undefined && !isIntegerInRange(counter, 0, MAX_COUNTER)) {
     throw new InvalidInputError('COUNTER_OUT_OF_RANGE', `Counter must be an integer between 0 and ${MAX_COUNTER}`, {
       strategy: 'typeid',

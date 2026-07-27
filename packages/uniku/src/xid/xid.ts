@@ -25,6 +25,13 @@ export type XidOptions = {
    * XID stores whole seconds, so sub-second precision is truncated.
    */
   msecs?: number
+  /**
+   * Unix timestamp in seconds.
+   *
+   * @deprecated Use `msecs` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
+  secs?: number
   /** 24-bit counter. Explicit values do not consume shared state. */
   counter?: number
 }

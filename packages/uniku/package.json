@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "uniku",
-  "version": "1.0.0-rc.0",
+  "version": "0.5.0",
   "description": "Minimal, tree-shakeable unique ID generators for every JavaScript runtime",
   "author": {
     "name": "Alberto Schiabel",
@@ -69,6 +69,11 @@
         "types": "./build/typeid/typeid.d.mts",
         "import": "./build/typeid/typeid.mjs",
         "default": "./build/typeid/typeid.mjs"
+      },
+      "./cuid2": {
+        "types": "./build/cuid2/cuid2.d.mts",
+        "import": "./build/cuid2/cuid2.mjs",
+        "default": "./build/cuid2/cuid2.mjs"
       },
       "./cuid/v2": {
         "types": "./build/cuid/v2.d.mts",
@@ -155,6 +160,14 @@
         "default": "./build/typeid/typeid.mjs"
       },
       "default": "./build/typeid/typeid.mjs"
+    },
+    "./cuid2": {
+      "types": "./build/cuid2/cuid2.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/cuid2/cuid2.ts",
+        "default": "./build/cuid2/cuid2.mjs"
+      },
+      "default": "./build/cuid2/cuid2.mjs"
     },
     "./cuid/v2": {
       "types": "./build/cuid/v2.d.mts",

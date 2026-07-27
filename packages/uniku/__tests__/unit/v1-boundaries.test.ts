@@ -18,27 +18,27 @@ describe('v1 public boundary contract', () => {
     const cases: ReadonlyArray<{ readonly name: string; readonly generate: () => unknown }> = [
       {
         name: 'UUID v7 rejects negative timestamps',
-        generate: () => uuidv7({ msecs: -1, random: zeroes(16), counter: 0 }),
+        generate: () => uuidv7({ msecs: -1, random: zeroes(16), seq: 0 }),
       },
       {
         name: 'UUID v7 rejects timestamps above 48 bits',
-        generate: () => uuidv7({ msecs: 2 ** 48, random: zeroes(16), counter: 0 }),
+        generate: () => uuidv7({ msecs: 2 ** 48, random: zeroes(16), seq: 0 }),
       },
       {
-        name: 'UUID v7 rejects NaN counters',
-        generate: () => uuidv7({ msecs: 0, random: zeroes(16), counter: Number.NaN }),
+        name: 'UUID v7 rejects NaN sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: Number.NaN }),
       },
       {
-        name: 'UUID v7 rejects fractional counters',
-        generate: () => uuidv7({ msecs: 0, random: zeroes(16), counter: 1.5 }),
+        name: 'UUID v7 rejects fractional sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 1.5 }),
       },
       {
-        name: 'UUID v7 rejects negative counters',
-        generate: () => uuidv7({ msecs: 0, random: zeroes(16), counter: -1 }),
+        name: 'UUID v7 rejects negative sequences',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: -1 }),
       },
       {
-        name: 'UUID v7 rejects counters above 32 bits',
-        generate: () => uuidv7({ msecs: 0, random: zeroes(16), counter: 2 ** 32 }),
+        name: 'UUID v7 rejects sequences above 32 bits',
+        generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 2 ** 32 }),
       },
       {
         name: 'ULID rejects negative timestamps',
@@ -90,8 +90,8 @@ describe('v1 public boundary contract', () => {
       expect(generate).toThrow(InvalidInputError)
     })
 
-    it('UUID v7 accepts the maximum unsigned 32-bit counter', () => {
-      expect(() => uuidv7({ msecs: 0, random: zeroes(16), counter: 0xffffffff })).not.toThrow()
+    it('UUID v7 accepts the maximum unsigned 32-bit sequence', () => {
+      expect(() => uuidv7({ msecs: 0, random: zeroes(16), seq: 0xffffffff })).not.toThrow()
     })
   })
 
@@ -362,7 +362,7 @@ describe('v1 public boundary contract', () => {
         code: 'RANDOM_BYTES_TOO_SHORT',
         strategy: 'nanoid',
         errorClass: InvalidInputError,
-        run: () => nanoid({ length: 21, random: zeroes(20) }),
+        run: () => nanoid({ size: 21, random: zeroes(20) }),
       },
       {
         name: 'CUID2 reports RANDOM_BYTES_TOO_SHORT',
@@ -585,7 +585,7 @@ describe('v1 public boundary contract', () => {
         {
           name: 'UUID v7 rejects fractional offsets',
           strategy: 'uuid',
-          generate: () => uuidv7({ msecs: 0, random: zeroes(16), counter: 0 }, zeroes(32), 0.5),
+          generate: () => uuidv7({ msecs: 0, random: zeroes(16), seq: 0 }, zeroes(32), 0.5),
         },
         {
           name: 'ULID rejects fractional offsets',

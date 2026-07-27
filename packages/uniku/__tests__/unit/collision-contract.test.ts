@@ -1,5 +1,5 @@
 import { afterEach } from 'vitest'
-import { cuidv2 } from '@/src/cuid/v2'
+import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
@@ -39,7 +39,7 @@ describe('small-timeframe collision contract', () => {
       () => uuidv7(),
       () => ulid(),
       () => typeid('benchmark'),
-      () => cuidv2(),
+      () => cuid2(),
       () => nanoid(),
       () => ksuid(),
       () => objectid(),

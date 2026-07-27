@@ -45,6 +45,31 @@ describe('nanoid', () => {
     expect(nanoid({ length: 10 })).toHaveLength(10)
   })
 
+  describe('deprecated size alias', () => {
+    // TODO(v1-rc): remove this block together with the `size` option.
+    it('produces the same output as length until v1-rc', () => {
+      const random = new Uint8Array(32).fill(7)
+      expect(nanoid({ size: 10, random })).toBe(nanoid({ length: 10, random }))
+    })
+
+    it('validates the size range', () => {
+      expect(() => nanoid({ size: -1 })).toThrow(InvalidInputError)
+      expect(() => nanoid({ size: 3000 })).toThrow(InvalidInputError)
+    })
+
+    it('rejects passing both length and size', () => {
+      let error: unknown
+      try {
+        nanoid({ length: 10, size: 10 })
+      } catch (caught) {
+        error = caught
+      }
+
+      expect(error).toBeInstanceOf(InvalidInputError)
+      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'nanoid' })
+    })
+  })
+
   it('generates with custom alphabet', () => {
     const id = nanoid({ alphabet: '0123456789abcdef', length: 12 })
     expect(id).toHaveLength(12)

@@ -89,7 +89,7 @@ describe('CLI: uniku inspect', () => {
     it.effect('[Given] XID [Then] auto-detects and inspects its timestamp and tail', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
-        const id = xid({ msecs: 1_720_000_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
+        const id = xid({ secs: 1_720_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
         yield* cli(['inspect', id, '--json'])
         expect(JSON.parse((yield* MockOutput.getStdout)[0])).toMatchObject({
           type: 'xid',

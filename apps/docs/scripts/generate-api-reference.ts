@@ -12,6 +12,7 @@ type GeneratorDefinition = {
   examples: Record<string, ApiExample>
   id: string
   exportName: string
+  sourceExportName?: string
   sourcePath: string
   typeName: string
 }
@@ -167,8 +168,9 @@ const generators: GeneratorDefinition[] = [
     },
     id: 'cuid-v2',
     exportName: 'cuidv2',
-    sourcePath: 'packages/uniku/src/cuid/v2.ts',
-    typeName: 'CuidV2',
+    sourceExportName: 'cuid2',
+    sourcePath: 'packages/uniku/src/cuid2/cuid2.ts',
+    typeName: 'Cuid2',
   },
   {
     examples: {
@@ -449,7 +451,7 @@ function generate(): Record<string, GeneratorApi> {
 
     const typeAlias = findTypeAlias(sourceFile, generator.typeName)
     apis[generator.id] = {
-      description: findExportDescription(sourceFile, generator.exportName),
+      description: findExportDescription(sourceFile, generator.sourceExportName ?? generator.exportName),
       members: membersFor(program, typeAlias, generator.exportName, generator.examples, sourceFile),
       sourcePath: relative(repositoryRoot, absoluteSourcePath).replaceAll('\\', '/'),
     }

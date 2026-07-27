@@ -55,8 +55,10 @@ Define an options type with these optional fields:
 - `random?: Uint8Array` — Custom random bytes for deterministic tests
 - `msecs?: number` — Custom timestamp in milliseconds since the Unix epoch (time-ordered
   generators). Second-precision formats (ksuid, objectid, xid) truncate sub-second
-  precision via `Math.floor(msecs / 1000)`.
-- `counter?: number` — Counter value (uuidv7, objectid, tsid, xid).
+  precision via `Math.floor(msecs / 1000)`; their pre-v1 `secs` aliases are deprecated
+  and tracked for removal at v1-rc (see `docs/STABILITY.md`).
+- `counter?: number` — Counter value (uuidv7, objectid, tsid, xid). uuidv7's pre-v1
+  `seq` alias is deprecated and tracked for removal at v1-rc.
 
 ## Monotonic State (Time-Ordered Generators)
 
@@ -156,7 +158,8 @@ Each generator has its own entry point (no barrel exports):
 - `uniku/uuid/v4`, `uniku/uuid/v7`, `uniku/ulid`, etc.
 
 Versioned generators use a versioned subpath: `uniku/uuid/v4`, `uniku/uuid/v7`, and
-`uniku/cuid/v2` (the sole CUID v2 entry point).
+`uniku/cuid/v2` (the canonical CUID2 entry point). `uniku/cuid2` is a deprecated
+alias for `uniku/cuid/v2` — it still works but should not be used in new code.
 
 Two non-generator, metadata-only entry points follow the same standalone-module convention:
 - `uniku/errors` — the shared error classes.

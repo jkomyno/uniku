@@ -1,4 +1,4 @@
-import { cuidv2 } from '../build/cuid/v2.mjs'
+import { cuid2 } from '../build/cuid2/cuid2.mjs'
 import { ksuid } from '../build/ksuid/ksuid.mjs'
 import { nanoid } from '../build/nanoid/nanoid.mjs'
 import { objectid } from '../build/objectid/objectid.mjs'
@@ -21,7 +21,7 @@ const generators = [
   ['uuidv7', uuidv7],
   ['ulid', ulid],
   ['typeid', () => typeid('user'), typeid],
-  ['cuidv2', cuidv2],
+  ['cuid2', cuid2],
   ['nanoid', nanoid],
   ['ksuid', ksuid],
   ['objectid', objectid],

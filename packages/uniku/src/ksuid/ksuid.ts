@@ -43,6 +43,13 @@ export type KsuidOptions = {
    * KSUID stores whole seconds, so sub-second precision is truncated.
    */
   msecs?: number
+  /**
+   * Timestamp in seconds since the Unix epoch.
+   *
+   * @deprecated Use `msecs` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
+  secs?: number
 }
 
 export type Ksuid = {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@effect/vitest'
 import { assertTrue } from '@effect/vitest/utils'
-import { cuidv2 } from 'uniku/cuid/v2'
+import { cuid2 } from 'uniku/cuid2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
 import { objectid } from 'uniku/objectid'
@@ -78,7 +78,7 @@ describe('inspectId', () => {
   })
 
   it('inspects XID with second-precision timestamp and its tail bytes', () => {
-    const id = xid({ msecs: 1_720_000_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
+    const id = xid({ secs: 1_720_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
     const result = inspectId(id, 'xid')
     assertTrue(result !== null)
     expect(result).toMatchObject({ type: 'xid', timestamp_ms: 1_720_000_000_000, random: '0000000000000000' })
@@ -100,7 +100,7 @@ describe('inspectId', () => {
   })
 
   it('inspects CUID with no-metadata note', () => {
-    const id = cuidv2()
+    const id = cuid2()
     const result = inspectId(id, 'cuid')
     assertTrue(result !== null)
     expect(result.type).toBe('cuid')

@@ -38,6 +38,13 @@ export type ObjectIdOptions = {
    */
   msecs?: number
   /**
+   * Timestamp in seconds since the Unix epoch.
+   *
+   * @deprecated Use `msecs` instead. Will be removed at v1-rc.
+   */
+  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
+  secs?: number
+  /**
    * 24-bit counter value (0 to 0xFFFFFF).
    */
   counter?: number
