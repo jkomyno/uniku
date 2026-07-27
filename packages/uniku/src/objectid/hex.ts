@@ -45,8 +45,9 @@ for (let i = 0; i < 6; i += 1) {
 export function encodeObjectIdHex(bytes: Uint8Array): string {
   if (bytes.length < OBJECTID_BYTES) {
     throw new BufferError(
-      'OBJECTID_BYTES_TOO_SHORT',
+      'BYTES_INVALID_LENGTH',
       `ObjectID bytes must be at least ${OBJECTID_BYTES} bytes, got ${bytes.length}`,
+      { strategy: 'objectid' },
     )
   }
 
@@ -63,8 +64,9 @@ export function encodeObjectIdHex(bytes: Uint8Array): string {
 export function decodeObjectIdHex(str: string): Uint8Array {
   if (str.length !== OBJECTID_STRING_LEN) {
     throw new ParseError(
-      'OBJECTID_INVALID_LENGTH',
+      'INVALID_LENGTH',
       `ObjectID string must be ${OBJECTID_STRING_LEN} characters, got ${str.length}`,
+      { strategy: 'objectid' },
     )
   }
 
@@ -76,10 +78,10 @@ export function decodeObjectIdHex(str: string): Uint8Array {
     const lo = DECODING[str.charCodeAt(loIndex)]
 
     if (hi === 255) {
-      throw new ParseError('OBJECTID_INVALID_CHAR', `Invalid ObjectID character: ${str[hiIndex]}`)
+      throw new ParseError('INVALID_CHAR', `Invalid ObjectID character: ${str[hiIndex]}`, { strategy: 'objectid' })
     }
     if (lo === 255) {
-      throw new ParseError('OBJECTID_INVALID_CHAR', `Invalid ObjectID character: ${str[loIndex]}`)
+      throw new ParseError('INVALID_CHAR', `Invalid ObjectID character: ${str[loIndex]}`, { strategy: 'objectid' })
     }
 
     bytes[i] = (hi << 4) | lo

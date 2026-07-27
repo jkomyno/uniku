@@ -92,15 +92,20 @@ function writeXidBytesUnchecked(
 function validateOptions(options: XidOptions): void {
   if (options.machineId !== undefined && options.machineId.length < MACHINE_ID_BYTES) {
     throw new InvalidInputError(
-      'XID_MACHINE_ID_BYTES_TOO_SHORT',
+      'MACHINE_ID_BYTES_TOO_SHORT',
       `Machine ID bytes length must be >= ${MACHINE_ID_BYTES} for XID`,
+      { strategy: 'xid' },
     )
   }
   if (options.processId !== undefined && !isIntegerInRange(options.processId, 0, MAX_PROCESS_ID)) {
-    throw new InvalidInputError('XID_PROCESS_ID_OUT_OF_RANGE', `Process ID must be between 0 and ${MAX_PROCESS_ID}`)
+    throw new InvalidInputError('PROCESS_ID_OUT_OF_RANGE', `Process ID must be between 0 and ${MAX_PROCESS_ID}`, {
+      strategy: 'xid',
+    })
   }
   if (options.counter !== undefined && !isIntegerInRange(options.counter, 0, MAX_COUNTER)) {
-    throw new InvalidInputError('XID_COUNTER_OUT_OF_RANGE', `Counter must be between 0 and ${MAX_COUNTER}`)
+    throw new InvalidInputError('COUNTER_OUT_OF_RANGE', `Counter must be between 0 and ${MAX_COUNTER}`, {
+      strategy: 'xid',
+    })
   }
 }
 
@@ -132,10 +137,9 @@ function xidFn<TBuf extends Uint8Array = Uint8Array>(options?: XidOptions, buf?:
 
   if (buf !== undefined) {
     if (!isWritableRange(buf, offset, XID_BYTES)) {
-      throw new BufferError(
-        'XID_BUFFER_OUT_OF_BOUNDS',
-        `XID byte range ${offset}:${offset + 11} is out of buffer bounds`,
-      )
+      throw new BufferError('BUFFER_OUT_OF_BOUNDS', `XID byte range ${offset}:${offset + 11} is out of buffer bounds`, {
+        strategy: 'xid',
+      })
     }
     writeXidBytesUnchecked(secs, machineId, processId, counter, buf, offset)
     return buf

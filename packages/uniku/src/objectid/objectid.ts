@@ -148,8 +148,11 @@ function objectIdFn<TBuf extends Uint8Array = Uint8Array>(
     const optRandom = options.random
     if (optRandom && optRandom.length < RANDOM_BYTES) {
       throw new InvalidInputError(
-        'OBJECTID_RANDOM_BYTES_TOO_SHORT',
+        'RANDOM_BYTES_TOO_SHORT',
         `Random bytes length must be >= ${RANDOM_BYTES} for ObjectID`,
+        {
+          strategy: 'objectid',
+        },
       )
     }
 
@@ -157,7 +160,9 @@ function objectIdFn<TBuf extends Uint8Array = Uint8Array>(
 
     const optCounter = options.counter
     if (optCounter !== undefined && !isIntegerInRange(optCounter, 0, MAX_COUNTER)) {
-      throw new InvalidInputError('OBJECTID_COUNTER_OUT_OF_RANGE', `Counter must be between 0 and ${MAX_COUNTER}`)
+      throw new InvalidInputError('COUNTER_OUT_OF_RANGE', `Counter must be between 0 and ${MAX_COUNTER}`, {
+        strategy: 'objectid',
+      })
     }
 
     // Options bypass persistent state entirely: every field is sourced fresh (given
@@ -193,8 +198,9 @@ function objectIdFn<TBuf extends Uint8Array = Uint8Array>(
   if (buf) {
     if (!isWritableRange(buf, offset, OBJECTID_BYTES)) {
       throw new BufferError(
-        'OBJECTID_BUFFER_OUT_OF_BOUNDS',
+        'BUFFER_OUT_OF_BOUNDS',
         `ObjectID byte range ${offset}:${offset + OBJECTID_BYTES - 1} is out of buffer bounds`,
+        { strategy: 'objectid' },
       )
     }
     writeObjectIdBytesUnchecked(secs, random, counter, buf, offset)
@@ -219,8 +225,9 @@ function toBytes(id: string): Uint8Array {
 function fromBytes(bytes: Uint8Array): string {
   if (bytes.length !== OBJECTID_BYTES) {
     throw new BufferError(
-      'OBJECTID_BYTES_INVALID_LENGTH',
+      'BYTES_INVALID_LENGTH',
       `ObjectID bytes must be exactly ${OBJECTID_BYTES} bytes, got ${bytes.length}`,
+      { strategy: 'objectid' },
     )
   }
   return encodeObjectIdHex(bytes)

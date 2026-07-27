@@ -195,7 +195,7 @@ describe('CLI: uniku generate typeid', () => {
 
 describe('CLI: uniku generate nanoid', () => {
   layer(TestLive())((it) => {
-    it.effect('[Given] generate nanoid [Then] generates 1 nanoid (size=21)', () =>
+    it.effect('[Given] generate nanoid [Then] generates 1 nanoid (length=21)', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
         yield* cli(['generate', 'nanoid'])
@@ -205,10 +205,10 @@ describe('CLI: uniku generate nanoid', () => {
       }),
     )
 
-    it.effect('[Given] generate nanoid --size 10 [Then] generates nanoid of length 10', () =>
+    it.effect('[Given] generate nanoid --length 10 [Then] generates nanoid of length 10', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
-        yield* cli(['generate', 'nanoid', '--size', '10'])
+        yield* cli(['generate', 'nanoid', '--length', '10'])
         const output = yield* MockOutput.getStdout
         expect(output[0].length).toBe(10)
       }),
@@ -409,7 +409,7 @@ describe('CLI: uniku generate tsid', () => {
         const error = yield* cli(['generate', 'tsid', '--node-bits', '25']).pipe(Effect.flip)
 
         assertInstanceOf(error, CliError)
-        expect(error.code).toBe('TSID_NODE_BITS_OUT_OF_RANGE')
+        expect(error.code).toBe('NODE_BITS_OUT_OF_RANGE')
       }),
     )
   })

@@ -128,7 +128,9 @@ type ResolvedTsidOptions = {
 function resolveTsidOptions(options: TsidOptions): ResolvedTsidOptions {
   const nodeBits = options.nodeBits ?? DEFAULT_NODE_BITS
   if (!isIntegerInRange(nodeBits, 0, MAX_NODE_BITS)) {
-    throw new InvalidInputError('TSID_NODE_BITS_OUT_OF_RANGE', `nodeBits must be between 0 and ${MAX_NODE_BITS}`)
+    throw new InvalidInputError('NODE_BITS_OUT_OF_RANGE', `nodeBits must be between 0 and ${MAX_NODE_BITS}`, {
+      strategy: 'tsid',
+    })
   }
 
   const counterBits = RANDOM_BITS - nodeBits
@@ -136,17 +138,19 @@ function resolveTsidOptions(options: TsidOptions): ResolvedTsidOptions {
   const counterMask = (1 << counterBits) - 1
   const optNode = options.node
   if (optNode !== undefined && !isIntegerInRange(optNode, 0, nodeMask)) {
-    throw new InvalidInputError('TSID_NODE_OUT_OF_RANGE', `node must be between 0 and ${nodeMask}`)
+    throw new InvalidInputError('NODE_OUT_OF_RANGE', `node must be between 0 and ${nodeMask}`, { strategy: 'tsid' })
   }
 
   const optCounter = options.counter
   if (optCounter !== undefined && !isIntegerInRange(optCounter, 0, counterMask)) {
-    throw new InvalidInputError('TSID_COUNTER_OUT_OF_RANGE', `counter must be between 0 and ${counterMask}`)
+    throw new InvalidInputError('COUNTER_OUT_OF_RANGE', `counter must be between 0 and ${counterMask}`, {
+      strategy: 'tsid',
+    })
   }
 
   const epoch = options.epoch ?? TSID_EPOCH
   if (!Number.isInteger(epoch)) {
-    throw new InvalidInputError('TSID_EPOCH_INVALID', 'epoch must be a finite integer')
+    throw new InvalidInputError('EPOCH_INVALID', 'epoch must be a finite integer', { strategy: 'tsid' })
   }
   const msecs = options.msecs ?? Date.now()
   if (!Number.isInteger(msecs)) {
@@ -228,8 +232,9 @@ function tsidFn<TBuf extends Uint8Array = Uint8Array>(options?: TsidOptions, buf
   if (buf) {
     if (!isWritableRange(buf, offset, TSID_BYTES)) {
       throw new BufferError(
-        'TSID_BUFFER_OUT_OF_BOUNDS',
+        'BUFFER_OUT_OF_BOUNDS',
         `TSID byte range ${offset}:${offset + TSID_BYTES - 1} is out of buffer bounds`,
+        { strategy: 'tsid' },
       )
     }
     writeTsidBytesUnchecked(packed, buf, offset)
@@ -255,8 +260,9 @@ function toBytes(id: bigint): Uint8Array {
 function fromBytes(bytes: Uint8Array): bigint {
   if (bytes.length !== TSID_BYTES) {
     throw new BufferError(
-      'TSID_BYTES_INVALID_LENGTH',
+      'BYTES_INVALID_LENGTH',
       `TSID bytes must be exactly ${TSID_BYTES} bytes, got ${bytes.length}`,
+      { strategy: 'tsid' },
     )
   }
 
@@ -275,7 +281,7 @@ function fromBytes(bytes: Uint8Array): bigint {
 function timestamp(id: bigint, epoch: number = TSID_EPOCH): number {
   assertValidTsid(id)
   if (!Number.isInteger(epoch)) {
-    throw new InvalidInputError('TSID_EPOCH_INVALID', 'epoch must be a finite integer')
+    throw new InvalidInputError('EPOCH_INVALID', 'epoch must be a finite integer', { strategy: 'tsid' })
   }
   return epoch + Number(id >> BigInt(RANDOM_BITS))
 }
@@ -292,7 +298,9 @@ const MAX = (1n << 64n) - 1n
 
 function assertValidTsid(id: bigint): void {
   if (id < NIL || id > MAX) {
-    throw new InvalidInputError('TSID_VALUE_OUT_OF_RANGE', `TSID value must be between ${NIL} and ${MAX}`)
+    throw new InvalidInputError('VALUE_OUT_OF_RANGE', `TSID value must be between ${NIL} and ${MAX}`, {
+      strategy: 'tsid',
+    })
   }
 }
 

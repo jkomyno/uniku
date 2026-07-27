@@ -336,7 +336,7 @@ describe('ulid', () => {
 
       expect(error).toBeInstanceOf(InvalidInputError)
       expect(error).toMatchObject({
-        code: 'ULID_RANDOM_OVERFLOW',
+        code: 'RANDOM_OVERFLOW',
         message: 'ULID random component overflowed while preserving monotonic order',
       })
     })

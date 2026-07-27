@@ -75,8 +75,9 @@ function writeUlidBytesUnchecked(time: number, random: Uint8Array, buf: Uint8Arr
 function writeUlidBytes(time: number, random: Uint8Array, buf: Uint8Array, offset: number): void {
   if (!isWritableRange(buf, offset, ULID_BYTES)) {
     throw new BufferError(
-      'ULID_BUFFER_OUT_OF_BOUNDS',
+      'BUFFER_OUT_OF_BOUNDS',
       `ULID byte range ${offset}:${offset + ULID_BYTES - 1} is out of buffer bounds`,
+      { strategy: 'ulid' },
     )
   }
   writeUlidBytesUnchecked(time, random, buf, offset)
@@ -119,8 +120,11 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
     if (optRandom) {
       if (optRandom.length < RANDOM_BYTES) {
         throw new InvalidInputError(
-          'ULID_RANDOM_BYTES_TOO_SHORT',
+          'RANDOM_BYTES_TOO_SHORT',
           `Random bytes length must be >= ${RANDOM_BYTES} for ULID`,
+          {
+            strategy: 'ulid',
+          },
         )
       }
       random = optRandom
@@ -141,8 +145,9 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
       if (!incrementBytesInPlace(state.lastRandom)) {
         state.lastRandom.fill(0xff)
         throw new InvalidInputError(
-          'ULID_RANDOM_OVERFLOW',
+          'RANDOM_OVERFLOW',
           'ULID random component overflowed while preserving monotonic order',
+          { strategy: 'ulid' },
         )
       }
       random = state.lastRandom

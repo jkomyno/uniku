@@ -1,5 +1,5 @@
-import { isIntegerInRange } from '../common/validation'
-import { InvalidInputError, ParseError } from '../errors'
+import { isIntegerInRange, isWritableRange } from '../common/validation'
+import { BufferError, InvalidInputError, ParseError } from '../errors'
 import type { UuidV7Options } from '../uuid/v7'
 import { uuidv7 } from '../uuid/v7'
 
@@ -8,6 +8,15 @@ export type TypeidOptions = UuidV7Options
 export type Typeid = {
   /** Generate a TypeID from a lowercase entity prefix and a UUID v7 suffix. */
   (prefix: string, options?: TypeidOptions): string
+  /** Generate a TypeID with explicit options or write its 16 canonical UUID v7 bytes into a caller-owned buffer. */
+  <TBuf extends Uint8Array = Uint8Array>(
+    prefix: string,
+    options: TypeidOptions | undefined,
+    buf: TBuf,
+    offset?: number,
+  ): TBuf
+  /** Generate a TypeID string with optional timestamp, counter, or random bytes. */
+  (prefix: string, options?: TypeidOptions, buf?: undefined, offset?: number): string
   /** Convert a TypeID's UUID v7 suffix to its canonical 16-byte representation. */
   toBytes(id: string): Uint8Array
   /** Build a TypeID from a prefix and canonical UUID v7 bytes. */
@@ -28,10 +37,11 @@ export type Typeid = {
 
 const TYPEID_SUFFIX_LENGTH = 26
 const TYPEID_UUID_BYTE_LENGTH = 16
-// 48-bit UUID v7 timestamp capacity, mirrored from uuid/v7 so timestamp
-// validation is attributed to the typeid boundary instead of leaking
-// `strategy: 'uuid'` through delegation.
+// 48-bit UUID v7 timestamp capacity, mirrored from uuid/v7 alongside the
+// 32-bit counter capacity, so option validation is attributed to the typeid
+// boundary instead of leaking `strategy: 'uuid'` through delegation.
 const MAX_MSECS = 0xffffffffffff
+const MAX_COUNTER = 0xffffffff
 const TYPEID_ALPHABET = '0123456789abcdefghjkmnpqrstvwxyz'
 
 const BASE32_DECODE: number[] = Array.from({ length: 128 }, () => -1)
@@ -51,7 +61,9 @@ function assertValidPrefix(prefix: string): void {
   }
 
   if (prefix.length > 63) {
-    throw new InvalidInputError('TYPEID_PREFIX_TOO_LONG', 'TypeID prefix must be at most 63 characters')
+    throw new InvalidInputError('PREFIX_TOO_LONG', 'TypeID prefix must be at most 63 characters', {
+      strategy: 'typeid',
+    })
   }
 
   for (let i = 0; i < prefix.length; i += 1) {
@@ -61,13 +73,16 @@ function assertValidPrefix(prefix: string): void {
 
     if (!isLowercaseLetter && !isUnderscore) {
       throw new InvalidInputError(
-        'TYPEID_PREFIX_INVALID_CHARACTER',
+        'PREFIX_INVALID_CHAR',
         'TypeID prefix must contain only lowercase ASCII letters and underscores',
+        { strategy: 'typeid' },
       )
     }
 
     if ((i === 0 || i === prefix.length - 1) && !isLowercaseLetter) {
-      throw new InvalidInputError('TYPEID_PREFIX_INVALID_BOUNDARY', 'TypeID prefix must start and end with a-z')
+      throw new InvalidInputError('PREFIX_INVALID_BOUNDARY', 'TypeID prefix must start and end with a-z', {
+        strategy: 'typeid',
+      })
     }
   }
 }
@@ -77,10 +92,9 @@ function decodeSuffixValue(suffix: string, index: number): number {
   const value = code < BASE32_DECODE.length ? BASE32_DECODE[code] : -1
 
   if (value === -1) {
-    throw new ParseError(
-      'TYPEID_SUFFIX_INVALID_CHARACTER',
-      `TypeID suffix contains invalid character at position ${index}`,
-    )
+    throw new ParseError('INVALID_CHAR', `TypeID suffix contains invalid character at position ${index}`, {
+      strategy: 'typeid',
+    })
   }
 
   return value
@@ -88,17 +102,23 @@ function decodeSuffixValue(suffix: string, index: number): number {
 
 function assertValidSuffixShape(suffix: string): void {
   if (suffix.length !== TYPEID_SUFFIX_LENGTH) {
-    throw new ParseError('TYPEID_SUFFIX_INVALID_LENGTH', `TypeID suffix must be 26 characters, got ${suffix.length}`)
+    throw new ParseError('INVALID_LENGTH', `TypeID suffix must be 26 characters, got ${suffix.length}`, {
+      strategy: 'typeid',
+    })
   }
 
   if (suffix[0] > '7') {
-    throw new ParseError('TYPEID_SUFFIX_OVERFLOW', 'TypeID suffix must encode a 128-bit value')
+    throw new ParseError('VALUE_OUT_OF_RANGE', 'TypeID suffix must encode a 128-bit value', {
+      strategy: 'typeid',
+    })
   }
 }
 
 function encodeBytesToSuffix(bytes: Uint8Array): string {
   if (bytes.length !== TYPEID_UUID_BYTE_LENGTH) {
-    throw new InvalidInputError('TYPEID_UUID_BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`)
+    throw new InvalidInputError('BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`, {
+      strategy: 'typeid',
+    })
   }
 
   return (
@@ -162,11 +182,15 @@ function decodeSuffixToBytes(suffix: string): Uint8Array {
 
 function assertUuidV7Bytes(bytes: Uint8Array): void {
   if (bytes.length !== TYPEID_UUID_BYTE_LENGTH) {
-    throw new InvalidInputError('TYPEID_UUID_BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`)
+    throw new InvalidInputError('BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`, {
+      strategy: 'typeid',
+    })
   }
 
   if (bytes[6] >> 4 !== 7 || (bytes[8] & 0xc0) !== 0x80) {
-    throw new InvalidInputError('TYPEID_UUID_NOT_V7', 'TypeID UUID bytes must encode a UUID v7 value')
+    throw new InvalidInputError('UUID_NOT_V7', 'TypeID UUID bytes must encode a UUID v7 value', {
+      strategy: 'typeid',
+    })
   }
 }
 
@@ -178,7 +202,7 @@ function uuidV7BytesFromSuffix(suffix: string): Uint8Array {
 
 function uuidV7BytesFromUuid(uuid: string): Uint8Array {
   if (!uuidv7.isValid(uuid)) {
-    throw new InvalidInputError('TYPEID_UUID_NOT_V7', 'TypeID can only wrap UUID v7 values')
+    throw new InvalidInputError('UUID_NOT_V7', 'TypeID can only wrap UUID v7 values', { strategy: 'typeid' })
   }
 
   return uuidv7.toBytes(uuid)
@@ -188,7 +212,7 @@ function parseTypeid(id: string): ParsedTypeid {
   const separatorIndex = id.lastIndexOf('_')
 
   if (separatorIndex === 0) {
-    throw new ParseError('TYPEID_INVALID_FORMAT', 'TypeID must not start with "_"')
+    throw new ParseError('INVALID_FORMAT', 'TypeID must not start with "_"', { strategy: 'typeid' })
   }
 
   const prefix = separatorIndex === -1 ? '' : id.slice(0, separatorIndex)
@@ -218,12 +242,66 @@ function timestampFromUuidV7Bytes(bytes: Uint8Array): number {
   return msecs
 }
 
-function typeidFn(prefix: string, options?: TypeidOptions): string {
-  const msecs = options?.msecs
+/**
+ * Mirror uuid/v7's option validation at the typeid boundary, so failures are
+ * attributed to `strategy: 'typeid'` instead of leaking `strategy: 'uuid'`
+ * through delegation.
+ */
+function validateTypeidOptions(options: TypeidOptions): void {
+  const msecs = options.msecs
   if (msecs !== undefined && !isIntegerInRange(msecs, 0, MAX_MSECS)) {
     throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', `Timestamp must be an integer between 0 and ${MAX_MSECS}`, {
       strategy: 'typeid',
     })
+  }
+
+  if (options.counter !== undefined && options.seq !== undefined) {
+    throw new InvalidInputError('CONFLICTING_OPTIONS', 'Pass only one of `counter` or `seq`, not both', {
+      strategy: 'typeid',
+    })
+  }
+  const counter = options.counter ?? options.seq
+  if (counter !== undefined && !isIntegerInRange(counter, 0, MAX_COUNTER)) {
+    throw new InvalidInputError('COUNTER_OUT_OF_RANGE', `Counter must be an integer between 0 and ${MAX_COUNTER}`, {
+      strategy: 'typeid',
+    })
+  }
+
+  const random = options.random
+  if (random && random.length < TYPEID_UUID_BYTE_LENGTH) {
+    throw new InvalidInputError('RANDOM_BYTES_TOO_SHORT', `Random bytes length must be >= ${TYPEID_UUID_BYTE_LENGTH}`, {
+      strategy: 'typeid',
+    })
+  }
+}
+
+function typeidFn(prefix: string, options?: TypeidOptions, buf?: undefined, offset?: number): string
+function typeidFn<TBuf extends Uint8Array = Uint8Array>(
+  prefix: string,
+  options: TypeidOptions | undefined,
+  buf: TBuf,
+  offset?: number,
+): TBuf
+function typeidFn<TBuf extends Uint8Array = Uint8Array>(
+  prefix: string,
+  options?: TypeidOptions,
+  buf?: TBuf,
+  offset = 0,
+): string | TBuf {
+  if (options !== undefined) {
+    validateTypeidOptions(options)
+  }
+
+  if (buf) {
+    if (!isWritableRange(buf, offset, TYPEID_UUID_BYTE_LENGTH)) {
+      throw new BufferError(
+        'BUFFER_OUT_OF_BOUNDS',
+        `TypeID byte range ${offset}:${offset + TYPEID_UUID_BYTE_LENGTH - 1} is out of buffer bounds`,
+        { strategy: 'typeid' },
+      )
+    }
+    assertValidPrefix(prefix)
+    return uuidv7(options, buf, offset)
   }
 
   const bytes = uuidv7(options, new Uint8Array(TYPEID_UUID_BYTE_LENGTH))

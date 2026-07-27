@@ -101,7 +101,9 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(
 function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, buf?: TBuf, offset = 0): string | TBuf {
   const random = options?.random
   if (random && random.length < PAYLOAD_BYTES) {
-    throw new InvalidInputError('KSUID_RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16 for KSUID')
+    throw new InvalidInputError('RANDOM_BYTES_TOO_SHORT', 'Random bytes length must be >= 16 for KSUID', {
+      strategy: 'ksuid',
+    })
   }
 
   let timestamp: number
@@ -124,8 +126,9 @@ function ksuidFn<TBuf extends Uint8Array = Uint8Array>(options?: KsuidOptions, b
   if (buf) {
     if (!isWritableRange(buf, offset, KSUID_BYTES)) {
       throw new BufferError(
-        'KSUID_BUFFER_OUT_OF_BOUNDS',
+        'BUFFER_OUT_OF_BOUNDS',
         `KSUID byte range ${offset}:${offset + KSUID_BYTES - 1} is out of buffer bounds`,
+        { strategy: 'ksuid' },
       )
     }
     writeKsuidBytesUnchecked(timestamp, payload, buf, offset)
@@ -155,8 +158,9 @@ function toBytes(id: string): Uint8Array {
 function fromBytes(bytes: Uint8Array): string {
   if (bytes.length !== KSUID_BYTES) {
     throw new BufferError(
-      'KSUID_BYTES_INVALID_LENGTH',
+      'BYTES_INVALID_LENGTH',
       `KSUID bytes must be exactly ${KSUID_BYTES} bytes, got ${bytes.length}`,
+      { strategy: 'ksuid' },
     )
   }
   return encodeBase62(bytes)

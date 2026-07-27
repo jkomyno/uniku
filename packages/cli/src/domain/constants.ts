@@ -7,12 +7,12 @@ export const UUID_VERSIONS = [4, 7] as const
 /** Default UUID version. */
 export const UUID_VERSION_DEFAULT = 4
 
-/** Default nanoid size. */
-export const NANOID_SIZE_DEFAULT = 21
+/** Default nanoid length. */
+export const NANOID_LENGTH_DEFAULT = 21
 
-/** Nanoid size range. */
-export const NANOID_SIZE_MIN = 1
-export const NANOID_SIZE_MAX = 256
+/** Nanoid length range. */
+export const NANOID_LENGTH_MIN = 1
+export const NANOID_LENGTH_MAX = 256
 
 /** Default CUID2 length. */
 export const CUID_LENGTH_DEFAULT = 24

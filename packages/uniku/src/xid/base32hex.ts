@@ -16,10 +16,9 @@ for (let i = 0; i < ENCODING.length; i += 1) {
 /** Encode the 12 canonical XID bytes as lowercase base32hex. */
 export function encodeBase32Hex(bytes: Uint8Array): string {
   if (bytes.length !== XID_BYTES) {
-    throw new BufferError(
-      'XID_BYTES_INVALID_LENGTH',
-      `XID bytes must be exactly ${XID_BYTES} bytes, got ${bytes.length}`,
-    )
+    throw new BufferError('BYTES_INVALID_LENGTH', `XID bytes must be exactly ${XID_BYTES} bytes, got ${bytes.length}`, {
+      strategy: 'xid',
+    })
   }
 
   ENCODED[0] = ENCODING_CODES[bytes[0] >> 3]
@@ -62,20 +61,22 @@ export function encodeCounterSuffix(lastIdentityByte: number, counter: number): 
 /** Decode a canonical lowercase base32hex XID string to its 12 bytes. */
 export function decodeBase32Hex(id: string): Uint8Array {
   if (id.length !== XID_LENGTH) {
-    throw new ParseError('XID_INVALID_LENGTH', `XID string must be ${XID_LENGTH} characters, got ${id.length}`)
+    throw new ParseError('INVALID_LENGTH', `XID string must be ${XID_LENGTH} characters, got ${id.length}`, {
+      strategy: 'xid',
+    })
   }
 
   const values = new Uint8Array(XID_LENGTH)
   for (let i = 0; i < XID_LENGTH; i += 1) {
     const value = DECODING[id.charCodeAt(i)]
     if (value === 255) {
-      throw new ParseError('XID_INVALID_CHAR', `Invalid XID character: ${id[i]}`)
+      throw new ParseError('INVALID_CHAR', `Invalid XID character: ${id[i]}`, { strategy: 'xid' })
     }
     values[i] = value
   }
 
   if (values[19] !== 0 && values[19] !== 16) {
-    throw new ParseError('XID_NON_CANONICAL', 'XID trailing bits must be canonically encoded')
+    throw new ParseError('NON_CANONICAL', 'XID trailing bits must be canonically encoded', { strategy: 'xid' })
   }
 
   return new Uint8Array([

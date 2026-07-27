@@ -53,7 +53,9 @@ export function encodeTsidString(value: bigint): string {
  */
 export function decodeTsidString(str: string): bigint {
   if (str.length !== TSID_STRING_LEN) {
-    throw new ParseError('TSID_INVALID_LENGTH', `TSID string must be ${TSID_STRING_LEN} characters, got ${str.length}`)
+    throw new ParseError('INVALID_LENGTH', `TSID string must be ${TSID_STRING_LEN} characters, got ${str.length}`, {
+      strategy: 'tsid',
+    })
   }
 
   let value = 0n
@@ -61,13 +63,12 @@ export function decodeTsidString(str: string): bigint {
     const code = str.charCodeAt(i)
     const group = code < 128 ? DECODING[code] : 255
     if (group === 255) {
-      throw new ParseError('TSID_INVALID_CHAR', `Invalid TSID character: ${str[i]}`)
+      throw new ParseError('INVALID_CHAR', `Invalid TSID character: ${str[i]}`, { strategy: 'tsid' })
     }
     if (i === 0 && group > TSID_LEADING_MAX) {
-      throw new ParseError(
-        'TSID_LEADING_CHAR_OUT_OF_RANGE',
-        `TSID leading character must be one of 0-9, A-F, got: ${str[i]}`,
-      )
+      throw new ParseError('VALUE_OUT_OF_RANGE', `TSID leading character must be one of 0-9, A-F, got: ${str[i]}`, {
+        strategy: 'tsid',
+      })
     }
     value = (value << 5n) | BigInt(group)
   }

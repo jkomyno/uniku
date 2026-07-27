@@ -6,7 +6,7 @@ import { CliError, fromUnikuError } from '@/src/domain/errors'
 
 export type NanoidGenerateOptions = {
   readonly count: number
-  readonly size: number
+  readonly length: number
   readonly alphabet?: string
 }
 
@@ -21,7 +21,7 @@ export function generateNanoid(options: NanoidGenerateOptions): Effect.Effect<st
       const alphabet = resolveAlphabet(options.alphabet)
       const ids: string[] = []
       for (let i = 0; i < options.count; i++) {
-        ids.push(nanoid({ size: options.size, alphabet }))
+        ids.push(nanoid({ length: options.length, alphabet }))
       }
       return ids
     },
