@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@effect/vitest'
 import { assertTrue } from '@effect/vitest/utils'
-import { cuid2 } from 'uniku/cuid2'
+import { cuidv2 } from 'uniku/cuid/v2'
 import { ksuid } from 'uniku/ksuid'
 import { nanoid } from 'uniku/nanoid'
 import { objectid } from 'uniku/objectid'
@@ -100,7 +100,7 @@ describe('inspectId', () => {
   })
 
   it('inspects CUID with no-metadata note', () => {
-    const id = cuid2()
+    const id = cuidv2()
     const result = inspectId(id, 'cuid')
     assertTrue(result !== null)
     expect(result.type).toBe('cuid')
