@@ -4,25 +4,18 @@ description: 'Setup the Bun version pinned in mise.toml'
 runs:
   using: 'composite'
   steps:
+    - name: Setup mise
+      uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+      with:
+        add_shims_to_path: false
+        cache: false
+        install: false
+
     - name: Resolve Bun version
       id: bun-version
       shell: bash
       run: |
-        bun_version="$(awk '
-          $0 == "[tools]" { in_tools = 1; next }
-          /^\[/ { in_tools = 0 }
-          in_tools && $1 == "bun" && $2 == "=" {
-            gsub(/^"|"$/, "", $3)
-            print $3
-            exit
-          }
-        ' mise.toml)"
-
-        if [[ -z "$bun_version" ]]; then
-          echo "::error::Could not resolve the Bun version from mise.toml"
-          exit 1
-        fi
-
+        bun_version="$(mise config get tools.bun)"
         echo "bun-version=$bun_version" >> "$GITHUB_OUTPUT"
 
     - name: Setup Bun

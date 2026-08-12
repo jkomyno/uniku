@@ -29,34 +29,21 @@ runs:
         restore-keys: |
           ${{ runner.os }}-turbo-
 
+    - name: Setup mise
+      uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+      with:
+        add_shims_to_path: false
+        cache: false
+        install: false
+
     - name: Resolve runtime versions
       id: runtime-versions
       shell: bash
       run: |
-        read_mise_value() {
-          local section="$1"
-          local key="$2"
-
-          awk -v expected_section="[$section]" -v expected_key="$key" '
-            $0 == expected_section { in_section = 1; next }
-            /^\[/ { in_section = 0 }
-            in_section && $1 == expected_key && $2 == "=" {
-              gsub(/^"|"$/, "", $3)
-              print $3
-              exit
-            }
-          ' mise.toml
-        }
-
-        node_version="$(read_mise_value tools node)"
-        node_compat_version="$(read_mise_value vars node_compat)"
-        bun_test_version="$(read_mise_value vars bun_test)"
-        deno_version="$(read_mise_value tools deno)"
-
-        if [[ -z "$node_version" || -z "$node_compat_version" || -z "$bun_test_version" || -z "$deno_version" ]]; then
-          echo "::error::Could not resolve all runtime versions from mise.toml"
-          exit 1
-        fi
+        node_version="$(mise config get -f mise.toml tools.node)"
+        node_compat_version="$(mise config get -f mise.toml vars.node_compat)"
+        bun_test_version="$(mise config get -f mise.toml vars.bun_test)"
+        deno_version="$(mise config get -f mise.toml tools.deno)"
 
         echo "node-version=$node_version" >> "$GITHUB_OUTPUT"
         echo "node-compat-version=$node_compat_version" >> "$GITHUB_OUTPUT"
