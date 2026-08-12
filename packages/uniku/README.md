@@ -36,21 +36,57 @@ npm install uniku
 
 The [getting-started guide](https://jkomyno.github.io/uniku/docs/getting-started/) also covers pnpm, Bun, and Deno.
 
-## Quick start
+## Public API at a glance
 
-Every generator has its own entry point and keeps related operations on the generator function:
+Each module exports a callable generator with attached helpers. The most common public API looks like this:
 
 ```ts
 import { uuidv7 } from 'uniku/uuid/v7'
 
 const id = uuidv7()
-const bytes = uuidv7.toBytes(id)
-const restored = uuidv7.fromBytes(bytes)
+// e.g. '019f5732-0342-75f9-9efd-fc3c1f8da7fd'
 
-if (uuidv7.isValid(restored)) {
-  console.log(uuidv7.timestamp(restored))
-}
+uuidv7.isValid(id)
+// true
+
+const bytes = uuidv7.toBytes(id)
+// Uint8Array(16)
+
+uuidv7.fromBytes(bytes)
+// the same value as `id`
+
+uuidv7.timestamp(id)
+// e.g. 1783874323266
+
+uuidv7.NIL
+// '00000000-0000-0000-0000-000000000000'
+
+uuidv7.MAX
+// 'ffffffff-ffff-ffff-ffff-ffffffffffff'
 ```
+
+Binary modules can also write directly into a caller-owned buffer:
+
+```ts
+const destination = new Uint8Array(24)
+const result = uuidv7(undefined, destination, 8)
+// Uint8Array(24), with UUID bytes at offsets 8 through 23
+
+result === destination
+// true
+```
+
+### How modules differ
+
+| Modules | Public API |
+| --- | --- |
+| `uuid/v7`, `ulid`, `ksuid`, `objectid`, `xid` | Callable, buffer write, `toBytes()`, `fromBytes()`, `timestamp()`, `isValid()`, `NIL`, `MAX` |
+| `uuid/v4` | Callable, buffer write, `toBytes()`, `fromBytes()`, `isValid()`, `NIL`, `MAX` |
+| `typeid` | Prefix-first callable, buffer write, `toBytes()`, `fromBytes()`, `toUuid()`, `fromUuid()`, `timestamp()`, `prefix()`, `suffix()`, `isValid()` |
+| `tsid` | `bigint` primary value, buffer write, `toBytes()`, `fromBytes()`, `toString()`, `fromString()`, `timestamp()`, `isValid()`, `NIL`, `MAX` |
+| `cuid/v2`, `nanoid` | Callable and `isValid()` only |
+
+Open the [generator reference](https://jkomyno.github.io/uniku/docs/reference/entry-points/) for complete signatures, options, constants, and examples.
 
 There are no barrel exports:
 
