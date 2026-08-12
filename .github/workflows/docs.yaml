@@ -117,11 +117,79 @@ jobs:
           DOCS_BASE_PATH: /uniku/pr-preview/pr-${{ github.event.number }}/
         run: pnpm docs:build
 
-      - name: Deploy or remove preview
-        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
+      - name: Stamp preview build
+        if: github.event.action != 'closed'
+        run: printf '%s\n' "$GITHUB_SHA" > apps/docs/dist/client/preview-build.txt
+
+      - name: Deploy preview
+        if: github.event.action != 'closed'
+        uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4.8.0
         with:
-          source-dir: apps/docs/dist/client
-          preview-branch: gh-pages
-          umbrella-dir: pr-preview
-          action: auto
-          wait-for-pages-deployment: true
+          folder: apps/docs/dist/client
+          branch: gh-pages
+          target-folder: pr-preview/pr-${{ github.event.number }}
+          commit-message: Deploy preview for PR ${{ github.event.number }}
+          force: false
+
+      - name: Wait for preview deployment
+        if: github.event.action != 'closed'
+        env:
+          PREVIEW_MARKER_URL: https://jkomyno.github.io/uniku/pr-preview/pr-${{ github.event.number }}/preview-build.txt
+        run: |
+          for (( attempt = 1; attempt <= 90; attempt++ )); do
+            deployed_sha="$(curl --fail --silent "$PREVIEW_MARKER_URL?run=$GITHUB_RUN_ID" || true)"
+            if [[ "$deployed_sha" == "$GITHUB_SHA" ]]; then
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "::error::Timed out waiting for the PR preview to deploy"
+          exit 1
+
+      - name: Comment with preview URL
+        if: github.event.action != 'closed'
+        uses: marocchino/sticky-pull-request-comment@447031a6bb83f7438d890bb0136932be78342022 # v3.0.0
+        with:
+          header: pr-preview
+          message: |
+            :rocket: View the docs preview at https://jkomyno.github.io/uniku/pr-preview/pr-${{ github.event.number }}/
+
+            <sub>Built by workflow run [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).</sub>
+
+      - name: Prepare empty preview directory
+        if: github.event.action == 'closed'
+        run: mkdir -p "$RUNNER_TEMP/empty-preview"
+
+      - name: Remove preview
+        if: github.event.action == 'closed'
+        uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4.8.0
+        with:
+          folder: ${{ runner.temp }}/empty-preview
+          branch: gh-pages
+          target-folder: pr-preview/pr-${{ github.event.number }}
+          commit-message: Remove preview for PR ${{ github.event.number }}
+          force: false
+
+      - name: Wait for preview removal
+        if: github.event.action == 'closed'
+        env:
+          PREVIEW_MARKER_URL: https://jkomyno.github.io/uniku/pr-preview/pr-${{ github.event.number }}/preview-build.txt
+        run: |
+          for (( attempt = 1; attempt <= 90; attempt++ )); do
+            status_code="$(curl --silent --output /dev/null --write-out '%{http_code}' "$PREVIEW_MARKER_URL?run=$GITHUB_RUN_ID" || true)"
+            if [[ "$status_code" == "404" ]]; then
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "::error::Timed out waiting for the PR preview to be removed"
+          exit 1
+
+      - name: Comment after preview removal
+        if: github.event.action == 'closed'
+        uses: marocchino/sticky-pull-request-comment@447031a6bb83f7438d890bb0136932be78342022 # v3.0.0
+        with:
+          header: pr-preview
+          message: Preview removed because the pull request was closed.
