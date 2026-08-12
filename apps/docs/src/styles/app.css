@@ -12,65 +12,76 @@
  * UI without touching its markup.
  */
 :root {
-  --color-fd-background: #f6f8f5;
-  --color-fd-foreground: #14211f;
-  --color-fd-muted: #e6ece7;
-  --color-fd-muted-foreground: #55635f;
-  --color-fd-popover: #ffffff;
-  --color-fd-popover-foreground: #14211f;
-  --color-fd-card: #ffffff;
-  --color-fd-card-foreground: #14211f;
-  --color-fd-border: #d8e1db;
-  --color-fd-primary: #0c766b;
-  --color-fd-primary-foreground: #ffffff;
-  --color-fd-secondary: #eef2ee;
-  --color-fd-secondary-foreground: #14211f;
-  --color-fd-accent: #dcebe7;
-  --color-fd-accent-foreground: #0c332e;
-  --color-fd-ring: #0c766b;
+  color-scheme: light;
+
+  /* Near-neutral paper and ink. Teal is reserved for interaction states. */
+  --color-fd-background: oklch(0.985 0.004 170);
+  --color-fd-foreground: oklch(0.19 0.012 170);
+  --color-fd-muted: oklch(0.95 0.006 170);
+  --color-fd-muted-foreground: oklch(0.43 0.014 170);
+  --color-fd-popover: oklch(0.995 0.003 170);
+  --color-fd-popover-foreground: oklch(0.19 0.012 170);
+  --color-fd-card: oklch(0.995 0.003 170);
+  --color-fd-card-foreground: oklch(0.19 0.012 170);
+  --color-fd-border: oklch(0.9 0.006 170);
+  --color-fd-primary: oklch(0.43 0.08 170);
+  --color-fd-primary-foreground: oklch(0.985 0.004 170);
+  --color-fd-secondary: oklch(0.945 0.008 170);
+  --color-fd-secondary-foreground: oklch(0.19 0.012 170);
+  --color-fd-accent: oklch(0.92 0.025 170);
+  --color-fd-accent-foreground: oklch(0.25 0.045 170);
+  --color-fd-ring: oklch(0.5 0.09 170);
 
   /* Landing page + API reference: values with no direct fumadocs equivalent. */
-  --primary-hover: #075c54;
-  --atlas-surface: #152523;
-  --atlas-border: #29423d;
-  --atlas-shadow: #dce6df;
-  --atlas-heading: #94afa6;
-  --atlas-rail-line: #4dc3a0;
-  --atlas-index: #7ee0bd;
-  --atlas-text: #eef6f0;
-  --atlas-body: #b7c9c0;
+  --primary-hover: oklch(0.36 0.075 170);
+  --atlas-surface: oklch(0.2 0.018 170);
+  --atlas-border: oklch(0.34 0.025 170);
+  --atlas-shadow: oklch(0.88 0.008 170);
+  --atlas-heading: oklch(0.74 0.025 170);
+  --atlas-rail-line: oklch(0.7 0.11 170);
+  --atlas-index: oklch(0.82 0.1 170);
+  --atlas-text: oklch(0.95 0.006 170);
+  --atlas-body: oklch(0.78 0.018 170);
+  --docs-frame-radius: 0.625rem;
+  --docs-frame-hover-border: color-mix(
+    in oklch,
+    var(--color-fd-primary) 68%,
+    var(--color-fd-border)
+  );
 }
 
 .dark {
-  /* Green-tinted dark neutrals (brand hue ~183deg), never pure black/white. */
-  --color-fd-background: #091715;
-  --color-fd-foreground: #e0ebe8;
-  --color-fd-muted: #1a2a27;
-  --color-fd-muted-foreground: #91aba6;
-  --color-fd-popover: #11201e;
-  --color-fd-popover-foreground: #e0ebe8;
-  --color-fd-card: #11201e;
-  --color-fd-card-foreground: #e0ebe8;
-  --color-fd-border: #263d39;
-  --color-fd-primary: #1cd3c0;
-  --color-fd-primary-foreground: #0a1f1c;
-  --color-fd-secondary: #152523;
-  --color-fd-secondary-foreground: #e0ebe8;
-  --color-fd-accent: #223834;
-  --color-fd-accent-foreground: #e0ebe8;
-  --color-fd-ring: #1cd3c0;
+  color-scheme: dark;
 
-  --primary-hover: #00b3a1;
+  /* Low-glare charcoal neutrals with teal reserved for interaction states. */
+  --color-fd-background: oklch(0.155 0.008 170);
+  --color-fd-foreground: oklch(0.93 0.007 170);
+  --color-fd-muted: oklch(0.245 0.012 170);
+  --color-fd-muted-foreground: oklch(0.72 0.015 170);
+  --color-fd-popover: oklch(0.195 0.01 170);
+  --color-fd-popover-foreground: oklch(0.93 0.007 170);
+  --color-fd-card: oklch(0.195 0.01 170);
+  --color-fd-card-foreground: oklch(0.93 0.007 170);
+  --color-fd-border: oklch(0.3 0.012 170);
+  --color-fd-primary: oklch(0.76 0.12 170);
+  --color-fd-primary-foreground: oklch(0.16 0.01 170);
+  --color-fd-secondary: oklch(0.225 0.012 170);
+  --color-fd-secondary-foreground: oklch(0.93 0.007 170);
+  --color-fd-accent: oklch(0.285 0.035 170);
+  --color-fd-accent-foreground: oklch(0.93 0.01 170);
+  --color-fd-ring: oklch(0.76 0.12 170);
+
+  --primary-hover: oklch(0.82 0.12 170);
   /* Elevated surface, lighter than the page background, so the specimen
      panel still reads as distinct instead of vanishing into the page. */
-  --atlas-surface: #1d332f;
-  --atlas-border: #344e49;
-  --atlas-shadow: #263d39;
-  --atlas-heading: #9fc3ba;
-  --atlas-rail-line: #4dc3a0;
-  --atlas-index: #7ee0bd;
-  --atlas-text: #eef6f0;
-  --atlas-body: #c3d6cd;
+  --atlas-surface: oklch(0.22 0.018 170);
+  --atlas-border: oklch(0.38 0.025 170);
+  --atlas-shadow: oklch(0.1 0.008 170);
+  --atlas-heading: oklch(0.76 0.025 170);
+  --atlas-rail-line: oklch(0.74 0.11 170);
+  --atlas-index: oklch(0.84 0.1 170);
+  --atlas-text: oklch(0.95 0.006 170);
+  --atlas-body: oklch(0.8 0.018 170);
 }
 
 html {
@@ -84,6 +95,59 @@ body {
 
 code {
   font-variant-ligatures: none;
+}
+
+/*
+ * Documentation frames follow one rule: one quiet border around one distinct
+ * surface. Avoid stacking a border and shadow around the same code sample.
+ */
+.prose figure.shiki {
+  --shiki-dark-bg: var(--color-fd-muted) !important;
+  --shiki-light-bg: var(--color-fd-muted) !important;
+
+  background: var(--color-fd-muted);
+  border-color: var(--color-fd-border);
+  box-shadow: none;
+}
+
+.prose > figure.shiki,
+.prose > [dir][data-orientation='horizontal'].border {
+  border-radius: var(--docs-frame-radius);
+}
+
+.prose > [dir][data-orientation='horizontal'].border {
+  border-color: var(--color-fd-border);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.prose > [dir][data-orientation='horizontal'].border [role='tablist'] {
+  background: var(--color-fd-card);
+}
+
+.prose > [dir][data-orientation='horizontal'].border [role='tabpanel'] > figure.shiki {
+  border-radius: 0 0 var(--docs-frame-radius) var(--docs-frame-radius);
+}
+
+article > [class~='@container'] > a[class~='border'] {
+  background: transparent;
+  border-color: var(--color-fd-border);
+  border-radius: var(--docs-frame-radius);
+  box-shadow: none;
+  transition-duration: 160ms;
+  transition-property: background-color, border-color, color;
+  transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+article > [class~='@container'] > a[class~='border']:hover {
+  background: color-mix(in oklch, var(--color-fd-muted) 62%, transparent);
+  border-color: var(--docs-frame-hover-border);
+}
+
+article > [class~='@container'] > a[class~='border']:focus-visible {
+  border-color: var(--color-fd-primary);
+  outline: 2px solid color-mix(in oklch, var(--color-fd-ring) 55%, transparent);
+  outline-offset: 2px;
 }
 
 .landing-shell {

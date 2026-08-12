@@ -65,25 +65,37 @@ const id = uuidv7()
 
 ## The usual shape
 
-Most generators follow the same pattern: call the generator, keep its primary value, and validate unknown input at the boundary.
+The named generator import has two roles. Call it to generate an ID. Use the same value as a dictionary of methods and constants for that strategy.
+
+If you are used to class APIs, the attached helpers resemble "static methods." The generator is still a function, so there is nothing to instantiate:
 
 ```ts
 import { uuidv7 } from 'uniku/uuid/v7'
 
+// Call the imported value to generate a UUID v7 string.
 const id = uuidv7()
 
-if (uuidv7.isValid(id)) {
-  // `id` is a UUID v7 string here.
-}
+// Use that same value to access the UUID v7 API.
+const bytes = uuidv7.toBytes(id)
+const restored = uuidv7.fromBytes(bytes)
+const createdAt = new Date(uuidv7.timestamp(id))
+const valid = uuidv7.isValid(restored)
+
+const nil = uuidv7.NIL
+const max = uuidv7.MAX
 ```
 
-Time-ordered formats also expose `timestamp()`. Each generator page lists its complete public API, including options, constants, and overloads.
+You do not import `toBytes()` or `timestamp()` separately. They stay attached to `uuidv7` and grouped with that strategy.
+
+Every generator value exposes `isValid()`. The remaining API matches the strategy. Time-ordered formats expose `timestamp()`. Formats with a canonical binary representation expose `toBytes()` and `fromBytes()`. CUID v2 and Nanoid expose a smaller API because they have no canonical byte representation.
+
+Each [generator reference](/docs/reference/entry-points) lists the exact call signatures, methods, constants, and overloads available from its imported value.
 
 ## Every strategy
 
 Each format is independently importable and tree-shakeable. Install one package, then ship only the strategy your application imports.
 
-| Strategy | Direct import | Usual call | Primary value |
+| Strategy | Direct import | Usual function call | Primary value |
 | --- | --- | --- | --- |
 | UUID v4 | `uniku/uuid/v4` | `uuidv4()` | `string` |
 | UUID v7 | `uniku/uuid/v7` | `uuidv7()` | `string` |
