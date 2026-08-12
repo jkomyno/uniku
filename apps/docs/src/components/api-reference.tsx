@@ -14,7 +14,7 @@ export function ApiReference({ generator }: ApiReferenceProps) {
       <div className="api-reference-heading">
         <div>
           <p className="eyebrow">Generated API reference</p>
-          <h2>Public methods</h2>
+          <h2>Public API</h2>
         </div>
         <a href={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/${api.sourcePath}`}>
           Read source

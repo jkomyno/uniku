@@ -4,33 +4,60 @@ description: Ten stable generator entry points behind one consistent, type-safe 
 icon: Braces
 ---
 
-uniku exposes ten ID generation strategies with a consistent callable-generator API and format-specific typed helpers. The package root is intentionally not exported, so import a generator or metadata module directly:
+`uniku` exposes ten ID generation modules. Each module exports a callable generator with attached helpers. The most common public API looks like this:
 
 ```ts
-import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
-import { ulid } from 'uniku/ulid'
-import { typeid } from 'uniku/typeid'
-import { cuidv2 } from 'uniku/cuid/v2'
-import { nanoid } from 'uniku/nanoid'
-import { ksuid } from 'uniku/ksuid'
-import { objectid } from 'uniku/objectid'
-import { xid } from 'uniku/xid'
-import { tsid } from 'uniku/tsid'
+
+const id = uuidv7()
+// e.g. '019f5732-0342-75f9-9efd-fc3c1f8da7fd'
+
+uuidv7.isValid(id)
+// true
+
+const bytes = uuidv7.toBytes(id)
+// Uint8Array(16)
+
+uuidv7.fromBytes(bytes)
+// the same value as `id`
+
+uuidv7.timestamp(id)
+// e.g. 1783874323266
+
+uuidv7.NIL
+// '00000000-0000-0000-0000-000000000000'
+
+uuidv7.MAX
+// 'ffffffff-ffff-ffff-ffff-ffffffffffff'
 ```
 
-Two metadata entry points round out the library:
+Binary modules can also write directly into a caller-owned buffer:
+
+```ts
+const destination = new Uint8Array(24)
+const result = uuidv7(undefined, destination, 8)
+// Uint8Array(24), with UUID bytes at offsets 8 through 23
+
+result === destination
+// true
+```
+
+## How modules differ
+
+<PublicApiOverview />
+
+This table is derived from the generated TypeScript API reference. Open a module's page for complete signatures, options, constants, and examples.
+
+The package root is intentionally not exported, so import a generator or metadata module directly. Two metadata entry points round out the library:
 
 | Import | Purpose |
 | --- | --- |
 | `uniku/errors` | Typed, machine-readable input, parse, and buffer errors. |
 | `uniku/generators` | The canonical ordered list of supported generator kinds. |
 
-Every generator exposes its own methods, such as `isValid`, `toBytes`, `fromBytes`, or a format-specific timestamp accessor where applicable.
-
 ## Generator references
 
-Read the reference for the strategy you use. The public method sections are generated from the TypeScript signatures and JSDoc in `packages/uniku/src`, so they stay aligned with the library source.
+Read the reference for the module you use. Each Public API section is generated from the TypeScript signatures and JSDoc in `packages/uniku/src`, so it stays aligned with the library source.
 
 <Cards>
   <Card title="UUID v4" href="/docs/reference/uuid-v4" description="Random, standards-compatible UUIDs." />
