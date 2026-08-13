@@ -46,8 +46,8 @@ describe('nanoid', () => {
   })
 
   describe('deprecated size alias', () => {
-    // TODO(v1-rc): remove this block together with the `size` option.
-    it('produces the same output as length until v1-rc', () => {
+    // TODO(v1-rc.1): remove this block together with the `size` option.
+    it('produces the same output as length until 1.0.0-rc.1', () => {
       const random = new Uint8Array(32).fill(7)
       expect(nanoid({ size: 10, random })).toBe(nanoid({ length: 10, random }))
     })

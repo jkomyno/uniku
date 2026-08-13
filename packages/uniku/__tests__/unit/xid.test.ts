@@ -139,8 +139,8 @@ describe('xid', () => {
   })
 
   describe('deprecated secs alias', () => {
-    // TODO(v1-rc): remove this block together with the `secs` option.
-    it('accepts whole seconds until v1-rc', () => {
+    // TODO(v1-rc.1): remove this block together with the `secs` option.
+    it('accepts whole seconds until 1.0.0-rc.1', () => {
       const id = xid({ secs: 1_700_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
       expect(xid.timestamp(id)).toBe(1_700_000_000_000)
     })

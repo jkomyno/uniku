@@ -152,8 +152,8 @@ describe('uuidv7', () => {
   })
 
   describe('deprecated seq alias', () => {
-    // TODO(v1-rc): remove this block together with the `seq` option.
-    it('produces the same output as counter until v1-rc', () => {
+    // TODO(v1-rc.1): remove this block together with the `seq` option.
+    it('produces the same output as counter until 1.0.0-rc.1', () => {
       const msecs = 1_702_387_456_789
       const random = new Uint8Array(16).fill(42)
       expect(uuidv7({ msecs, seq: 0x12345678, random })).toBe(uuidv7({ msecs, counter: 0x12345678, random }))

@@ -143,8 +143,8 @@ describe('typeid', () => {
   })
 
   describe('deprecated seq alias', () => {
-    // TODO(v1-rc): remove this block together with the `seq` option.
-    it('produces the same output as counter until v1-rc', () => {
+    // TODO(v1-rc.1): remove this block together with the `seq` option.
+    it('produces the same output as counter until 1.0.0-rc.1', () => {
       const bySeq = typeid('user', { msecs: FIXED_MSECS, seq: 0x12345678, random: ZERO_RANDOM })
       const byCounter = typeid('user', { msecs: FIXED_MSECS, counter: 0x12345678, random: ZERO_RANDOM })
       expect(bySeq).toBe(byCounter)
