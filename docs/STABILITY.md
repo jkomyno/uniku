@@ -43,11 +43,11 @@ import { cuidv2 } from 'uniku/cuid/v2'
 After v1, deprecated APIs remain available for the rest of their current major
 version and are removed only in the next major version.
 
-### v1-rc cleanup checklist
+### v1.0.0-rc.1 cleanup checklist
 
-The following deprecated surfaces must be removed before tagging the v1
-release candidate. Code-level reminders live in `TODO(v1-rc)` comments next to
-each deprecated surface.
+The following deprecated surfaces remain available through `uniku@0.6.0` and
+must be removed in `uniku@1.0.0-rc.1`. Code-level reminders live in
+`TODO(v1-rc.1)` comments next to each deprecated surface.
 
 - `uniku/cuid2` entry point (see CUID2 migration above).
 - `secs` timestamp options in `uniku/ksuid`, `uniku/objectid`, and `uniku/xid`

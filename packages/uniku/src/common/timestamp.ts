@@ -13,11 +13,11 @@ export type TimestampSecsOptions = {
    */
   msecs?: number
   /**
-   * Timestamp in seconds since the Unix epoch.
+   * Deprecated alias for `msecs`; timestamp in seconds since the Unix epoch.
    *
-   * @deprecated Use `msecs` instead. Will be removed at v1-rc.
+   * @deprecated Use `msecs` instead. Will be removed in `1.0.0-rc.1`.
    */
-  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
+  // TODO(v1-rc.1): remove this alias (tracked in docs/STABILITY.md).
   secs?: number
 }
 
@@ -28,7 +28,7 @@ export type TimestampSecsOptions = {
  * `msecs` is the unified input and is truncated to whole seconds; `secs` is
  * the deprecated pre-v1 alias. Passing both is an error.
  *
- * TODO(v1-rc): drop the `secs` branch once the alias is removed.
+ * TODO(v1-rc.1): drop the `secs` branch once the alias is removed.
  */
 export function resolveTimestampSecs(
   options: TimestampSecsOptions,

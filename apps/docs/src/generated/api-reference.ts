@@ -171,7 +171,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Unsigned 32-bit sequence value.",
+              "description": "Deprecated alias for `counter`; unsigned 32-bit sequence value.",
               "name": "seq",
               "optional": true,
               "type": "number"
@@ -427,7 +427,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Unsigned 32-bit sequence value.",
+              "description": "Deprecated alias for `counter`; unsigned 32-bit sequence value.",
               "name": "seq",
               "optional": true,
               "type": "number"
@@ -636,7 +636,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Length of generated ID.",
+              "description": "Deprecated alias for `length`.",
               "name": "size",
               "optional": true,
               "type": "number"
@@ -699,7 +699,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Timestamp in seconds since the Unix epoch.",
+              "description": "Deprecated alias for `msecs`; timestamp in seconds since the Unix epoch.",
               "name": "secs",
               "optional": true,
               "type": "number"
@@ -827,7 +827,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Timestamp in seconds since the Unix epoch.",
+              "description": "Deprecated alias for `msecs`; timestamp in seconds since the Unix epoch.",
               "name": "secs",
               "optional": true,
               "type": "number"
@@ -1133,7 +1133,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Unix timestamp in seconds.",
+              "description": "Deprecated alias for `msecs`; Unix timestamp in seconds.",
               "name": "secs",
               "optional": true,
               "type": "number"

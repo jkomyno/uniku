@@ -258,8 +258,8 @@ describe('ksuid', () => {
   })
 
   describe('deprecated secs alias', () => {
-    // TODO(v1-rc): remove this block together with the `secs` option.
-    it('accepts whole seconds until v1-rc', () => {
+    // TODO(v1-rc.1): remove this block together with the `secs` option.
+    it('accepts whole seconds until 1.0.0-rc.1', () => {
       const id = ksuid({ secs: 1_500_000_000, random: new Uint8Array(16) })
       expect(ksuid.timestamp(id)).toBe(1_500_000_000_000)
     })

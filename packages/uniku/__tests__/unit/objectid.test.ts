@@ -104,8 +104,8 @@ describe('objectid', () => {
   })
 
   describe('deprecated secs alias', () => {
-    // TODO(v1-rc): remove this block together with the `secs` option.
-    it('accepts whole seconds until v1-rc', () => {
+    // TODO(v1-rc.1): remove this block together with the `secs` option.
+    it('accepts whole seconds until 1.0.0-rc.1', () => {
       const id = objectid({ secs: 1_700_000_000, random: new Uint8Array(5), counter: 0 })
       expect(objectid.timestamp(id)).toBe(1_700_000_000_000)
     })

@@ -55,11 +55,11 @@ export type NanoidOptions = {
    */
   length?: number
   /**
-   * Length of generated ID.
+   * Deprecated alias for `length`.
    *
-   * @deprecated Use `length` instead. Will be removed at v1-rc.
+   * @deprecated Use `length` instead. Will be removed in `1.0.0-rc.1`.
    */
-  // TODO(v1-rc): remove this alias (tracked in docs/STABILITY.md).
+  // TODO(v1-rc.1): remove this alias (tracked in docs/STABILITY.md).
   size?: number
 }
 
