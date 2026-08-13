@@ -4,6 +4,8 @@ import { useMetricAtom } from 'codemod:metrics'
 import { type AuditCandidate, classifyAuditCandidates, renderAuditFinding } from './audit.ts'
 import { type PlannedEdit, planEdits } from './edit-plan.ts'
 import {
+  ERROR_CODE_BY_SOURCE,
+  type ErrorCodeMigration,
   GENERATOR_BY_MODULE,
   GENERATOR_MIGRATIONS,
   type GeneratorMigration,
@@ -611,6 +613,213 @@ const processCuidDynamicImports = (
   }
 }
 
+interface PropertyAccess {
+  readonly member: Node
+  readonly receiver: Node
+}
+
+const binaryOperator = (node: Node): string | null => nodeField(node, 'operator')?.text() ?? null
+
+const nonComputedPropertyAccess = (node: Node, propertyName: string): PropertyAccess | null => {
+  const member = transparentExpression(node)
+  if (member.kind() !== 'member_expression' || member.text().includes('?.')) return null
+
+  const property = nodeField(member, 'property')
+  const receiver = nodeField(member, 'object')
+  if (!property || property.text() !== propertyName || !receiver) return null
+  if (
+    receiver.kind() === 'call_expression' ||
+    findAll(receiver, 'call_expression').length > 0 ||
+    findAll(receiver, 'subscript_expression').length > 0 ||
+    receiver.text().includes('?.')
+  ) {
+    return null
+  }
+  if (!['identifier', 'member_expression', 'parenthesized_expression', 'this'].includes(nodeKind(receiver))) return null
+
+  return { member, receiver }
+}
+
+const equalityLiteral = (node: Node): { readonly access: PropertyAccess; readonly literal: Node } | null => {
+  if (node.kind() !== 'binary_expression') return null
+  const left = nodeField(node, 'left')
+  const right = nodeField(node, 'right')
+  if (!left || !right) return null
+
+  const leftAccess = nonComputedPropertyAccess(left, 'strategy')
+  const rightAccess = nonComputedPropertyAccess(right, 'strategy')
+  if (leftAccess && stringValue(transparentExpression(right)) !== null) {
+    return { access: leftAccess, literal: transparentExpression(right) }
+  }
+  if (rightAccess && stringValue(transparentExpression(left)) !== null) {
+    return { access: rightAccess, literal: transparentExpression(left) }
+  }
+  return null
+}
+
+const flattenConjuncts = (node: Node): Node[] => {
+  const expression = transparentExpression(node)
+  if (expression.kind() !== 'binary_expression' || binaryOperator(expression) !== '&&') return [expression]
+  const left = nodeField(expression, 'left')
+  const right = nodeField(expression, 'right')
+  return left && right ? [...flattenConjuncts(left), ...flattenConjuncts(right)] : [expression]
+}
+
+const containingConjunction = (comparison: Node): Node | null => {
+  let current = comparison
+  let conjunction: Node | null = null
+
+  for (const ancestor of comparison.ancestors()) {
+    if (ancestor.kind() === 'parenthesized_expression') {
+      current = ancestor
+      continue
+    }
+    if (ancestor.kind() !== 'binary_expression' || binaryOperator(ancestor) !== '&&') break
+    const left = nodeField(ancestor, 'left')
+    const right = nodeField(ancestor, 'right')
+    if (
+      (!left || !isInsideRange(current, left.range().start.index, left.range().end.index)) &&
+      (!right || !isInsideRange(current, right.range().start.index, right.range().end.index))
+    ) {
+      break
+    }
+    conjunction = ancestor
+    current = ancestor
+  }
+
+  return conjunction
+}
+
+const strategyConjunctState = (
+  comparison: Node,
+  receiverText: string,
+  expectedStrategy: string,
+): 'absent' | 'matching' | 'conflicting' => {
+  const conjunction = containingConjunction(comparison)
+  if (!conjunction) return 'absent'
+
+  let matching = false
+  for (const conjunct of flattenConjuncts(conjunction)) {
+    if (sameRange(conjunct, comparison)) continue
+    const predicate = equalityLiteral(conjunct)
+    if (!predicate || predicate.access.receiver.text() !== receiverText) continue
+
+    if (binaryOperator(conjunct) === '===' && stringValue(predicate.literal) === expectedStrategy) matching = true
+    else return 'conflicting'
+  }
+
+  return matching ? 'matching' : 'absent'
+}
+
+const comparisonWithTargetCode = (comparison: Node, literal: Node, targetCode: string): string => {
+  const comparisonRange = comparison.range()
+  const literalRange = literal.range()
+  const start = literalRange.start.index - comparisonRange.start.index
+  const end = literalRange.end.index - comparisonRange.start.index
+  return `${comparison.text().slice(0, start)}${replacementForString(literal, targetCode)}${comparison.text().slice(end)}`
+}
+
+const processErrorComparisons = (
+  rootNode: Node,
+  path: string,
+  candidates: PlannedEdit[],
+  groups: Map<string, GroupMetadata>,
+  audits: AuditCandidate[],
+  handledLegacyStarts: Set<number>,
+): void => {
+  for (const comparison of findAll(rootNode, 'binary_expression')) {
+    if (binaryOperator(comparison) !== '===') continue
+    const left = nodeField(comparison, 'left')
+    const right = nodeField(comparison, 'right')
+    if (!left || !right) continue
+
+    const leftLiteral = transparentExpression(left)
+    const rightLiteral = transparentExpression(right)
+    const leftMigration = ERROR_CODE_BY_SOURCE.get(stringValue(leftLiteral) ?? '')
+    const rightMigration = ERROR_CODE_BY_SOURCE.get(stringValue(rightLiteral) ?? '')
+    const literal = leftMigration ? leftLiteral : rightMigration ? rightLiteral : null
+    const migration = leftMigration ?? rightMigration
+    if (!literal || !migration) continue
+
+    const otherOperand = leftMigration ? right : left
+    const codeAccess = nonComputedPropertyAccess(otherOperand, 'code')
+    handledLegacyStarts.add(literal.range().start.index)
+    if (!codeAccess) {
+      audits.push(
+        sourcePositionFinding(
+          literal,
+          path,
+          RULES.error,
+          'The legacy code is not compared with a recoverable, non-computed .code receiver.',
+        ),
+      )
+      continue
+    }
+
+    const strategyState = strategyConjunctState(comparison, codeAccess.receiver.text(), migration.strategy)
+    if (strategyState === 'conflicting') {
+      audits.push(
+        sourcePositionFinding(
+          literal,
+          path,
+          RULES.error,
+          'The surrounding conjunction already checks a different strategy for this receiver.',
+        ),
+      )
+      continue
+    }
+
+    const group = `error-comparison:${comparison.range().start.index}`
+    if (strategyState === 'matching') {
+      addEdit(candidates, groups, literal, replacementForString(literal, migration.targetCode), group, RULES.error)
+      continue
+    }
+
+    const quote = literal.text()[0]
+    const codeComparison = comparisonWithTargetCode(comparison, literal, migration.targetCode)
+    const replacement = `(${codeComparison} && ${codeAccess.receiver.text()}.strategy === ${quote}${migration.strategy}${quote})`
+    addEdit(candidates, groups, comparison, replacement, group, RULES.error)
+  }
+}
+
+const unsupportedLegacyReason = (literal: Node): string => {
+  const ancestors = literal.ancestors()
+  const binary = ancestors.find((ancestor) => ancestor.kind() === 'binary_expression')
+  if (binary) {
+    const operator = binaryOperator(binary)
+    if (operator !== '===') return `The ${operator ?? 'unknown'} comparison is not a strict positive equality.`
+  }
+  if (ancestors.some((ancestor) => ancestor.kind() === 'switch_case')) {
+    return 'Switch labels require case-specific manual migration.'
+  }
+  if (ancestors.some((ancestor) => ancestor.kind() === 'array')) {
+    return 'Legacy codes stored in arrays require data-flow-aware manual migration.'
+  }
+  if (ancestors.some((ancestor) => ['pair', 'object'].includes(nodeKind(ancestor)))) {
+    return 'Legacy codes stored in lookup objects require data-flow-aware manual migration.'
+  }
+  if (ancestors.some((ancestor) => ['object_pattern', 'pair_pattern'].includes(nodeKind(ancestor)))) {
+    return 'Destructured legacy codes require data-flow-aware manual migration.'
+  }
+  if (ancestors.some((ancestor) => ancestor.kind() === 'variable_declarator')) {
+    return 'Legacy codes stored in variables require data-flow-aware manual migration.'
+  }
+  return 'This legacy code is not used in a supported direct .code equality.'
+}
+
+const auditUnsupportedErrorCodes = (
+  rootNode: Node,
+  path: string,
+  audits: AuditCandidate[],
+  handledLegacyStarts: ReadonlySet<number>,
+): void => {
+  for (const literal of findAll(rootNode, 'string')) {
+    const migration: ErrorCodeMigration | undefined = ERROR_CODE_BY_SOURCE.get(stringValue(literal) ?? '')
+    if (!migration || handledLegacyStarts.has(literal.range().start.index)) continue
+    audits.push(sourcePositionFinding(literal, path, RULES.error, unsupportedLegacyReason(literal)))
+  }
+}
+
 const auditUnsupportedModuleUses = (
   rootNode: Node,
   path: string,
@@ -673,6 +882,7 @@ const codemod: Codemod<TypesMap> = async (root) => {
   const groups = new Map<string, GroupMetadata>()
   const audits: AuditCandidate[] = []
   const scheduledSourceStarts = new Set<number>()
+  const handledLegacyStarts = new Set<number>()
 
   processCuidImports(rootNode, root.filename(), path, candidates, groups, audits, scheduledSourceStarts)
   processCuidReexports(rootNode, path, candidates, groups, audits, scheduledSourceStarts)
@@ -686,7 +896,10 @@ const codemod: Codemod<TypesMap> = async (root) => {
     if (migration) processOptionCall(call, migration, path, candidates, groups, audits)
   }
 
+  processErrorComparisons(rootNode, path, candidates, groups, audits, handledLegacyStarts)
+
   auditUnsupportedModuleUses(rootNode, path, audits, scheduledSourceStarts)
+  auditUnsupportedErrorCodes(rootNode, path, audits, handledLegacyStarts)
 
   const editPlan = planEdits(candidates)
   for (const groupId of editPlan.rejectedGroupIds) {

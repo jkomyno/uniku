@@ -11,7 +11,9 @@ import expectedFindings from './integration/expected-findings.json'
 
 const testDirectory = dirname(fileURLToPath(import.meta.url))
 const packageRoot = resolve(testDirectory, '..')
+const repositoryRoot = resolve(packageRoot, '../..')
 const codemodBinary = resolve(packageRoot, 'node_modules/.bin/codemod')
+const typescriptBinary = resolve(repositoryRoot, 'node_modules/.bin/tsc')
 
 const run = (command: string, args: readonly string[], cwd: string): string =>
   execFileSync(command, [...args], {
@@ -98,6 +100,7 @@ const parseAuditOutput = (output: string): AuditFinding[] =>
 describe('local workflow integration', () => {
   it('migrates the fixture, emits structured findings, and is idempotent', () => {
     const target = mkdtempSync(join(tmpdir(), 'uniku-v1-codemod-'))
+    const artifacts = mkdtempSync(join(tmpdir(), 'uniku-v1-artifacts-'))
 
     try {
       cpSync(resolve(testDirectory, 'integration/consumer'), target, { recursive: true })
@@ -144,8 +147,16 @@ describe('local workflow integration', () => {
         packageRoot,
       )
       expect(run('git', ['status', '--porcelain'], target)).toBe('')
+
+      run('pnpm', ['--filter', 'uniku', 'build'], repositoryRoot)
+      const tarball = join(artifacts, 'uniku.tgz')
+      run('pnpm', ['--filter', 'uniku', 'pack', '--out', tarball], repositoryRoot)
+      run('pnpm', ['add', '--offline', '--ignore-scripts', '--save-exact', tarball], target)
+      run(typescriptBinary, ['-p', 'tsconfig.json'], target)
+      run(process.execPath, ['runtime.mjs'], target)
     } finally {
       rmSync(target, { recursive: true, force: true })
+      rmSync(artifacts, { recursive: true, force: true })
     }
   }, 30_000)
 })
