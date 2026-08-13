@@ -1,5 +1,11 @@
 # uniku
 
+## 1.0.0-rc.1
+
+### Patch Changes
+
+- Remove the deprecated `secs`, `seq`, and Nanoid object-form `size` aliases after their final migration release in `0.6.0`. Use `msecs`, `counter`, and `length` instead.
+
 ## 1.0.0-rc.0
 
 ### Major Changes
