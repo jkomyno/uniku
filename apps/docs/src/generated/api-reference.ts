@@ -169,12 +169,6 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "name": "counter",
               "optional": true,
               "type": "number"
-            },
-            {
-              "description": "Deprecated alias for `counter`; unsigned 32-bit sequence value.",
-              "name": "seq",
-              "optional": true,
-              "type": "number"
             }
           ],
           "typeName": "UuidV7Options"
@@ -425,12 +419,6 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "name": "counter",
               "optional": true,
               "type": "number"
-            },
-            {
-              "description": "Deprecated alias for `counter`; unsigned 32-bit sequence value.",
-              "name": "seq",
-              "optional": true,
-              "type": "number"
             }
           ],
           "typeName": "TypeidOptions"
@@ -581,12 +569,12 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "Uint8Array"
             }
           ],
-          "typeName": "Cuid2Options"
+          "typeName": "CuidV2Options"
         },
         "signatures": [
           {
             "description": "Generate a CUID v2 string.",
-            "text": "cuidv2(options?: Cuid2Options): string"
+            "text": "cuidv2(options?: CuidV2Options): string"
           }
         ]
       },
@@ -604,7 +592,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         ]
       }
     ],
-    "sourcePath": "packages/uniku/src/cuid2/cuid2.ts"
+    "sourcePath": "packages/uniku/src/cuid/v2.ts"
   },
   "nanoid": {
     "description": "Generate a URL-friendly unique string ID. Nanoid is a tiny, secure, URL-friendly unique string ID generator. It uses a URL-safe alphabet (A-Za-z0-9_-) and generates 21-character IDs by default with 126 bits of entropy. Unlike UUID v7 or ULID, nanoid is NOT time-ordered. Use it for: - URL shorteners - Session tokens - Invite codes - Any case where you need short, random IDs",
@@ -632,12 +620,6 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
             {
               "description": "Length of generated ID. Default: 21. Maximum: 2048.",
               "name": "length",
-              "optional": true,
-              "type": "number"
-            },
-            {
-              "description": "Deprecated alias for `length`.",
-              "name": "size",
               "optional": true,
               "type": "number"
             }
@@ -695,12 +677,6 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
             {
               "description": "Timestamp in milliseconds since the Unix epoch. Defaults to Date.now(). KSUID stores whole seconds, so sub-second precision is truncated.",
               "name": "msecs",
-              "optional": true,
-              "type": "number"
-            },
-            {
-              "description": "Deprecated alias for `msecs`; timestamp in seconds since the Unix epoch.",
-              "name": "secs",
               "optional": true,
               "type": "number"
             }
@@ -823,12 +799,6 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
             {
               "description": "Timestamp in milliseconds since the Unix epoch. Defaults to Date.now(). ObjectID stores whole seconds, so sub-second precision is truncated.",
               "name": "msecs",
-              "optional": true,
-              "type": "number"
-            },
-            {
-              "description": "Deprecated alias for `msecs`; timestamp in seconds since the Unix epoch.",
-              "name": "secs",
               "optional": true,
               "type": "number"
             },
@@ -1129,12 +1099,6 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
             {
               "description": "Unix timestamp in milliseconds. Defaults to Date.now(). XID stores whole seconds, so sub-second precision is truncated.",
               "name": "msecs",
-              "optional": true,
-              "type": "number"
-            },
-            {
-              "description": "Deprecated alias for `msecs`; Unix timestamp in seconds.",
-              "name": "secs",
               "optional": true,
               "type": "number"
             },

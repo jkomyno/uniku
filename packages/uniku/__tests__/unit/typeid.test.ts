@@ -142,27 +142,6 @@ describe('typeid', () => {
     })
   })
 
-  describe('deprecated seq alias', () => {
-    // TODO(v1-rc.1): remove this block together with the `seq` option.
-    it('produces the same output as counter until 1.0.0-rc.1', () => {
-      const bySeq = typeid('user', { msecs: FIXED_MSECS, seq: 0x12345678, random: ZERO_RANDOM })
-      const byCounter = typeid('user', { msecs: FIXED_MSECS, counter: 0x12345678, random: ZERO_RANDOM })
-      expect(bySeq).toBe(byCounter)
-    })
-
-    it('rejects passing both counter and seq', () => {
-      let error: unknown
-      try {
-        typeid('user', { counter: 1, seq: 1 })
-      } catch (caught) {
-        error = caught
-      }
-
-      expect(error).toBeInstanceOf(InvalidInputError)
-      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'typeid' })
-    })
-  })
-
   describe('prefix validation', () => {
     it('accepts lowercase snake_case prefixes', () => {
       expect(typeid.isValid(typeid('api_key'))).toBe(true)

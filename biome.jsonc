@@ -21,6 +21,12 @@
       "!apps/docs/.source",
       "!apps/docs/src/generated",
       "!apps/docs/src/routeTree.gen.ts",
+      // Codemod fixtures intentionally contain pre-migration and unsupported syntax.
+      "!codemods/v1/tests/**/input.*",
+      "!codemods/v1/tests/**/expected.*",
+      "!codemods/v1/tests/**/metrics.json",
+      "!codemods/v1/tests/integration/consumer",
+      "!codemods/v1/tests/integration/expected",
       "!**/.turbo",
       "!public",
       // Read-only source clone of Effect (git submodule) — never lint.

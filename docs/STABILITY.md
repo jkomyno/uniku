@@ -29,8 +29,8 @@ generator or metadata module they use.
 
 ### CUID2 migration
 
-`uniku/cuid2` is a pre-1.0 compatibility alias. It will be removed in
-`uniku@1.0.0`; it is not part of the v1 contract.
+The v1 release candidate removes the pre-1.0 `uniku/cuid2` compatibility
+alias. It is not part of the v1 contract.
 
 ```ts
 // Before v1
@@ -43,20 +43,21 @@ import { cuidv2 } from 'uniku/cuid/v2'
 After v1, deprecated APIs remain available for the rest of their current major
 version and are removed only in the next major version.
 
-### v1.0.0-rc.1 cleanup checklist
+### v1 release candidate contract
 
-The following deprecated surfaces remain available through `uniku@0.6.0` and
-must be removed in `uniku@1.0.0-rc.1`. Code-level reminders live in
-`TODO(v1-rc.1)` comments next to each deprecated surface.
+`uniku@0.6.0` was the final release for the deprecated `secs`, `seq`, and
+object-form Nanoid `size` aliases. `uniku@1.0.0-rc.1` removes them. The release
+candidate exposes only the canonical v1 spellings:
 
-- `uniku/cuid2` entry point (see CUID2 migration above).
-- `secs` timestamp options in `uniku/ksuid`, `uniku/objectid`, and `uniku/xid`
-  (superseded by the unified `msecs` option); the seconds-based `--timestamp`
-  parsing in `@uniku/cli` is already gone.
-- `seq` counter option in `uniku/uuid/v7` (superseded by `counter`, inherited
-  by `uniku/typeid`).
-- `size` length option in `uniku/nanoid` (superseded by `length`); the CLI's
-  `--size` flag was renamed to `--length` at the same time.
+- `uniku/cuid/v2` and its `cuidv2` export are the sole CUID v2 entry point and
+  generator name.
+- `msecs` is the sole timestamp option in `uniku/ksuid`, `uniku/objectid`, and
+  `uniku/xid`. These formats truncate milliseconds to their stored
+  second-precision representation.
+- `counter` is the sole explicit UUID v7 counter option and is inherited by
+  `uniku/typeid`.
+- Nanoid's object form uses `length`; the positional `nanoid(number)` overload
+  remains supported.
 
 ## Runtime support
 
@@ -94,8 +95,8 @@ existing entry points isolated and tree-shakeable.
 ### Input boundaries
 
 Public numeric inputs must be finite integers within the format's documented
-range. This includes timestamps, sequence values, counters, node IDs, lengths,
-sizes, and buffer offsets. Invalid values fail with a typed `UniqueIdError`;
+range. This includes timestamps, counters, node IDs, lengths, and buffer
+offsets. Invalid values fail with a typed `UniqueIdError`;
 they are never clamped, truncated, or wrapped silently.
 
 `fromBytes()` requires the format's exact canonical byte length. Buffer-writing
@@ -132,7 +133,7 @@ starts.
 - XID keeps a random per-runtime identity and always-incrementing counter.
 - TSID keeps its node ID and advances virtual time if its per-millisecond
   counter overflows.
-- Explicit timestamp, sequence, random, node, or counter options do not mutate
+- Explicit timestamp, random, node, or counter options do not mutate
   the default generator state.
 
 Monotonicity is process-local. It does not coordinate independent machines or

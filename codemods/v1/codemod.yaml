@@ -1,0 +1,15 @@
+schema_version: "1.0"
+name: "@jkomyno/uniku-v1"
+version: "0.1.0"
+description: "Migrate supported uniku 0.6 source contracts to v1"
+author: "Alberto Schiabel <alberto.schiabel@gmail.com>"
+license: "MIT"
+workflow: "workflow.yaml"
+repository: "https://github.com/jkomyno/uniku"
+category: "migration"
+targets:
+  languages: ["javascript", "typescript", "tsx"]
+keywords: ["uniku", "v1", "migration"]
+registry:
+  access: "public"
+  visibility: "public"

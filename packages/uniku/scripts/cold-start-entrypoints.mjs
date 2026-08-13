@@ -5,7 +5,6 @@ const INVOKE = {
   'uuid/v7': (module) => module.uuidv7(),
   ulid: (module) => module.ulid(),
   typeid: (module) => module.typeid('benchmark'),
-  cuid2: (module) => module.cuid2(),
   'cuid/v2': (module) => module.cuidv2(),
   nanoid: (module) => module.nanoid(),
   ksuid: (module) => module.ksuid(),

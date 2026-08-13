@@ -1,5 +1,5 @@
 import { bench, describe } from 'vitest'
-import { cuid2 } from '@/src/cuid2/cuid2'
+import { cuidv2 } from '@/src/cuid/v2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
@@ -52,9 +52,9 @@ describe('ID Generation', () => {
   )
 
   bench(
-    'cuid2',
+    'cuidv2',
     () => {
-      cuid2()
+      cuidv2()
     },
     benchOptions,
   )
@@ -78,7 +78,7 @@ describe('ID Generation', () => {
   bench(
     'nanoid({ alphabet: hex })',
     () => {
-      nanoid({ alphabet: '0123456789abcdef', size: 12 })
+      nanoid({ alphabet: '0123456789abcdef', length: 12 })
     },
     benchOptions,
   )
@@ -277,7 +277,7 @@ describe('ID isValid', () => {
   const v7String = uuidv7()
   const ulidString = ulid()
   const typeidString = typeid('user')
-  const cuid2String = cuid2()
+  const cuidv2String = cuidv2()
   const ksuidString = ksuid()
   const objectidString = objectid()
   const tsidId = tsid()
@@ -316,9 +316,9 @@ describe('ID isValid', () => {
   )
 
   bench(
-    'cuid2.isValid',
+    'cuidv2.isValid',
     () => {
-      cuid2.isValid(cuid2String)
+      cuidv2.isValid(cuidv2String)
     },
     benchOptions,
   )

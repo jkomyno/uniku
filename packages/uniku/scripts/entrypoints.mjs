@@ -17,7 +17,6 @@ const ENTRIES = [
   { subpath: './uuid/v7', src: 'src/uuid/v7.ts' },
   { subpath: './ulid', src: 'src/ulid/ulid.ts' },
   { subpath: './typeid', src: 'src/typeid/typeid.ts' },
-  { subpath: './cuid2', src: 'src/cuid2/cuid2.ts', hasExternal: true },
   { subpath: './cuid/v2', src: 'src/cuid/v2.ts', hasExternal: true },
   { subpath: './nanoid', src: 'src/nanoid/nanoid.ts' },
   { subpath: './ksuid', src: 'src/ksuid/ksuid.ts' },

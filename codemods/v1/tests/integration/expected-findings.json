@@ -1,0 +1,18 @@
+[
+  {
+    "ruleId": "uniku-v1/counter-options",
+    "path": "unsupported.mjs",
+    "line": 5,
+    "column": 42,
+    "reason": "An object spread makes seq precedence ambiguous.",
+    "guideUrl": "https://jkomyno.github.io/uniku/docs/migration/v1/#rename-uuid-v7-and-typeid-counters"
+  },
+  {
+    "ruleId": "uniku-v1/error-codes",
+    "path": "unsupported.mjs",
+    "line": 6,
+    "column": 29,
+    "reason": "Legacy codes stored in arrays require data-flow-aware manual migration.",
+    "guideUrl": "https://jkomyno.github.io/uniku/docs/migration/v1/#update-error-code-matches"
+  }
+]

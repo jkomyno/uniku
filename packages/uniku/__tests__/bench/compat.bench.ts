@@ -8,7 +8,7 @@ import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-j
 import { ulid as npmUlid } from 'ulid'
 import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
 import { describe, bench as registerBench } from 'vitest'
-import { cuid2 } from '@/src/cuid2/cuid2'
+import { cuidv2 } from '@/src/cuid/v2'
 import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
@@ -53,7 +53,7 @@ const testIds = {
   unikuUlid: ulid(),
   unikuTypeid: typeid('user'),
   unikuNanoid: nanoid(),
-  unikuCuid2: cuid2(),
+  unikuCuid2: cuidv2(),
   unikuKsuid: ksuid(),
   unikuObjectid: objectid(),
   unikuTsid: tsid.toString(tsid()),
@@ -177,7 +177,7 @@ describe('Generation', () => {
     bench(
       'uniku',
       () => {
-        cuid2()
+        cuidv2()
       },
       benchOptions,
     )
@@ -354,7 +354,7 @@ describe('Validation', () => {
     bench(
       'uniku',
       () => {
-        cuid2.isValid(testIds.npmCuid2)
+        cuidv2.isValid(testIds.npmCuid2)
       },
       benchOptions,
     )

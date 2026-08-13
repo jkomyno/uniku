@@ -83,7 +83,7 @@ async function calculateWithBun(entry: EntryPoint): Promise<BundleSize> {
   const minifiedBytes = new Uint8Array(minifiedContent)
   const gzipped = Bun.gzipSync(minifiedBytes, { level: 9 })
 
-  // Whether this entry uses external deps (cuid2 uses @noble/hashes)
+  // Whether this entry uses external deps (cuid/v2 uses @noble/hashes)
   const { hasExternal } = entry
 
   return {
@@ -136,7 +136,7 @@ async function calculateWithTsdown(entry: EntryPoint): Promise<BundleSize> {
   // Cleanup temp directory
   await Bun.spawn(['rm', '-rf', tmpDir]).exited
 
-  // Whether this entry uses external deps (cuid2 uses @noble/hashes)
+  // Whether this entry uses external deps (cuid/v2 uses @noble/hashes)
   const { hasExternal } = entry
 
   return {
