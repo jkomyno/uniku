@@ -147,13 +147,13 @@ Bypasses monotonic state when options provided.
 ulid(options, buf, offset) -> buf
 ```
 Write 16-byte ULID to provided buffer at offset.
-Throws RangeError if buffer too small.
+Throws `BufferError` if the buffer is too small.
 
 ```
 ulid.toBytes(id) -> Uint8Array
 ```
 Convert 26-character Base32 string to 16-byte Uint8Array.
-Case-insensitive. Throws Error on invalid input.
+Case-insensitive. Throws `ParseError` on invalid input.
 
 ```
 ulid.fromBytes(bytes) -> string

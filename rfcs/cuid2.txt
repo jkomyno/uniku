@@ -109,7 +109,7 @@ Generate a CUID2 with custom options.
 - `options.length`: Length of ID (default: 24, range: 2-32)
 - `options.random`: Deterministic random bytes for testing
 
-Throws RangeError if length < 2 or > 32.
+Throws `InvalidInputError` if length < 2 or > 32.
 
 ```
 cuidv2.isValid(id) -> boolean
@@ -296,8 +296,8 @@ cuidv2.isValid("ab-cd")                      // false (hyphen not allowed)
 ### Example 4: Invalid Inputs
 | Input | Reason Invalid |
 |-------|----------------|
-| `cuidv2({ length: 1 })` | Length < 2 throws RangeError |
-| `cuidv2({ length: 33 })` | Length > 32 throws RangeError |
+| `cuidv2({ length: 1 })` | Length < 2 throws `InvalidInputError` |
+| `cuidv2({ length: 33 })` | Length > 32 throws `InvalidInputError` |
 | `""` | Empty string fails validation |
 | `"1abcdefghij"` | Starts with digit |
 | `"UPPERCASE"` | Contains uppercase letters |
