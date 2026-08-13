@@ -1,0 +1,10 @@
+[
+  {
+    "ruleId": "uniku-v1/counter-options",
+    "path": "index.ts",
+    "line": 6,
+    "column": 73,
+    "reason": "An object spread makes seq precedence ambiguous.",
+    "guideUrl": "https://jkomyno.github.io/uniku/docs/migration/v1/#rename-uuid-v7-and-typeid-counters"
+  }
+]
