@@ -79,23 +79,31 @@ const findAuditRecords = (value: unknown): AuditFinding[] => {
 }
 
 const parseAuditOutput = (output: string): AuditFinding[] =>
-  output
-    .split('\n')
-    .filter(Boolean)
-    .flatMap((line) => {
-      try {
-        return findAuditRecords(JSON.parse(line) as unknown)
-      } catch {
-        return []
-      }
-    })
-    .sort(
-      (left, right) =>
-        left.path.localeCompare(right.path) ||
-        left.line - right.line ||
-        left.column - right.column ||
-        left.ruleId.localeCompare(right.ruleId),
-    )
+  findAuditRecords(output).sort(
+    (left, right) =>
+      left.path.localeCompare(right.path) ||
+      left.line - right.line ||
+      left.column - right.column ||
+      left.ruleId.localeCompare(right.ruleId),
+  )
+
+const runWorkflow = (target: string): string =>
+  run(
+    codemodBinary,
+    [
+      'workflow',
+      'run',
+      '-w',
+      packageRoot,
+      '-t',
+      target,
+      '--no-interactive',
+      '--format',
+      'jsonl',
+      '--disable-analytics',
+    ],
+    packageRoot,
+  )
 
 describe('local workflow integration', () => {
   it('migrates the fixture, emits structured findings, and is idempotent', () => {
@@ -108,44 +116,14 @@ describe('local workflow integration', () => {
       run('git', ['add', '.'], target)
       run('git', ['commit', '--quiet', '-m', 'fixture'], target)
 
-      const output = run(
-        codemodBinary,
-        [
-          'workflow',
-          'run',
-          '-w',
-          packageRoot,
-          '-t',
-          target,
-          '--no-interactive',
-          '--format',
-          'jsonl',
-          '--disable-analytics',
-        ],
-        packageRoot,
-      )
+      const output = runWorkflow(target)
 
       expect(readTree(target)).toEqual(readTree(resolve(testDirectory, 'integration/expected')))
       expect(parseAuditOutput(output)).toEqual(expectedFindings)
 
       run('git', ['add', '.'], target)
       run('git', ['commit', '--quiet', '-m', 'migrated'], target)
-      run(
-        codemodBinary,
-        [
-          'workflow',
-          'run',
-          '-w',
-          packageRoot,
-          '-t',
-          target,
-          '--no-interactive',
-          '--format',
-          'jsonl',
-          '--disable-analytics',
-        ],
-        packageRoot,
-      )
+      runWorkflow(target)
       expect(run('git', ['status', '--porcelain'], target)).toBe('')
 
       run('pnpm', ['--filter', 'uniku', 'build'], repositoryRoot)

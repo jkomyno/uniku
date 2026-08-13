@@ -1,5 +1,6 @@
 import { sha3_512 } from '@noble/hashes/sha3.js'
 import { randomUint32 } from '../common/random'
+import { isIntegerInRange } from '../common/validation'
 import { InvalidInputError } from '../errors'
 
 export type CuidV2Options = {
@@ -141,10 +142,7 @@ function getRandomFn(random?: Uint8Array): () => number {
 function cuidv2Fn(options?: CuidV2Options): string {
   const requestedLength = options?.length
 
-  if (
-    requestedLength !== undefined &&
-    (!Number.isInteger(requestedLength) || requestedLength < MIN_LENGTH || requestedLength > MAX_LENGTH)
-  ) {
+  if (requestedLength !== undefined && !isIntegerInRange(requestedLength, MIN_LENGTH, MAX_LENGTH)) {
     throw new InvalidInputError(
       'LENGTH_OUT_OF_RANGE',
       `CUID2 length must be between ${MIN_LENGTH} and ${MAX_LENGTH}. Received: ${requestedLength}`,

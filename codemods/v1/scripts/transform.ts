@@ -30,6 +30,27 @@ interface GroupMetadata {
   readonly rule: MigrationRule
 }
 
+/**
+ * Per-file traversal results and accumulators shared by every migration pass.
+ * The node lists are gathered once because each pass would otherwise re-walk
+ * the whole tree looking for the same node kinds.
+ */
+interface MigrationContext {
+  readonly rootNode: Node
+  readonly filename: string
+  readonly path: string
+  readonly importStatements: readonly Node[]
+  readonly callExpressions: readonly Node[]
+  readonly stringLiterals: readonly Node[]
+  /** Memoized: only files importing the legacy module ever need this scan. */
+  readonly hasCuidv2Collision: () => boolean
+  readonly candidates: PlannedEdit[]
+  readonly groups: Map<string, GroupMetadata>
+  readonly audits: AuditCandidate[]
+  readonly scheduledSourceStarts: Set<number>
+  readonly handledLegacyStarts: Set<number>
+}
+
 const manualMigrationMetric = useMetricAtom('uniku-v1-manual-migrations')
 
 const findAll = (node: Node, kind: string): Node[] => node.findAll({ rule: { kind } }) as Node[]
@@ -59,18 +80,14 @@ const isInsideRange = (node: Node, start: number, end: number): boolean => {
   return range.start.index >= start && range.end.index <= end
 }
 
-const collectReferences = (localNode: Node, filename: string): ReadonlySet<number> => {
-  const starts = new Set<number>()
+const referencesInFile = (localNode: Node, filename: string): Node[] =>
+  localNode
+    .references()
+    .filter((fileReferences) => fileReferences.root.filename() === filename)
+    .flatMap((fileReferences) => fileReferences.nodes)
 
-  for (const fileReferences of localNode.references()) {
-    if (fileReferences.root.filename() !== filename) continue
-    for (const reference of fileReferences.nodes) {
-      starts.add(reference.range().start.index)
-    }
-  }
-
-  return starts
-}
+const collectReferences = (localNode: Node, filename: string): ReadonlySet<number> =>
+  new Set(referencesInFile(localNode, filename).map((reference) => reference.range().start.index))
 
 const createBinding = (
   kind: Binding['kind'],
@@ -103,50 +120,56 @@ const resolvesToBinding = (node: Node, binding: Binding): boolean => {
   )
 }
 
-const sourcePositionFinding = (node: Node, path: string, rule: MigrationRule, reason: string): AuditCandidate => {
+const addAudit = (context: MigrationContext, node: Node, rule: MigrationRule, reason: string): void => {
   const range = node.range()
-  return {
+  context.audits.push({
     startPos: range.start.index,
     endPos: range.end.index,
     ruleId: rule.id,
-    path,
+    path: context.path,
     line: range.start.line + 1,
     column: range.start.column + 1,
     reason,
     guideUrl: rule.guideUrl,
-  }
+  })
 }
 
 const addEdit = (
-  candidates: PlannedEdit[],
-  groups: Map<string, GroupMetadata>,
+  context: MigrationContext,
   node: Node,
   insertedText: string,
   atomicGroup: string,
   rule: MigrationRule,
 ): void => {
   const range = node.range()
-  candidates.push({
+  context.candidates.push({
     startPos: range.start.index,
     endPos: range.end.index,
     insertedText,
     atomicGroup,
     ruleId: rule.id,
   })
-  groups.set(atomicGroup, { node, rule })
+  context.groups.set(atomicGroup, { node, rule })
 }
+
+/**
+ * Wrappers an ancestor walk may step through while still describing the same
+ * value. Note this set omits `type_assertion`, which is only ever unwrapped
+ * downwards by `transparentExpression`.
+ */
+const TRANSPARENT_ANCESTOR_KINDS = new Set([
+  'await_expression',
+  'parenthesized_expression',
+  'as_expression',
+  'satisfies_expression',
+])
+
+const TRANSPARENT_EXPRESSION_KINDS = new Set([...TRANSPARENT_ANCESTOR_KINDS, 'type_assertion'])
 
 const transparentExpression = (node: Node): Node => {
   let current = node
-  const transparentKinds = new Set([
-    'await_expression',
-    'parenthesized_expression',
-    'as_expression',
-    'satisfies_expression',
-    'type_assertion',
-  ])
 
-  while (transparentKinds.has(nodeKind(current))) {
+  while (TRANSPARENT_EXPRESSION_KINDS.has(nodeKind(current))) {
     const next =
       nodeField(current, 'expression') ??
       nodeField(current, 'argument') ??
@@ -192,26 +215,26 @@ const patternImportedName = (pattern: Node): string | null => {
   return nodeField(pattern, 'key')?.text() ?? null
 }
 
-const discoverGeneratorBindings = (rootNode: Node, filename: string): Binding[] => {
+const discoverGeneratorBindings = (context: MigrationContext): Binding[] => {
   const bindings: Binding[] = []
 
-  for (const statement of findAll(rootNode, 'import_statement')) {
+  for (const statement of context.importStatements) {
     const migration = GENERATOR_BY_MODULE.get(stringValue(nodeField(statement, 'source')) ?? '')
     if (!migration) continue
 
     for (const specifier of findAll(statement, 'import_specifier')) {
       if (nodeField(specifier, 'name')?.text() !== migration.exportName) continue
       const localNode = nodeField(specifier, 'alias') ?? nodeField(specifier, 'name')
-      if (localNode) bindings.push(createBinding('named', localNode, statement, migration, filename))
+      if (localNode) bindings.push(createBinding('named', localNode, statement, migration, context.filename))
     }
 
     for (const namespaceImport of findAll(statement, 'namespace_import')) {
       const localNode = namespaceImport.children().find((child) => child.kind() === 'identifier')
-      if (localNode) bindings.push(createBinding('namespace', localNode, statement, migration, filename))
+      if (localNode) bindings.push(createBinding('namespace', localNode, statement, migration, context.filename))
     }
   }
 
-  for (const declarator of findAll(rootNode, 'variable_declarator')) {
+  for (const declarator of findAll(context.rootNode, 'variable_declarator')) {
     const value = nodeField(declarator, 'value')
     const source = value ? dynamicImportSource(value) : null
     const migration = GENERATOR_BY_MODULE.get(stringValue(source) ?? '')
@@ -221,7 +244,7 @@ const discoverGeneratorBindings = (rootNode: Node, filename: string): Binding[] 
     for (const pattern of name.children()) {
       if (patternImportedName(pattern) !== migration.exportName) continue
       const localNode = bindingLocalNode(pattern)
-      if (localNode) bindings.push(createBinding('named', localNode, declarator, migration, filename))
+      if (localNode) bindings.push(createBinding('named', localNode, declarator, migration, context.filename))
     }
   }
 
@@ -269,36 +292,28 @@ const computedLiteralPropertyName = (property: Node): string | null => {
   return expression ? stringValue(transparentExpression(expression)) : null
 }
 
-const needsTimestampParentheses = (value: Node): boolean =>
-  !new Set([
-    'call_expression',
-    'identifier',
-    'member_expression',
-    'number',
-    'parenthesized_expression',
-    'subscript_expression',
-    'unary_expression',
-  ]).has(nodeKind(value))
+const TIMESTAMP_MULTIPLICAND_KINDS = new Set([
+  'call_expression',
+  'identifier',
+  'member_expression',
+  'number',
+  'parenthesized_expression',
+  'subscript_expression',
+  'unary_expression',
+])
 
-const processOptionCall = (
-  call: Node,
-  migration: GeneratorMigration,
-  path: string,
-  candidates: PlannedEdit[],
-  groups: Map<string, GroupMetadata>,
-  audits: AuditCandidate[],
-): void => {
+const needsTimestampParentheses = (value: Node): boolean => !TIMESTAMP_MULTIPLICAND_KINDS.has(nodeKind(value))
+
+const processOptionCall = (call: Node, migration: GeneratorMigration, context: MigrationContext): void => {
   const argument = callArguments(call)[migration.optionIndex]
   if (!argument) return
   if (argument.kind() !== 'object') {
     if (migration.exportName !== 'nanoid') {
-      audits.push(
-        sourcePositionFinding(
-          argument,
-          path,
-          migration.rule,
-          `The ${migration.exportName} options are not an inline object, so ${migration.sourceKey} cannot be migrated safely.`,
-        ),
+      addAudit(
+        context,
+        argument,
+        migration.rule,
+        `The ${migration.exportName} options are not an inline object, so ${migration.sourceKey} cannot be migrated safely.`,
       )
     }
     return
@@ -323,8 +338,7 @@ const processOptionCall = (
         ? `A computed option key makes ${migration.sourceKey} precedence ambiguous.`
         : `An object spread makes ${migration.sourceKey} precedence ambiguous.`
 
-    for (const property of affectedSourceProperties)
-      audits.push(sourcePositionFinding(propertyKey(property)!, path, migration.rule, reason))
+    for (const property of affectedSourceProperties) addAudit(context, propertyKey(property)!, migration.rule, reason)
     return
   }
 
@@ -334,37 +348,23 @@ const processOptionCall = (
 
     if (property.kind() === 'shorthand_property_identifier') {
       const multiplier = migration.multiplyByThousand ? ' * 1000' : ''
-      addEdit(
-        candidates,
-        groups,
-        property,
-        `${migration.targetKey}: ${migration.sourceKey}${multiplier}`,
-        group,
-        migration.rule,
-      )
+      addEdit(context, property, `${migration.targetKey}: ${migration.sourceKey}${multiplier}`, group, migration.rule)
       continue
     }
 
     const value = nodeField(property, 'value')
     if (!value) {
-      audits.push(
-        sourcePositionFinding(
-          property,
-          path,
-          migration.rule,
-          `The ${migration.sourceKey} value could not be read safely.`,
-        ),
-      )
+      addAudit(context, property, migration.rule, `The ${migration.sourceKey} value could not be read safely.`)
       continue
     }
 
     const targetKey =
       stringValue(key) === migration.sourceKey ? replacementForString(key, migration.targetKey) : migration.targetKey
-    addEdit(candidates, groups, key, targetKey, group, migration.rule)
+    addEdit(context, key, targetKey, group, migration.rule)
     if (migration.multiplyByThousand) {
       const original = value.text()
       const operand = needsTimestampParentheses(value) ? `(${original})` : original
-      addEdit(candidates, groups, value, `${operand} * 1000`, group, migration.rule)
+      addEdit(context, value, `${operand} * 1000`, group, migration.rule)
     }
   }
 }
@@ -373,22 +373,43 @@ const cuidv2CollisionExists = (rootNode: Node): boolean =>
   rootNode.findAll({ rule: { regex: '^cuidv2$' } }).some((node) => node.text() === 'cuidv2')
 
 const referencesForRename = (localNode: Node, filename: string): Node[] =>
-  localNode
-    .references()
-    .filter((fileReferences) => fileReferences.root.filename() === filename)
-    .flatMap((fileReferences) => fileReferences.nodes)
-    .filter((reference) => reference.text() === localNode.text())
+  referencesInFile(localNode, filename).filter((reference) => reference.text() === localNode.text())
 
-const processCuidImports = (
-  rootNode: Node,
-  filename: string,
-  path: string,
-  candidates: PlannedEdit[],
-  groups: Map<string, GroupMetadata>,
-  audits: AuditCandidate[],
-  scheduledSourceStarts: Set<number>,
+const CUID_COLLISION_REASON =
+  'The file already declares or references cuidv2, so renaming cuid2 could capture a different binding.'
+
+/**
+ * Rewrite one legacy CUID binding — its module specifier, its imported name,
+ * and (when the binding is not aliased) every reference to it.
+ */
+const migrateCuidBinding = (
+  context: MigrationContext,
+  group: string,
+  source: Node,
+  importedNode: Node,
+  localNode: Node,
+  isAliased: boolean,
+  collisionAuditNode: Node,
 ): void => {
-  for (const statement of findAll(rootNode, 'import_statement')) {
+  context.scheduledSourceStarts.add(source.range().start.index)
+
+  if (!isAliased && context.hasCuidv2Collision()) {
+    addAudit(context, collisionAuditNode, RULES.cuid, CUID_COLLISION_REASON)
+    return
+  }
+
+  addEdit(context, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
+  addEdit(context, importedNode, 'cuidv2', group, RULES.cuid)
+
+  if (!isAliased) {
+    for (const reference of referencesForRename(localNode, context.filename)) {
+      addEdit(context, reference, 'cuidv2', group, RULES.cuid)
+    }
+  }
+}
+
+const processCuidImports = (context: MigrationContext): void => {
+  for (const statement of context.importStatements) {
     const source = nodeField(statement, 'source')
     if (!source || stringValue(source) !== 'uniku/cuid2') continue
     const group = `cuid-import:${statement.range().start.index}`
@@ -399,30 +420,8 @@ const processCuidImports = (
       const specifier = specifiers[0]!
       const importedName = nodeField(specifier, 'name')!
       const alias = nodeField(specifier, 'alias')
-      const localNode = alias ?? importedName
 
-      if (!alias && cuidv2CollisionExists(rootNode)) {
-        scheduledSourceStarts.add(source.range().start.index)
-        audits.push(
-          sourcePositionFinding(
-            importedName,
-            path,
-            RULES.cuid,
-            'The file already declares or references cuidv2, so renaming cuid2 could capture a different binding.',
-          ),
-        )
-        continue
-      }
-
-      addEdit(candidates, groups, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
-      addEdit(candidates, groups, importedName, 'cuidv2', group, RULES.cuid)
-      scheduledSourceStarts.add(source.range().start.index)
-
-      if (!alias) {
-        for (const reference of referencesForRename(localNode, filename)) {
-          addEdit(candidates, groups, reference, 'cuidv2', group, RULES.cuid)
-        }
-      }
+      migrateCuidBinding(context, group, source, importedName, alias ?? importedName, Boolean(alias), importedName)
       continue
     }
 
@@ -430,7 +429,7 @@ const processCuidImports = (
       const namespace = namespaces[0]!
       const localNode = namespace.children().find((child) => child.kind() === 'identifier')
       if (!localNode) continue
-      const references = referencesForRename(localNode, filename)
+      const references = referencesForRename(localNode, context.filename)
       const propertyNodes: Node[] = []
       let unsupportedReference: Node | null = null
 
@@ -449,62 +448,43 @@ const processCuidImports = (
         propertyNodes.push(property)
       }
 
+      context.scheduledSourceStarts.add(source.range().start.index)
+
       if (unsupportedReference) {
-        scheduledSourceStarts.add(source.range().start.index)
-        audits.push(
-          sourcePositionFinding(
-            unsupportedReference,
-            path,
-            RULES.cuid,
-            'The legacy CUID namespace has a use other than direct .cuid2 access.',
-          ),
+        addAudit(
+          context,
+          unsupportedReference,
+          RULES.cuid,
+          'The legacy CUID namespace has a use other than direct .cuid2 access.',
         )
         continue
       }
 
-      addEdit(candidates, groups, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
-      scheduledSourceStarts.add(source.range().start.index)
-      for (const property of propertyNodes) addEdit(candidates, groups, property, 'cuidv2', group, RULES.cuid)
+      addEdit(context, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
+      for (const property of propertyNodes) addEdit(context, property, 'cuidv2', group, RULES.cuid)
       continue
     }
 
-    scheduledSourceStarts.add(source.range().start.index)
-    audits.push(
-      sourcePositionFinding(source, path, RULES.cuid, 'This legacy CUID import shape cannot be migrated atomically.'),
-    )
+    context.scheduledSourceStarts.add(source.range().start.index)
+    addAudit(context, source, RULES.cuid, 'This legacy CUID import shape cannot be migrated atomically.')
   }
 }
 
-const processCuidReexports = (
-  rootNode: Node,
-  path: string,
-  candidates: PlannedEdit[],
-  groups: Map<string, GroupMetadata>,
-  audits: AuditCandidate[],
-  scheduledSourceStarts: Set<number>,
-): void => {
-  for (const statement of findAll(rootNode, 'export_statement')) {
+const processCuidReexports = (context: MigrationContext): void => {
+  for (const statement of findAll(context.rootNode, 'export_statement')) {
     const source = nodeField(statement, 'source')
     if (!source || stringValue(source) !== 'uniku/cuid2') continue
     const specifiers = findAll(statement, 'export_specifier')
+    context.scheduledSourceStarts.add(source.range().start.index)
 
     if (specifiers.length !== 1 || nodeField(specifiers[0]!, 'name')?.text() !== 'cuid2') {
-      scheduledSourceStarts.add(source.range().start.index)
-      audits.push(
-        sourcePositionFinding(
-          source,
-          path,
-          RULES.cuid,
-          'This legacy CUID re-export shape cannot be migrated atomically.',
-        ),
-      )
+      addAudit(context, source, RULES.cuid, 'This legacy CUID re-export shape cannot be migrated atomically.')
       continue
     }
 
     const group = `cuid-reexport:${statement.range().start.index}`
-    addEdit(candidates, groups, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
-    addEdit(candidates, groups, nodeField(specifiers[0]!, 'name')!, 'cuidv2', group, RULES.cuid)
-    scheduledSourceStarts.add(source.range().start.index)
+    addEdit(context, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
+    addEdit(context, nodeField(specifiers[0]!, 'name')!, 'cuidv2', group, RULES.cuid)
   }
 }
 
@@ -514,13 +494,7 @@ const dynamicImportDeclarator = (call: Node): Node | null => {
       const value = nodeField(ancestor, 'value')
       return value && sameRange(transparentExpression(value), call) ? ancestor : null
     }
-    if (
-      !['await_expression', 'parenthesized_expression', 'as_expression', 'satisfies_expression'].includes(
-        nodeKind(ancestor),
-      )
-    ) {
-      break
-    }
+    if (!TRANSPARENT_ANCESTOR_KINDS.has(nodeKind(ancestor))) break
   }
   return null
 }
@@ -528,11 +502,7 @@ const dynamicImportDeclarator = (call: Node): Node | null => {
 const immediateDynamicMember = (call: Node): Node | null => {
   let current = call
   for (const ancestor of call.ancestors()) {
-    if (
-      ['await_expression', 'parenthesized_expression', 'as_expression', 'satisfies_expression'].includes(
-        nodeKind(ancestor),
-      )
-    ) {
+    if (TRANSPARENT_ANCESTOR_KINDS.has(nodeKind(ancestor))) {
       current = ancestor
       continue
     }
@@ -543,25 +513,17 @@ const immediateDynamicMember = (call: Node): Node | null => {
   return null
 }
 
-const processCuidDynamicImports = (
-  rootNode: Node,
-  filename: string,
-  path: string,
-  candidates: PlannedEdit[],
-  groups: Map<string, GroupMetadata>,
-  audits: AuditCandidate[],
-  scheduledSourceStarts: Set<number>,
-): void => {
-  for (const call of findAll(rootNode, 'call_expression')) {
+const processCuidDynamicImports = (context: MigrationContext): void => {
+  for (const call of context.callExpressions) {
     const source = dynamicImportSource(call)
     if (!source || stringValue(source) !== 'uniku/cuid2') continue
     const group = `cuid-dynamic:${call.range().start.index}`
     const member = immediateDynamicMember(call)
 
     if (member && nodeField(member, 'property')?.text() === 'cuid2') {
-      addEdit(candidates, groups, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
-      addEdit(candidates, groups, nodeField(member, 'property')!, 'cuidv2', group, RULES.cuid)
-      scheduledSourceStarts.add(source.range().start.index)
+      addEdit(context, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
+      addEdit(context, nodeField(member, 'property')!, 'cuidv2', group, RULES.cuid)
+      context.scheduledSourceStarts.add(source.range().start.index)
       continue
     }
 
@@ -574,42 +536,14 @@ const processCuidDynamicImports = (
       const localNode = bindingLocalNode(entry)
       if (!localNode) continue
       const isAliased = entry.kind() === 'pair_pattern'
+      const importedNode = isAliased ? nodeField(entry, 'key')! : entry
 
-      if (!isAliased && cuidv2CollisionExists(rootNode)) {
-        scheduledSourceStarts.add(source.range().start.index)
-        audits.push(
-          sourcePositionFinding(
-            entry,
-            path,
-            RULES.cuid,
-            'The file already declares or references cuidv2, so renaming cuid2 could capture a different binding.',
-          ),
-        )
-        continue
-      }
-
-      addEdit(candidates, groups, source, replacementForString(source, 'uniku/cuid/v2'), group, RULES.cuid)
-      const importedNode = entry.kind() === 'pair_pattern' ? nodeField(entry, 'key')! : entry
-      addEdit(candidates, groups, importedNode, 'cuidv2', group, RULES.cuid)
-      scheduledSourceStarts.add(source.range().start.index)
-
-      if (!isAliased) {
-        for (const reference of referencesForRename(localNode, filename)) {
-          addEdit(candidates, groups, reference, 'cuidv2', group, RULES.cuid)
-        }
-      }
+      migrateCuidBinding(context, group, source, importedNode, localNode, isAliased, entry)
       continue
     }
 
-    scheduledSourceStarts.add(source.range().start.index)
-    audits.push(
-      sourcePositionFinding(
-        source,
-        path,
-        RULES.cuid,
-        'This dynamic CUID import is not immediate member access or destructuring.',
-      ),
-    )
+    context.scheduledSourceStarts.add(source.range().start.index)
+    addAudit(context, source, RULES.cuid, 'This dynamic CUID import is not immediate member access or destructuring.')
   }
 }
 
@@ -719,15 +653,8 @@ const comparisonWithTargetCode = (comparison: Node, literal: Node, targetCode: s
   return `${comparison.text().slice(0, start)}${replacementForString(literal, targetCode)}${comparison.text().slice(end)}`
 }
 
-const processErrorComparisons = (
-  rootNode: Node,
-  path: string,
-  candidates: PlannedEdit[],
-  groups: Map<string, GroupMetadata>,
-  audits: AuditCandidate[],
-  handledLegacyStarts: Set<number>,
-): void => {
-  for (const comparison of findAll(rootNode, 'binary_expression')) {
+const processErrorComparisons = (context: MigrationContext): void => {
+  for (const comparison of findAll(context.rootNode, 'binary_expression')) {
     if (binaryOperator(comparison) !== '===') continue
     const left = nodeField(comparison, 'left')
     const right = nodeField(comparison, 'right')
@@ -743,42 +670,38 @@ const processErrorComparisons = (
 
     const otherOperand = leftMigration ? right : left
     const codeAccess = nonComputedPropertyAccess(otherOperand, 'code')
-    handledLegacyStarts.add(literal.range().start.index)
+    context.handledLegacyStarts.add(literal.range().start.index)
     if (!codeAccess) {
-      audits.push(
-        sourcePositionFinding(
-          literal,
-          path,
-          RULES.error,
-          'The legacy code is not compared with a recoverable, non-computed .code receiver.',
-        ),
+      addAudit(
+        context,
+        literal,
+        RULES.error,
+        'The legacy code is not compared with a recoverable, non-computed .code receiver.',
       )
       continue
     }
 
     const strategyState = strategyConjunctState(comparison, codeAccess.receiver.text(), migration.strategy)
     if (strategyState === 'conflicting') {
-      audits.push(
-        sourcePositionFinding(
-          literal,
-          path,
-          RULES.error,
-          'The surrounding conjunction already checks a different strategy for this receiver.',
-        ),
+      addAudit(
+        context,
+        literal,
+        RULES.error,
+        'The surrounding conjunction already checks a different strategy for this receiver.',
       )
       continue
     }
 
     const group = `error-comparison:${comparison.range().start.index}`
     if (strategyState === 'matching') {
-      addEdit(candidates, groups, literal, replacementForString(literal, migration.targetCode), group, RULES.error)
+      addEdit(context, literal, replacementForString(literal, migration.targetCode), group, RULES.error)
       continue
     }
 
     const quote = literal.text()[0]
     const codeComparison = comparisonWithTargetCode(comparison, literal, migration.targetCode)
     const replacement = `(${codeComparison} && ${codeAccess.receiver.text()}.strategy === ${quote}${migration.strategy}${quote})`
-    addEdit(candidates, groups, comparison, replacement, group, RULES.error)
+    addEdit(context, comparison, replacement, group, RULES.error)
   }
 }
 
@@ -807,38 +730,21 @@ const unsupportedLegacyReason = (literal: Node): string => {
   return 'This legacy code is not used in a supported direct .code equality.'
 }
 
-const auditUnsupportedErrorCodes = (
-  rootNode: Node,
-  path: string,
-  audits: AuditCandidate[],
-  handledLegacyStarts: ReadonlySet<number>,
-): void => {
-  for (const literal of findAll(rootNode, 'string')) {
+const auditUnsupportedErrorCodes = (context: MigrationContext): void => {
+  for (const literal of context.stringLiterals) {
     const migration: ErrorCodeMigration | undefined = ERROR_CODE_BY_SOURCE.get(stringValue(literal) ?? '')
-    if (!migration || handledLegacyStarts.has(literal.range().start.index)) continue
-    audits.push(sourcePositionFinding(literal, path, RULES.error, unsupportedLegacyReason(literal)))
+    if (!migration || context.handledLegacyStarts.has(literal.range().start.index)) continue
+    addAudit(context, literal, RULES.error, unsupportedLegacyReason(literal))
   }
 }
 
-const auditUnsupportedModuleUses = (
-  rootNode: Node,
-  path: string,
-  audits: AuditCandidate[],
-  scheduledSourceStarts: ReadonlySet<number>,
-): void => {
-  for (const source of findAll(rootNode, 'string')) {
+const auditUnsupportedModuleUses = (context: MigrationContext): void => {
+  for (const source of context.stringLiterals) {
     const value = stringValue(source)
-    if (!value || scheduledSourceStarts.has(source.range().start.index)) continue
+    if (!value || context.scheduledSourceStarts.has(source.range().start.index)) continue
 
     if (value === 'uniku/cuid2') {
-      audits.push(
-        sourcePositionFinding(
-          source,
-          path,
-          RULES.cuid,
-          'The retired uniku/cuid2 module remains in an unsupported construct.',
-        ),
-      )
+      addAudit(context, source, RULES.cuid, 'The retired uniku/cuid2 module remains in an unsupported construct.')
       continue
     }
 
@@ -846,77 +752,80 @@ const auditUnsupportedModuleUses = (
     if (!migration) continue
     const call = source.ancestors().find((ancestor) => ancestor.kind() === 'call_expression')
     if (call && nodeField(call, 'function')?.text() === 'require') {
-      audits.push(
-        sourcePositionFinding(
-          source,
-          path,
-          migration.rule,
-          'Static require() is unsupported because uniku is ESM-only.',
-        ),
-      )
+      addAudit(context, source, migration.rule, 'Static require() is unsupported because uniku is ESM-only.')
     }
   }
 
-  for (const statement of findAll(rootNode, 'import_statement')) {
+  for (const statement of context.importStatements) {
     const source = stringValue(nodeField(statement, 'source'))
     if (!source?.startsWith('.')) continue
     for (const specifier of findAll(statement, 'import_specifier')) {
       if (nodeField(specifier, 'name')?.text() === 'cuid2') {
-        audits.push(
-          sourcePositionFinding(
-            nodeField(specifier, 'name')!,
-            path,
-            RULES.cuid,
-            'A cuid2 import behind a local re-export is not followed across files.',
-          ),
+        addAudit(
+          context,
+          nodeField(specifier, 'name')!,
+          RULES.cuid,
+          'A cuid2 import behind a local re-export is not followed across files.',
         )
       }
     }
   }
 }
 
+const createMigrationContext = (rootNode: Node, filename: string, path: string): MigrationContext => {
+  let cuidv2Collision: boolean | undefined
+
+  return {
+    rootNode,
+    filename,
+    path,
+    importStatements: findAll(rootNode, 'import_statement'),
+    callExpressions: findAll(rootNode, 'call_expression'),
+    stringLiterals: findAll(rootNode, 'string'),
+    hasCuidv2Collision: () => (cuidv2Collision ??= cuidv2CollisionExists(rootNode)),
+    candidates: [],
+    groups: new Map(),
+    audits: [],
+    scheduledSourceStarts: new Set(),
+    handledLegacyStarts: new Set(),
+  }
+}
+
 const codemod: Codemod<TypesMap> = async (root) => {
   const rootNode = root.root()
-  const path = root.relativeFilename()
-  const candidates: PlannedEdit[] = []
-  const groups = new Map<string, GroupMetadata>()
-  const audits: AuditCandidate[] = []
-  const scheduledSourceStarts = new Set<number>()
-  const handledLegacyStarts = new Set<number>()
+  const context = createMigrationContext(rootNode, root.filename(), root.relativeFilename())
 
-  processCuidImports(rootNode, root.filename(), path, candidates, groups, audits, scheduledSourceStarts)
-  processCuidReexports(rootNode, path, candidates, groups, audits, scheduledSourceStarts)
-  processCuidDynamicImports(rootNode, root.filename(), path, candidates, groups, audits, scheduledSourceStarts)
+  processCuidImports(context)
+  processCuidReexports(context)
+  processCuidDynamicImports(context)
 
-  const bindings = discoverGeneratorBindings(rootNode, root.filename())
-  for (const call of findAll(rootNode, 'call_expression')) {
+  const bindings = discoverGeneratorBindings(context)
+  for (const call of context.callExpressions) {
     const callee = nodeField(call, 'function')
     if (!callee) continue
     const migration = migrationForCallee(callee, bindings)
-    if (migration) processOptionCall(call, migration, path, candidates, groups, audits)
+    if (migration) processOptionCall(call, migration, context)
   }
 
-  processErrorComparisons(rootNode, path, candidates, groups, audits, handledLegacyStarts)
+  processErrorComparisons(context)
 
-  auditUnsupportedModuleUses(rootNode, path, audits, scheduledSourceStarts)
-  auditUnsupportedErrorCodes(rootNode, path, audits, handledLegacyStarts)
+  auditUnsupportedModuleUses(context)
+  auditUnsupportedErrorCodes(context)
 
-  const editPlan = planEdits(candidates)
+  const editPlan = planEdits(context.candidates)
   for (const groupId of editPlan.rejectedGroupIds) {
-    const metadata = groups.get(groupId)
+    const metadata = context.groups.get(groupId)
     if (metadata) {
-      audits.push(
-        sourcePositionFinding(
-          metadata.node,
-          path,
-          RULES.overlap,
-          `Overlapping edits made the ${metadata.rule.id} atomic migration unsafe.`,
-        ),
+      addAudit(
+        context,
+        metadata.node,
+        RULES.overlap,
+        `Overlapping edits made the ${metadata.rule.id} atomic migration unsafe.`,
       )
     }
   }
 
-  const findings = classifyAuditCandidates(audits)
+  const findings = classifyAuditCandidates(context.audits)
   for (const finding of findings) {
     manualMigrationMetric.increment({ ruleId: finding.ruleId })
     console.log(renderAuditFinding(finding))
