@@ -4,7 +4,7 @@ description: Generate, inspect, and validate IDs from the terminal.
 icon: Terminal
 ---
 
-`@uniku/cli` is the command-line companion to the library. It is useful when an ID belongs in a shell pipeline, a migration, or a one-off diagnostic instead of your application source. It supports every generator in the library: UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, MongoDB ObjectID, XID, and TSID.
+`@uniku/cli` is the command-line companion to the library. It is useful when an ID belongs in a shell pipeline, a migration, or a one-off diagnostic instead of your application source. It supports every generator in the library: UUID v4/v5/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, MongoDB ObjectID, XID, and TSID.
 
 ## Install
 
@@ -80,7 +80,7 @@ Every generator-specific `--timestamp` option accepts a Unix timestamp in millis
 
 ### uuid
 
-Generate UUIDs (v4 or v7).
+Generate UUIDs (v4, v5, or v7).
 
 ```sh
 uniku uuid
@@ -89,13 +89,20 @@ uniku uuid
 uniku uuid -v 7
 # 018e5e5c-7c8a-7000-8000-000000000000
 
+uniku uuid -v 5 --namespace dns --name www.example.com
+# 2ed6657d-e927-568b-95e1-2665a8aea6a2
+
 uniku uuid -n 5 --json
 ```
 
 | Option | Alias | Description |
 | --- | --- | --- |
-| `--uuid-version` | `-v` | UUID version: `4` or `7` (default: `4`) |
+| `--uuid-version` | `-v` | UUID version: `4`, `5`, or `7` (default: `4`) |
+| `--name` | | Name to derive a UUID v5 from, hashed as UTF-8 (requires `-v 5`) |
+| `--namespace` | | UUID v5 namespace: `dns`, `url`, `oid`, `x500` (case-insensitive), or any UUID string (requires `-v 5`) |
 | `--lowercase` | | Output in lowercase |
+
+UUID v5 is name-based: the same `--name` and `--namespace` always produce the same ID. With `-v 5`, both `--name` and `--namespace` are required and `--count` cannot exceed `1`. Passing `--name` or `--namespace` with `-v 4` or `-v 7` is an error, as is a `--namespace` that is neither an alias nor a well-formed UUID.
 
 ### ulid
 
@@ -248,7 +255,7 @@ uniku inspect --json 018e5e5c-7c8a-7000-8000-000000000000
 uniku inspect -- --tricky-id
 ```
 
-The type is auto-detected unless `--type` is given. For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID, XID, TSID), inspect extracts the embedded timestamp. Random-only IDs (UUID v4, CUID v2, Nanoid) report that no decodable metadata is available. Timestamp precision matches each generator: UUID v7, ULID, and TSID are millisecond-precision; KSUID, ObjectID, and XID are second-precision.
+The type is auto-detected unless `--type` is given. For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID, XID, TSID), inspect extracts the embedded timestamp. Random-only IDs (UUID v4, CUID v2, Nanoid) and name-based UUID v5 IDs report that no decodable metadata is available. Timestamp precision matches each generator: UUID v7, ULID, and TSID are millisecond-precision; KSUID, ObjectID, and XID are second-precision.
 
 | Option | Description |
 | --- | --- |

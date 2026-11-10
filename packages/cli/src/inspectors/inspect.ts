@@ -4,6 +4,7 @@ import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import type { IdType, InspectResult } from '@/src/domain/types'
@@ -65,6 +66,15 @@ function inspectUuid(id: string): InspectResult {
       id,
       type: 'uuid',
       version: 4,
+      note: 'This ID type contains no decodable metadata.',
+    }
+  }
+
+  if (uuidv5.isValid(id)) {
+    return {
+      id,
+      type: 'uuid',
+      version: 5,
       note: 'This ID type contains no decodable metadata.',
     }
   }

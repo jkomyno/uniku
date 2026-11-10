@@ -33,6 +33,14 @@ describe('inspectId', () => {
     expect(result.note).toContain('no decodable metadata')
   })
 
+  it('inspects UUID v5 with no-metadata note', () => {
+    const result = inspectId('2ed6657d-e927-568b-95e1-2665a8aea6a2')
+    assertTrue(result !== null)
+    expect(result.type).toBe('uuid')
+    expect(result.version).toBe(5)
+    expect(result.note).toContain('no decodable metadata')
+  })
+
   it('inspects ULID with timestamp', () => {
     const id = ulid()
     const result = inspectId(id, 'ulid')

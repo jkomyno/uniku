@@ -39,6 +39,13 @@ describe('validateAs', () => {
     expect(result.version).toBe(7)
   })
 
+  it('validates a valid UUID v5', () => {
+    const result = validateAs('2ed6657d-e927-568b-95e1-2665a8aea6a2', 'uuid')
+    expect(result.valid).toBe(true)
+    expect(result.type).toBe('uuid')
+    expect(result.version).toBe(5)
+  })
+
   it('rejects an invalid UUID', () => {
     const result = validateAs('not-a-uuid', 'uuid')
     expect(result.valid).toBe(false)
@@ -150,6 +157,13 @@ describe('validateAutoDetect', () => {
     expect(result.valid).toBe(true)
     expect(result.type).toBe('uuid')
     expect(result.version).toBe(7)
+  })
+
+  it('auto-detects UUID v5', () => {
+    const result = validateAutoDetect('2ed6657d-e927-568b-95e1-2665a8aea6a2')
+    expect(result.valid).toBe(true)
+    expect(result.type).toBe('uuid')
+    expect(result.version).toBe(5)
   })
 
   it('auto-detects ULID', () => {

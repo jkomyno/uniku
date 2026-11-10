@@ -6,6 +6,7 @@ import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import type { IdType, ValidationResult } from '@/src/domain/types'
@@ -69,6 +70,9 @@ export function validateAutoDetect(id: string): ValidationResult {
   if (uuidv4.isValid(id)) {
     return { id, valid: true, type: 'uuid', version: 4 }
   }
+  if (uuidv5.isValid(id)) {
+    return { id, valid: true, type: 'uuid', version: 5 }
+  }
 
   // 2. TypeID (optional prefix + UUID v7 base32 suffix)
   if (typeid.isValid(id)) {
@@ -119,6 +123,9 @@ function validateUuid(id: string): ValidationResult {
   }
   if (uuidv4.isValid(id)) {
     return { id, valid: true, type: 'uuid', version: 4 }
+  }
+  if (uuidv5.isValid(id)) {
+    return { id, valid: true, type: 'uuid', version: 5 }
   }
   return { id, valid: false, type: 'uuid', error: 'invalid UUID format' }
 }

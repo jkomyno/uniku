@@ -2,7 +2,7 @@
 export const COUNT_DEFAULT = 1
 
 /** Valid UUID versions. */
-export const UUID_VERSIONS = [4, 7] as const
+export const UUID_VERSIONS = [4, 5, 7] as const
 
 /** Default UUID version. */
 export const UUID_VERSION_DEFAULT = 4

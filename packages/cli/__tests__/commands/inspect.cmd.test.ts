@@ -160,6 +160,17 @@ describe('CLI: uniku inspect', () => {
       }),
     )
 
+    it.effect('[Given] UUID v5 --json [Then] reports version 5', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['inspect', '2ed6657d-e927-568b-95e1-2665a8aea6a2', '--json'])
+        const output = yield* MockOutput.getStdout
+        const parsed = JSON.parse(output[0])
+        expect(parsed.type).toBe('uuid')
+        expect(parsed.version).toBe(5)
+      }),
+    )
+
     it.effect('[Given] --type uuid [Then] forces UUID inspection', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset

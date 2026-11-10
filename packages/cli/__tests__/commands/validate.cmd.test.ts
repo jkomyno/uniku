@@ -83,6 +83,15 @@ describe('CLI: uniku validate', () => {
       }),
     )
 
+    it.effect('[Given] --type uuid and valid UUID v5 [Then] validates as UUID v5', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['validate', '2ed6657d-e927-568b-95e1-2665a8aea6a2', '--type', 'uuid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (uuid v5)'])
+      }),
+    )
+
     it.effect('[Given] --type uuid and valid ULID [Then] reports invalid', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
