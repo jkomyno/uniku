@@ -142,8 +142,8 @@ isolates.
 UUID v5 is name-based and keeps no monotonic state. Its output depends only on
 the name and namespace, so the same inputs give the same ID in every process
 and on every runtime. String names are hashed as UTF-8 without Unicode
-normalization; that encoding is part of the canonical output and will not
-change within `1.x`.
+normalization, with each lone surrogate encoded as U+FFFD; that encoding is
+part of the canonical output and will not change within `1.x`.
 
 ## Performance and bundle discipline
 

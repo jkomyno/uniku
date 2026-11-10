@@ -73,6 +73,11 @@ describe('uuidv5', () => {
     }
   })
 
+  it('encodes lone surrogates as U+FFFD, like TextEncoder', () => {
+    expect(uuidv5('a\uD800b', APP_NAMESPACE)).toBe(uuidv5('a\uFFFDb', APP_NAMESPACE))
+    expect(uuidv5('a\uDC00b', APP_NAMESPACE)).toBe(uuidv5('a\uFFFDb', APP_NAMESPACE))
+  })
+
   it('does not normalize Unicode', () => {
     const nfc = 'café'
     const nfd = 'café'
@@ -107,6 +112,17 @@ describe('uuidv5', () => {
       expect(result).toBe(buf)
       expect(formatUuid(buf.subarray(4, 20))).toBe('2ed6657d-e927-568b-95e1-2665a8aea6a2')
       expect([...buf.subarray(0, 4), ...buf.subarray(20)]).toEqual(new Array(8).fill(0xee))
+    })
+
+    it('allows the name or namespace bytes to be the output buffer', () => {
+      const name = seededBytes(16, 11)
+      const expected = uuidv5(name, APP_NAMESPACE)
+
+      const nameAsOutput = name.slice()
+      expect(uuidv5.fromBytes(uuidv5(nameAsOutput, APP_NAMESPACE, nameAsOutput))).toBe(expected)
+
+      const namespaceAsOutput = uuidv5.toBytes(APP_NAMESPACE)
+      expect(uuidv5.fromBytes(uuidv5(name, namespaceAsOutput, namespaceAsOutput))).toBe(expected)
     })
 
     it('defaults the offset to 0', () => {

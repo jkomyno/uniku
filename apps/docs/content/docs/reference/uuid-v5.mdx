@@ -63,6 +63,8 @@ A string name is encoded as UTF-8 and hashed as is. uniku does not apply Unicode
 uuidv5(name.normalize('NFC'), APP_NAMESPACE)
 ```
 
+A string with a lone surrogate is not valid Unicode. UTF-8 encoding replaces each one with U+FFFD, so `'a\uD800b'` and `'a\uFFFDb'` give the same ID. The `uuid` package throws for these strings instead. If your names can contain arbitrary UTF-16, check them first with `String.prototype.isWellFormed()` where your runtime supports it.
+
 ## An identifier, not a secret
 
 A UUID v5 does not reveal its name. It is still not a secret: anyone who knows or can guess the name and namespace can compute the same ID. Do not use it as a token, and do not derive it from data that must stay private when the possible inputs are few or known.
