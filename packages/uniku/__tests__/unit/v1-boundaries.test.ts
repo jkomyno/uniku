@@ -465,11 +465,11 @@ describe('v1 public boundary contract', () => {
         run: () => typeid('_user'),
       },
       {
-        name: 'TypeID reports UUID_NOT_V7 when wrapping a UUID v4',
+        name: 'TypeID reports UUID_NOT_V7 when reading the timestamp of a wrapped UUID v4',
         code: 'UUID_NOT_V7',
         strategy: 'typeid',
         errorClass: InvalidInputError,
-        run: () => typeid.fromUuid('user', uuidv4({ random: zeroes(16) })),
+        run: () => typeid.timestamp(typeid.fromUuid('user', uuidv4({ random: zeroes(16) }))),
       },
       // Option failures: string-native shapes
       {

@@ -4,6 +4,7 @@ import { ObjectId as npmObjectId } from 'bson'
 import { nanoid as npmNanoid } from 'nanoid'
 import { init as initNeXid, XID as npmNeXid } from 'nexid'
 import { TSID as npmTsid } from 'tsid-ts'
+import { TypeID as NpmTypeID, fromUUID as npmTypeidFromUuid } from 'typeid-js'
 import { ulid as npmUlid } from 'ulid'
 import {
   v4 as npmUuidV4,
@@ -19,6 +20,7 @@ import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
 import { tsid } from '@/src/tsid/tsid'
+import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
 import { uuidv5 } from '@/src/uuid/v5'
@@ -118,6 +120,25 @@ describe('Cross-Validation: UUID v7', () => {
     const ids = Array.from({ length: BATCH_SIZE }, () => npmUuidV7())
     const invalid = ids.filter((id) => !uuidv7.isValid(id))
     expect(invalid).toHaveLength(0)
+  })
+})
+
+describe('Cross-Validation: TypeID', () => {
+  it('encodes UUID v4, v5, and v7 like typeid-js', () => {
+    for (let i = 0; i < BATCH_SIZE; i += 1) {
+      for (const uuid of [npmUuidV4(), npmUuidV5(randomUnicodeName(), npmUuidV4()), npmUuidV7()]) {
+        const id = typeid.fromUuid('sess', uuid)
+        expect(id, uuid).toBe(npmTypeidFromUuid(uuid, 'sess').toString())
+        expect(NpmTypeID.fromString(id).toUUID()).toBe(uuid)
+      }
+    }
+  })
+
+  it('decodes typeid-js IDs', () => {
+    for (let i = 0; i < BATCH_SIZE; i += 1) {
+      const uuid = npmUuidV5(`name-${i}`, npmUuidV5.URL)
+      expect(typeid.toUuid(npmTypeidFromUuid(uuid, 'sess').toString())).toBe(uuid)
+    }
   })
 })
 
