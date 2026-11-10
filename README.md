@@ -6,7 +6,7 @@
 [![Documentation](https://img.shields.io/badge/docs-read-5b5bd6.svg)](https://jkomyno.github.io/uniku/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Ten ID strategies behind one consistent, type-safe API. The fastest implementation of each in our [current CI benchmark](https://jkomyno.github.io/uniku/docs/guides/performance/).
+Eleven ID strategies behind one consistent, type-safe API. The fastest implementation of each benchmarked format in our [current CI benchmark](https://jkomyno.github.io/uniku/docs/guides/performance/).
 
 > **uniku** */uˈniːku/*: Maltese for "unique"
 
@@ -21,8 +21,8 @@ const id = uuidv7()
 
 ## Why `uniku`?
 
-- **Fastest across the benchmark suite.** Every strategy beats its dedicated npm alternative in the current isolated-process CI benchmark, from 1.2× for UUID v4 and ObjectID to 116× for ULID.
-- **Ten strategies, one type-safe API.** UUID v4/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID each expose a callable generator with matching typed helpers.
+- **Fastest across the benchmark suite.** Every benchmarked strategy beats its dedicated npm alternative in the current isolated-process CI benchmark, from 1.2× for UUID v4 and ObjectID to 116× for ULID.
+- **Eleven strategies, one type-safe API.** UUID v4/v5/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID each expose a callable generator with matching typed helpers.
 - **Portable by default.** Runs on Node.js, Bun, Deno, browsers, edge runtimes, and Cloudflare Workers using `globalThis.crypto`.
 - **Tree-shakeable entry points.** Import only the generator you use; the package root is intentionally not exported.
 - **Useful at system boundaries.** Validate unknown input, convert canonical binary formats to bytes, or write directly into a caller-owned buffer.
@@ -82,6 +82,7 @@ result === destination
 | --- | --- |
 | `uuid/v7`, `ulid`, `ksuid`, `objectid`, `xid` | Callable, buffer write, `toBytes()`, `fromBytes()`, `timestamp()`, `isValid()`, `NIL`, `MAX` |
 | `uuid/v4` | Callable, buffer write, `toBytes()`, `fromBytes()`, `isValid()`, `NIL`, `MAX` |
+| `uuid/v5` | Name-based callable, buffer write, `namespace()`, `toBytes()`, `fromBytes()`, `isValid()`, `DNS`, `URL`, `OID`, `X500`, `NIL`, `MAX` |
 | `typeid` | Prefix-first callable, buffer write, `toBytes()`, `fromBytes()`, `toUuid()`, `fromUuid()`, `timestamp()`, `prefix()`, `suffix()`, `isValid()` |
 | `tsid` | `bigint` primary value, buffer write, `toBytes()`, `fromBytes()`, `toString()`, `fromString()`, `timestamp()`, `isValid()`, `NIL`, `MAX` |
 | `cuid/v2`, `nanoid` | Callable and `isValid()` only |
@@ -92,6 +93,7 @@ There are no barrel exports:
 
 ```ts
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { ulid } from 'uniku/ulid'
 import { typeid } from 'uniku/typeid'
 import { cuidv2 } from 'uniku/cuid/v2'
@@ -114,6 +116,7 @@ import { tsid } from 'uniku/tsid'
 | Go rs/xid compatibility | XID | Matches rs/xid's text and binary representation |
 | Native `BIGINT` storage | TSID | A sortable 64-bit integer rather than a UUID-shaped string |
 | Broad standards compatibility | UUID v4 | The conventional random UUID format |
+| An ID derived from something you already have | UUID v5 | The same name and namespace always give the same UUID |
 
 The [choosing guide](https://jkomyno.github.io/uniku/docs/guides/choosing-an-id/) covers ordering, timestamp leakage, storage boundaries, and format-specific trade-offs.
 

@@ -14,4 +14,13 @@ const userId = typeid('user')
 typeid.prefix(userId) // 'user'
 ```
 
+## Wrapping an existing UUID
+
+`typeid.fromUuid()` accepts only a UUID v7. Any other version, including a name-based [UUID v5](/docs/reference/uuid-v5), throws an `InvalidInputError` with code `UUID_NOT_V7`. This keeps `typeid.timestamp()` meaningful for every TypeID and matches the TypeID specification, which expects a UUID v7 suffix.
+
+```ts
+typeid.fromUuid('user', '019f5732-0343-742a-9eb9-82d47f650b87')
+// 'user_01kxbk40t3egn9xec2thzpa2w7'
+```
+
 <ApiReference generator="typeid" />

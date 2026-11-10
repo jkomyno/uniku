@@ -16,6 +16,7 @@ Different identifiers optimize for different constraints. Start with the boundar
 | Go rs/xid compatibility | XID | Matches rs/xid's compact 12-byte text and binary format. |
 | Native `BIGINT` storage | TSID | A sortable 64-bit integer, not a UUID-shaped string. |
 | Broad standards compatibility | UUID v4 | The conventional random UUID format. |
+| An ID derived from something you already have | UUID v5 | The same name and namespace always give the same UUID, with no state to keep. |
 
 ## A good default
 
@@ -26,6 +27,24 @@ import { uuidv7 } from 'uniku/uuid/v7'
 
 const orderId = uuidv7()
 ```
+
+## An ID derived from something you already have
+
+Every other generator creates a new value on each call. Sometimes you need the opposite: an ID that is a pure function of an identifier you already hold, such as a session ID issued by a third-party tool. The same input must give the same output in another process, on another machine, or after a reinstall, with no lookup table to keep.
+
+UUID v5 does this. It hashes a namespace and a name, so the function is the table:
+
+```ts
+import { uuidv5 } from 'uniku/uuid/v5'
+
+// Generated once with uuidv4(), then hard-coded and never changed.
+const SESSION_NAMESPACE = '1b671a64-40d5-491e-99b0-da01ff1f3341'
+const sessionId = uuidv5.namespace(SESSION_NAMESPACE)
+
+sessionId('tool-a:3f2c') // the same UUID in every process
+```
+
+A UUID v5 has no timestamp and no useful order, and it is an identifier, not a secret: anyone who knows the name and namespace can compute it. See [UUID v5](/docs/reference/uuid-v5) for namespaces, composing inputs, and string encoding.
 
 ## Time ordering is local
 

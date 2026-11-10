@@ -17,6 +17,10 @@ const publicApiFamilies: readonly PublicApiFamily[] = [
     generators: ['uuid-v4'],
   },
   {
+    callShape: 'Name-based callable',
+    generators: ['uuid-v5'],
+  },
+  {
     callShape: 'Prefix-first callable',
     generators: ['typeid'],
   },
@@ -84,7 +88,8 @@ function moduleName(generator: GeneratorId): string {
 }
 
 function helperLabel(helper: string): string {
-  return helper === 'NIL' || helper === 'MAX' ? helper : `${helper}()`
+  // Constants such as NIL, MAX, and the UUID v5 namespaces are upper case.
+  return /^[A-Z][A-Z0-9]*$/.test(helper) ? helper : `${helper}()`
 }
 
 function List({ items }: { items: readonly ReactNode[] }) {
