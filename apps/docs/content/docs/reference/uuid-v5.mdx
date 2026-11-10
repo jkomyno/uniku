@@ -81,9 +81,18 @@ A `Map` from input to `uuidv7()` gives a stable ID only while the map lives. Ano
 
 uniku keeps no cache. If a hot loop derives the same names repeatedly, cache the results in your own code, with a size bound you choose.
 
-## TypeID cannot wrap a UUID v5
+## Adding a TypeID prefix
 
-`typeid` is UUID v7 only. `typeid.fromUuid()` throws an `InvalidInputError` with code `UUID_NOT_V7` for a UUID v5, so `typeid.timestamp()` always has a meaning and the TypeID specification's expectation of UUID v7 holds. If you need a readable prefix on a derived ID, add it in your own format.
+`typeid.fromUuid()` wraps a UUID v5, so a derived ID can carry a readable prefix and stay deterministic:
+
+```ts
+import { typeid } from 'uniku/typeid'
+
+typeid.fromUuid('tool', uuidv5('https://example.com/tools/a', uuidv5.URL))
+// 'tool_5yx5xtd8m9bwna8eqneah4qjxw'
+```
+
+Such a TypeID has no timestamp: `typeid.timestamp()` throws an `InvalidInputError` with code `UUID_NOT_V7`.
 
 ## Errors
 

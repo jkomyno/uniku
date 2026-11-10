@@ -103,6 +103,11 @@ they are never clamped, truncated, or wrapped silently.
 generator overloads may accept larger destination buffers, but the offset must
 be a non-negative integer and the full ID must fit.
 
+TypeID generation always produces a UUID v7. TypeID conversion and validation
+accept any 128-bit value, as the TypeID specification recommends, so
+`typeid.fromUuid()` can wrap a UUID v4 or v5. Only `typeid.timestamp()`
+requires a UUID v7, and it throws `UUID_NOT_V7` otherwise.
+
 Caller-owned random byte arrays and destination buffers have distinct rules:
 
 - random input is read without mutation;

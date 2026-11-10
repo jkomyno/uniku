@@ -255,7 +255,7 @@ uniku inspect --json 018e5e5c-7c8a-7000-8000-000000000000
 uniku inspect -- --tricky-id
 ```
 
-The type is auto-detected unless `--type` is given. For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID, XID, TSID), inspect extracts the embedded timestamp. Random-only IDs (UUID v4, CUID v2, Nanoid) and name-based UUID v5 IDs report that no decodable metadata is available. Timestamp precision matches each generator: UUID v7, ULID, and TSID are millisecond-precision; KSUID, ObjectID, and XID are second-precision.
+The type is auto-detected unless `--type` is given. For time-ordered IDs (UUID v7, ULID, TypeID, KSUID, ObjectID, XID, TSID), inspect extracts the embedded timestamp. A TypeID that wraps another UUID version, such as one built with `typeid.fromUuid()` from a UUID v5, reports its version and no timestamp. Auto-detection treats a prefixless TypeID as a ULID unless it wraps a UUID v7. Random-only IDs (UUID v4, CUID v2, Nanoid) and name-based UUID v5 IDs report that no decodable metadata is available. Timestamp precision matches each generator: UUID v7, ULID, and TSID are millisecond-precision; KSUID, ObjectID, and XID are second-precision.
 
 | Option | Description |
 | --- | --- |

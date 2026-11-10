@@ -551,7 +551,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
     "sourcePath": "packages/uniku/src/ulid/ulid.ts"
   },
   "typeid": {
-    "description": "Generate a TypeID string backed by UUID v7. TypeID combines a lowercase snake_case type prefix with a 26-character modified base32 encoding of a UUID v7, producing sortable domain identifiers such as `user_01h2xcejqtf2nbrexx3vqjhp41`.",
+    "description": "Generate a TypeID string backed by UUID v7. TypeID combines a lowercase snake_case type prefix with a 26-character modified base32 encoding of a UUID, producing domain identifiers such as `user_01h2xcejqtf2nbrexx3vqjhp41`. Generated TypeIDs always wrap a UUID v7, so they sort by creation time. As the TypeID specification recommends, the conversion and validation functions accept any 128-bit value, such as a name-based UUID v5.",
     "members": [
       {
         "example": {
@@ -611,7 +611,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "toBytes",
         "signatures": [
           {
-            "description": "Convert a TypeID's UUID v7 suffix to its canonical 16-byte representation.",
+            "description": "Convert a TypeID's suffix to its 16 UUID bytes.",
             "text": "toBytes(id: string): Uint8Array"
           }
         ]
@@ -624,7 +624,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "fromBytes",
         "signatures": [
           {
-            "description": "Build a TypeID from a prefix and canonical UUID v7 bytes.",
+            "description": "Build a TypeID from a prefix and 16 UUID bytes of any version.",
             "text": "fromBytes(prefix: string, bytes: Uint8Array): string"
           }
         ]
@@ -637,7 +637,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "toUuid",
         "signatures": [
           {
-            "description": "Convert a TypeID to its UUID v7 string.",
+            "description": "Convert a TypeID to its UUID string.",
             "text": "toUuid(id: string): string"
           }
         ]
@@ -650,7 +650,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "fromUuid",
         "signatures": [
           {
-            "description": "Build a TypeID from a prefix and UUID v7 string.",
+            "description": "Build a TypeID from a prefix and a UUID string of any version.",
             "text": "fromUuid(prefix: string, uuid: string): string"
           }
         ]
@@ -663,7 +663,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "timestamp",
         "signatures": [
           {
-            "description": "Read the UUID v7 timestamp embedded in a TypeID, in milliseconds.",
+            "description": "Read the UUID v7 timestamp embedded in a TypeID, in milliseconds. Throws for a TypeID that does not wrap a UUID v7.",
             "text": "timestamp(id: string): number"
           }
         ]
@@ -689,7 +689,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "suffix",
         "signatures": [
           {
-            "description": "Read a TypeID's UUID v7 suffix.",
+            "description": "Read a TypeID's base32 suffix.",
             "text": "suffix(id: string): string"
           }
         ]
@@ -702,7 +702,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "isValid",
         "signatures": [
           {
-            "description": "Return whether a value is a syntactically valid TypeID.",
+            "description": "Return whether a value is a syntactically valid TypeID, whatever UUID version it wraps.",
             "text": "isValid(id: unknown): id is string"
           }
         ]
