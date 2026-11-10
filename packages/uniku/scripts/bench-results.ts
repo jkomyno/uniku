@@ -91,7 +91,9 @@ export function aggregateBenchResults(results: BenchResults[]): BenchResults {
 /**
  * Add an action-level aggregate to a rolling baseline. Keeping action
  * aggregates avoids treating repeat samples from the same shared runner as
- * independent cross-run evidence.
+ * independent cross-run evidence. Baseline actions measured with a different
+ * benchmark matrix (a benchmark was added, removed, or renamed) are dropped, so
+ * a matrix change restarts the rolling window instead of failing the merge.
  */
 export function mergeBenchmarkHistory(
   baseline: BenchResults | undefined,
@@ -105,8 +107,14 @@ export function mergeBenchmarkHistory(
   const baselineHistory = baseline ? (baseline.history ?? [toSnapshot(baseline)]) : []
   const currentHistory = current.history ?? [toSnapshot(current)]
   const currentAction = aggregateBenchmarkSnapshots(currentHistory, 'withinActionRme')
-  const history = [...baselineHistory, currentAction].slice(-maxHistory)
+  const currentMatrix = benchmarkMatrixOf(currentAction)
+  const compatibleHistory = baselineHistory.filter((snapshot) => benchmarkMatrixOf(snapshot) === currentMatrix)
+  const history = [...compatibleHistory, currentAction].slice(-maxHistory)
   return { ...aggregateBenchmarkSnapshots(history, 'crossActionRme'), history }
+}
+
+function benchmarkMatrixOf(snapshot: BenchmarkSnapshot): string {
+  return [...collectBenchmarks(snapshot).keys()].sort().join('\n')
 }
 
 function toSnapshot(result: BenchmarkSnapshot): BenchmarkSnapshot {

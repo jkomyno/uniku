@@ -8,6 +8,7 @@ import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 
@@ -21,6 +22,14 @@ try {
 
   if (!stringIds.every((id) => typeof id === 'string' && id.length > 0)) {
     throw new Error('A string generator returned an invalid value.')
+  }
+  // uuidv5 is deterministic: the browser must reproduce the RFC 9562 A.4 vector and
+  // hash a non-ASCII name as UTF-8 exactly like every other runtime.
+  if (uuidv5('www.example.com', uuidv5.DNS) !== '2ed6657d-e927-568b-95e1-2665a8aea6a2') {
+    throw new Error('UUID v5 did not reproduce the RFC 9562 test vector.')
+  }
+  if (uuidv5.namespace(uuidv5.URL)('日本語🦄') !== 'd2cdb36d-613b-5f03-a81c-eaa948daae54') {
+    throw new Error('UUID v5 did not hash a non-ASCII name as UTF-8.')
   }
   if (typeof tsid() !== 'bigint') {
     throw new Error('TSID did not return a bigint.')

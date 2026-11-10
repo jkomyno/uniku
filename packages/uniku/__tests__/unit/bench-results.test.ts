@@ -152,6 +152,28 @@ describe('benchmark results helpers', () => {
     expect(benchmark?.crossActionRme).toBeCloseTo(116.23584)
   })
 
+  it('restarts the rolling history when the benchmark matrix changes', () => {
+    const baseline = mergeBenchmarkHistory(
+      undefined,
+      aggregateBenchResults([withSingleBench(100, 1), withSingleBench(200, 2)]),
+      3,
+    )
+    const extended = withSingleBench(300, 3)
+    extended.files[0].groups[0].benchmarks.push(bench('uuidv5', 400, 4))
+
+    const result = mergeBenchmarkHistory(baseline, aggregateBenchResults([extended]), 3)
+
+    expect(result.history).toHaveLength(1)
+    expect([...collectBenchmarks(result).keys()]).toEqual([
+      '__tests__/bench/id.bench.ts > ID Generation > uuidv4',
+      '__tests__/bench/id.bench.ts > ID Generation > uuidv5',
+    ])
+    expect(collectBenchmarks(result).get('__tests__/bench/id.bench.ts > ID Generation > uuidv4')).toMatchObject({
+      hz: 300,
+      crossActionRme: 0,
+    })
+  })
+
   it('uses cross-action dispersion when deciding whether a benchmark changed', () => {
     const baseline = withSingleBench(1_000, 1)
     baseline.files[0].groups[0].benchmarks[0].crossActionRme = 30

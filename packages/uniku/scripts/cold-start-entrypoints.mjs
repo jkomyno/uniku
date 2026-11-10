@@ -2,6 +2,7 @@ import { ENTRYPOINTS } from './entrypoints.mjs'
 
 const INVOKE = {
   'uuid/v4': (module) => module.uuidv4(),
+  'uuid/v5': (module) => module.uuidv5('www.example.com', module.uuidv5.DNS),
   'uuid/v7': (module) => module.uuidv7(),
   ulid: (module) => module.ulid(),
   typeid: (module) => module.typeid('benchmark'),

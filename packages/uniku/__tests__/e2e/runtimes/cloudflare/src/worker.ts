@@ -12,6 +12,7 @@ import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 
@@ -23,7 +24,19 @@ const app = new Hono()
 app.get('/', (c) => {
   return c.json({
     message: 'uniku E2E Test Worker',
-    generators: ['uuid-v4', 'uuid-v7', 'typeid', 'ulid', 'ksuid', 'objectid', 'xid', 'tsid', 'cuid2', 'nanoid'],
+    generators: [
+      'uuid-v4',
+      'uuid-v5',
+      'uuid-v7',
+      'typeid',
+      'ulid',
+      'ksuid',
+      'objectid',
+      'xid',
+      'tsid',
+      'cuid2',
+      'nanoid',
+    ],
   })
 })
 
@@ -77,6 +90,84 @@ app.get('/uuid-v4/validate', (c) => {
       isValidKnownGood: uuidv4.isValid('f47ac10b-58cc-4372-a567-0e02b2c3d479'),
       isValidInvalid: uuidv4.isValid('not-a-uuid'),
       isValidEmpty: uuidv4.isValid(''),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================================================
+// UUID v5 Endpoints
+// ============================================================================
+
+// UUID v5 is name-based and deterministic: every route derives from a fixed
+// name and namespace, and batch uniqueness comes from distinct names.
+
+app.get('/uuid-v5/generate', (c) => {
+  try {
+    const id = uuidv5('www.example.com', uuidv5.DNS)
+    return c.json({ success: true, id })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/uuid-v5/generate-batch', (c) => {
+  try {
+    const count = Number(c.req.query('count') || '1000')
+    const derive = uuidv5.namespace(uuidv5.URL)
+    const ids = Array.from({ length: count }, (_, i) => derive(`https://example.com/${i}`))
+    return c.json({ success: true, ids, count: ids.length })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/uuid-v5/to-bytes', (c) => {
+  try {
+    const id = uuidv5('www.example.com', uuidv5.DNS)
+    const bytes = uuidv5.toBytes(id)
+    const restored = uuidv5.fromBytes(bytes)
+    return c.json({
+      success: true,
+      original: id,
+      bytes: Array.from(bytes),
+      restored,
+      roundTripMatch: id.toLowerCase() === restored,
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/uuid-v5/validate', (c) => {
+  try {
+    const validId = uuidv5('www.example.com', uuidv5.DNS)
+    return c.json({
+      success: true,
+      validId,
+      isValidGenerated: uuidv5.isValid(validId),
+      isValidV4: uuidv5.isValid('f47ac10b-58cc-4372-a567-0e02b2c3d479'),
+      isValidInvalid: uuidv5.isValid('not-a-uuid'),
+      isValidEmpty: uuidv5.isValid(''),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+app.get('/uuid-v5/vectors', (c) => {
+  try {
+    const name = '日本語🦄'
+    const buf = new Uint8Array(20)
+    uuidv5(name, uuidv5.URL, buf, 4)
+    return c.json({
+      success: true,
+      rfc: uuidv5('www.example.com', uuidv5.DNS),
+      nonAscii: uuidv5(name, uuidv5.URL),
+      nonAsciiFromDeriver: uuidv5.namespace(uuidv5.URL)(name),
+      nonAsciiFromBuffer: uuidv5.fromBytes(buf.subarray(4)),
+      nonAsciiFromNameBytes: uuidv5(new TextEncoder().encode(name), uuidv5.toBytes(uuidv5.URL)),
     })
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)

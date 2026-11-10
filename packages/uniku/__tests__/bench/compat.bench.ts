@@ -6,7 +6,13 @@ import { init as initNeXid, XID as npmNeXid } from 'nexid'
 import { TSID as npmTsid } from 'tsid-ts'
 import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-js'
 import { ulid as npmUlid } from 'ulid'
-import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
+import {
+  v4 as npmUuidV4,
+  v5 as npmUuidV5,
+  v7 as npmUuidV7,
+  validate as uuidValidate,
+  version as uuidVersion,
+} from 'uuid'
 import { describe, bench as registerBench } from 'vitest'
 import { cuid2 } from '@/src/cuid2/cuid2'
 import { ksuid } from '@/src/ksuid/ksuid'
@@ -16,6 +22,7 @@ import { tsid } from '@/src/tsid/tsid'
 import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
+import { uuidv5 } from '@/src/uuid/v5'
 import { uuidv7 } from '@/src/uuid/v7'
 import { xid } from '@/src/xid/xid'
 
@@ -45,10 +52,15 @@ function bench(name: string, task: () => void, options: typeof benchOptions): vo
 // ulid npm (v2.3.0) has no isValid(), use regex
 const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 const nexid = await initNeXid()
+// UUID v5 is name-based: both implementations derive the same RFC 9562 A.4 input.
+const V5_NAME = 'www.example.com'
+// A longer name shifts cost from call overhead to hashing, where npm uuid uses native SHA-1 on Node.
+const V5_LONG_NAME = 'x'.repeat(256)
 
 // Pre-generate IDs for validation benchmarks
 const testIds = {
   unikuV4: uuidv4(),
+  unikuV5: uuidv5(V5_NAME, uuidv5.DNS),
   unikuV7: uuidv7(),
   unikuUlid: ulid(),
   unikuTypeid: typeid('user'),
@@ -59,6 +71,7 @@ const testIds = {
   unikuTsid: tsid.toString(tsid()),
   unikuXid: xid(),
   npmV4: npmUuidV4(),
+  npmV5: npmUuidV5(V5_NAME, npmUuidV5.DNS),
   npmV7: npmUuidV7(),
   npmUlid: npmUlid(),
   npmTypeid: npmTypeid('user').toString(),
@@ -83,6 +96,40 @@ describe('Generation', () => {
       'npm',
       () => {
         npmUuidV4()
+      },
+      benchOptions,
+    )
+  })
+
+  describe('UUID v5', () => {
+    bench(
+      'uniku',
+      () => {
+        uuidv5(V5_NAME, uuidv5.DNS)
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        npmUuidV5(V5_NAME, npmUuidV5.DNS)
+      },
+      benchOptions,
+    )
+  })
+
+  describe('UUID v5 (256-char name)', () => {
+    bench(
+      'uniku',
+      () => {
+        uuidv5(V5_LONG_NAME, uuidv5.DNS)
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        npmUuidV5(V5_LONG_NAME, npmUuidV5.DNS)
       },
       benchOptions,
     )
@@ -275,6 +322,23 @@ describe('Validation', () => {
       'npm',
       () => {
         uuidValidate(testIds.unikuV4) && uuidVersion(testIds.unikuV4) === 4
+      },
+      benchOptions,
+    )
+  })
+
+  describe('UUID v5', () => {
+    bench(
+      'uniku',
+      () => {
+        uuidv5.isValid(testIds.npmV5)
+      },
+      benchOptions,
+    )
+    bench(
+      'npm',
+      () => {
+        uuidValidate(testIds.unikuV5) && uuidVersion(testIds.unikuV5) === 5
       },
       benchOptions,
     )
