@@ -117,7 +117,6 @@ const assertSourcesArePacked = (tarballPath) => {
   }
 }
 
-// Entry points that are not ID generators; any generator may import them.
 const SHARED_ENTRYPOINTS = new Set(['./errors', './generators'])
 // Generator-to-generator imports that exist by design: TypeID embeds a UUID v7,
 // and `cuid/v2` is the canonical name for `cuid2`.
@@ -127,8 +126,6 @@ const ALLOWED_GENERATOR_IMPORTS = {
 }
 const RELATIVE_IMPORT = /\b(?:from|import)\s*\(?\s*["'](\.{1,2}\/[^"']+)["']/g
 
-// Walks each packed generator's static relative imports and fails if it reaches
-// another generator's module, so importing one entry point never pulls in another.
 const assertEntryIsolation = (packageDir) => {
   const generatorEntries = ENTRYPOINTS.filter((entry) => !SHARED_ENTRYPOINTS.has(entry.subpath))
   const subpathByFile = new Map(generatorEntries.map((entry) => [resolve(packageDir, entry.mjs), entry.subpath]))

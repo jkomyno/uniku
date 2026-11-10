@@ -88,7 +88,6 @@ function moduleName(generator: GeneratorId): string {
 }
 
 function helperLabel(helper: string): string {
-  // Constants such as NIL, MAX, and the UUID v5 namespaces are upper case.
   return /^[A-Z][A-Z0-9]*$/.test(helper) ? helper : `${helper}()`
 }
 

@@ -17,7 +17,6 @@ export type UuidGenerateOptions = {
 
 const NAMESPACE_HINT = 'Use --namespace dns, url, oid, x500, or a UUID string'
 
-// Case-insensitive `--namespace` aliases for the RFC 9562 namespaces.
 const namespaceUuids: ReadonlyMap<string, string> = new Map([
   ['dns', uuidv5.DNS],
   ['url', uuidv5.URL],
@@ -37,12 +36,7 @@ function generateUuidV5(count: number, name: string, namespace: string): Effect.
   return Effect.try({
     try: () => {
       const derive = uuidv5.namespace(resolveNamespace(namespace))
-      // count is at most 1 here; a loop keeps `-n 0` printing nothing, as for v4/v7.
-      const ids: string[] = []
-      for (let i = 0; i < count; i++) {
-        ids.push(derive(name))
-      }
-      return ids
+      return Array.from({ length: count }, () => derive(name))
     },
     catch: (err) => {
       if (err instanceof UniqueIdError) {

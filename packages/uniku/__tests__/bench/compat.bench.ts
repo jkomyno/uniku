@@ -52,9 +52,7 @@ function bench(name: string, task: () => void, options: typeof benchOptions): vo
 // ulid npm (v2.3.0) has no isValid(), use regex
 const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 const nexid = await initNeXid()
-// UUID v5 is name-based: both implementations derive the same RFC 9562 A.4 input.
 const V5_NAME = 'www.example.com'
-// A longer name shifts cost from call overhead to hashing, where npm uuid uses native SHA-1 on Node.
 const V5_LONG_NAME = 'x'.repeat(256)
 
 // Pre-generate IDs for validation benchmarks

@@ -7,6 +7,7 @@ const UUID_BYTES = 16
 // Names that fit hash in this reused buffer; larger ones get a one-off allocation.
 const SCRATCH_BYTES = 512
 const scratch = new Uint8Array(SCRATCH_BYTES)
+const scratchName = scratch.subarray(UUID_BYTES)
 const reusableBuf = new Uint8Array(UUID_BYTES)
 const encoder = /*@__PURE__*/ new TextEncoder()
 
@@ -80,7 +81,8 @@ function writeV5BytesUnchecked(namespace: Uint8Array, name: UuidV5Name, out: Uin
     // UTF-8 needs at most 3 bytes per UTF-16 code unit.
     const capacity = sha1PaddedLength(UUID_BYTES + name.length * 3)
     msg = capacity <= SCRATCH_BYTES ? scratch : new Uint8Array(capacity)
-    length = UUID_BYTES + encoder.encodeInto(name, msg.subarray(UUID_BYTES)).written
+    const nameRegion = msg === scratch ? scratchName : msg.subarray(UUID_BYTES)
+    length = UUID_BYTES + encoder.encodeInto(name, nameRegion).written
   } else {
     length = UUID_BYTES + name.length
     const capacity = sha1PaddedLength(length)

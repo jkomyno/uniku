@@ -100,9 +100,6 @@ app.get('/uuid-v4/validate', (c) => {
 // UUID v5 Endpoints
 // ============================================================================
 
-// UUID v5 is name-based and deterministic: every route derives from a fixed
-// name and namespace, and batch uniqueness comes from distinct names.
-
 app.get('/uuid-v5/generate', (c) => {
   try {
     const id = uuidv5('www.example.com', uuidv5.DNS)

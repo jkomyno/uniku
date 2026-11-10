@@ -24,7 +24,6 @@ export function sha1Digest128Into(msg: Uint8Array, length: number, out: Uint8Arr
   msg[length] = 0x80
   msg.fill(0, length + 1, padded - 8)
 
-  // Message length in bits as a 64-bit big-endian integer.
   const bitsHigh = Math.floor(length / 0x20000000)
   const bitsLow = (length << 3) >>> 0
   msg[padded - 8] = bitsHigh >>> 24

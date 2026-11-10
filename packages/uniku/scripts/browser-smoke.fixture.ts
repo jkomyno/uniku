@@ -23,8 +23,6 @@ try {
   if (!stringIds.every((id) => typeof id === 'string' && id.length > 0)) {
     throw new Error('A string generator returned an invalid value.')
   }
-  // uuidv5 is deterministic: the browser must reproduce the RFC 9562 A.4 vector and
-  // hash a non-ASCII name as UTF-8 exactly like every other runtime.
   if (uuidv5('www.example.com', uuidv5.DNS) !== '2ed6657d-e927-568b-95e1-2665a8aea6a2') {
     throw new Error('UUID v5 did not reproduce the RFC 9562 test vector.')
   }

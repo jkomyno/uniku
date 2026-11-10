@@ -45,8 +45,6 @@ assert(tsid.isValid(tsidId), 'tsid should validate its generated bigint')
 const tsidStr = tsid.toString(tsidId)
 assert(typeof tsidStr === 'string' && tsidStr.length > 0, 'tsid.toString should produce a non-empty string')
 
-// uuidv5 is name-based: it takes required inputs and is deterministic, so instead
-// of a no-argument call it must reproduce fixed vectors identically on every runtime.
 // RFC 9562 Appendix A.4, and a non-ASCII name hashed as UTF-8 (computed with `uuid`'s v5).
 const uuidv5Vectors = [
   ['www.example.com', uuidv5.DNS, '2ed6657d-e927-568b-95e1-2665a8aea6a2'],

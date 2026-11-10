@@ -91,9 +91,7 @@ export function aggregateBenchResults(results: BenchResults[]): BenchResults {
 /**
  * Add an action-level aggregate to a rolling baseline. Keeping action
  * aggregates avoids treating repeat samples from the same shared runner as
- * independent cross-run evidence. Baseline actions measured with a different
- * benchmark matrix (a benchmark was added, removed, or renamed) are dropped, so
- * a matrix change restarts the rolling window instead of failing the merge.
+ * independent cross-run evidence.
  */
 export function mergeBenchmarkHistory(
   baseline: BenchResults | undefined,
