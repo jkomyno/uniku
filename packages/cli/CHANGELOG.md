@@ -1,5 +1,28 @@
 # @uniku/cli
 
+## 0.8.0
+
+### Minor Changes
+
+- 7c9c85b: Run on stable Effect 4.1.3 instead of the `4.0.0-beta.93` pin, which removes the direct `@effect/platform-node-shared` pin that worked around the `npm i -g` startup crash.
+
+  Command-line parsing is stricter. Each of these used to be ignored and now fails with exit code 1 and the command's help:
+
+  - a single-value flag passed twice, such as `uniku uuid -n 2 -n 3`;
+  - an extra positional argument, such as `uniku uuid extra`;
+  - a flag with a missing value, such as `uniku uuid -v`.
+
+  An invalid `--log-level` value now also shows the command's help with the error.
+
+  Negative numbers are read as flag values, so `uniku tsid --node -1` reports an invalid node instead of an unknown `-1` flag, and a negative `--count` is rejected as an invalid value. `--completions` also accepts `powershell` and `pwsh`, and parse errors are worded more plainly.
+
+### Patch Changes
+
+- 343f72d: Add `uniku uuid -v 5 --namespace <dns|url|oid|x500|uuid> --name <value>` for name-based UUIDs. `uniku inspect` and `uniku validate` now recognize UUID v5 IDs, which were misdetected as Nanoid, and report the UUID version a TypeID wraps instead of assuming v7. Fix the startup crash after `npm i -g @uniku/cli` (`ERR_MODULE_NOT_FOUND` for `effect/dist/process/ChildProcess.js`) by pinning `@effect/platform-node-shared` to the same Effect beta as the rest of the CLI.
+- Updated dependencies [a7ace05]
+- Updated dependencies [379c872]
+  - uniku@0.7.0
+
 ## 0.7.0
 
 ### Minor Changes
