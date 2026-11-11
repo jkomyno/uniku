@@ -44,6 +44,31 @@
       }
     },
     {
+      // The library runs on every JavaScript runtime, so binary data is always a Uint8Array.
+      "includes": ["packages/uniku/src/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedGlobals": {
+              "level": "error",
+              "options": {
+                "deniedGlobals": { "Buffer": "Node.js Buffer is not portable. Use Uint8Array." }
+              }
+            },
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "buffer": "Node.js Buffer is not portable. Use Uint8Array.",
+                  "node:buffer": "Node.js Buffer is not portable. Use Uint8Array."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["turbo.json"],
       "json": {
         "parser": {

@@ -1,4 +1,5 @@
 import { BufferError, ParseError } from '../../errors'
+import type { IdGenerator } from '../../generators'
 import { hexValue } from './hex'
 
 const UUID_BYTE_LENGTH = 16
@@ -135,9 +136,14 @@ export function formatUuidUnchecked(bytes: Uint8Array): string {
 }
 
 export function parseUuid(value: string): Uint8Array {
+  return parseUuidFor(value, 'uuid')
+}
+
+/** Parse a UUID string of any version, attributing errors to `strategy`. */
+export function parseUuidFor(value: string, strategy: IdGenerator): Uint8Array {
   if (value.length !== UUID_STRING_LENGTH) {
     throw new ParseError('INVALID_LENGTH', `UUID string must be 36 characters, got ${value.length}`, {
-      strategy: 'uuid',
+      strategy,
     })
   }
 
@@ -146,7 +152,7 @@ export function parseUuid(value: string): Uint8Array {
     throw new ParseError(
       'INVALID_FORMAT',
       `UUID string has invalid separators at positions 8, 13, 18, 23. Received: "${value}"`,
-      { strategy: 'uuid' },
+      { strategy },
     )
   }
 
@@ -161,7 +167,7 @@ export function parseUuid(value: string): Uint8Array {
     const nibble = hexValue(value.charCodeAt(i))
     if (nibble === -1) {
       throw new ParseError('INVALID_CHAR', `UUID string contains invalid hex character at position ${i}`, {
-        strategy: 'uuid',
+        strategy,
       })
     }
 

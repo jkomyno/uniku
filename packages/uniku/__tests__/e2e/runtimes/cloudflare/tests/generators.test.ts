@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
  */
 const generators = [
   { name: 'uuid-v4', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
+  { name: 'uuid-v5', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
   { name: 'uuid-v7', pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
   { name: 'typeid', pattern: /^user_[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/ },
   { name: 'ulid', pattern: /^[0-9A-HJKMNP-TV-Z]{26}$/ },
@@ -19,6 +20,7 @@ const generators = [
 
 const generatorsWithBytes = [
   { name: 'uuid-v4', byteLength: 16 },
+  { name: 'uuid-v5', byteLength: 16 },
   { name: 'uuid-v7', byteLength: 16 },
   { name: 'typeid', byteLength: 16 },
   { name: 'ulid', byteLength: 16 },
@@ -128,6 +130,40 @@ describe('ID generators on Cloudflare Workers', () => {
   // =========================================================================
   // Generator-specific tests
   // =========================================================================
+
+  describe('uuid-v5 determinism', () => {
+    it('reproduces the RFC 9562 vector and hashes non-ASCII names as UTF-8', async () => {
+      const response = await SELF.fetch('http://localhost/uuid-v5/vectors')
+      expect(response.status).toBe(200)
+
+      const body = (await response.json()) as {
+        success: boolean
+        rfc: string
+        nonAscii: string
+        nonAsciiFromDeriver: string
+        nonAsciiFromBuffer: string
+        nonAsciiFromNameBytes: string
+      }
+      expect(body).toEqual({
+        success: true,
+        rfc: '2ed6657d-e927-568b-95e1-2665a8aea6a2',
+        nonAscii: 'd2cdb36d-613b-5f03-a81c-eaa948daae54',
+        nonAsciiFromDeriver: 'd2cdb36d-613b-5f03-a81c-eaa948daae54',
+        nonAsciiFromBuffer: 'd2cdb36d-613b-5f03-a81c-eaa948daae54',
+        nonAsciiFromNameBytes: 'd2cdb36d-613b-5f03-a81c-eaa948daae54',
+      })
+    })
+
+    it('rejects other UUID versions', async () => {
+      const response = await SELF.fetch('http://localhost/uuid-v5/validate')
+      expect(response.status).toBe(200)
+
+      const body = (await response.json()) as { success: boolean; isValidV4: boolean; isValidEmpty: boolean }
+      expect(body.success).toBe(true)
+      expect(body.isValidV4).toBe(false)
+      expect(body.isValidEmpty).toBe(false)
+    })
+  })
 
   describe('cuid2 custom length', () => {
     it('generates IDs with custom length', async () => {

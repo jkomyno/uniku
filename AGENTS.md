@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A TypeScript library providing multiple unique ID generation strategies (UUID v4/v7, ULID, CUID2, Nanoid, KSUID) that works across all JavaScript runtimes.
+A TypeScript library providing multiple unique ID generation strategies (UUID v4/v5/v7, ULID, CUID2, Nanoid, KSUID) that works across all JavaScript runtimes.
 
 ## Commands
 

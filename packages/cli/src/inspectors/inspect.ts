@@ -4,10 +4,11 @@ import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import type { IdType, InspectResult } from '@/src/domain/types'
-import { validateAutoDetect } from '@/src/validators/validate'
+import { typeidUuidVersion, validateAutoDetect } from '@/src/validators/validate'
 
 /**
  * Inspect an ID and extract metadata.
@@ -69,6 +70,15 @@ function inspectUuid(id: string): InspectResult {
     }
   }
 
+  if (uuidv5.isValid(id)) {
+    return {
+      id,
+      type: 'uuid',
+      version: 5,
+      note: 'This ID type contains no decodable metadata.',
+    }
+  }
+
   return {
     id,
     type: 'uuid',
@@ -98,6 +108,18 @@ function inspectTypeid(id: string): InspectResult {
     }
   }
 
+  const version = typeidUuidVersion(id)
+  if (version !== 7) {
+    return {
+      id,
+      type: 'typeid',
+      version,
+      prefix: typeid.prefix(id),
+      suffix: typeid.suffix(id),
+      note: 'This TypeID does not wrap a UUID v7, so it has no timestamp.',
+    }
+  }
+
   const ms = typeid.timestamp(id)
   const bytes = typeid.toBytes(id)
   // UUID v7 random component: last 6 bytes (bytes 10-15)
@@ -105,7 +127,7 @@ function inspectTypeid(id: string): InspectResult {
   return {
     id,
     type: 'typeid',
-    version: 7,
+    version,
     prefix: typeid.prefix(id),
     suffix: typeid.suffix(id),
     timestamp: new Date(ms).toISOString(),

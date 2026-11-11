@@ -4,7 +4,7 @@ description: Every uniku generator beats its dedicated npm alternative in the cu
 icon: Gauge
 ---
 
-Generation speed is a primary design constraint in uniku. In the current CI snapshot, every one of its ten strategies beats the dedicated npm implementation it targets. The smallest measured lead is 1.2× for UUID v4 and ObjectID; ULID reaches 116×.
+Generation speed is a primary design constraint in uniku. In the current CI snapshot, every strategy it measures beats the dedicated npm implementation it targets. The smallest measured lead is 1.2× for UUID v4 and ObjectID; ULID reaches 116×.
 
 The claim is deliberately scoped to generation speed against the established package for each format. Application performance still depends on where and how IDs are created.
 
@@ -12,7 +12,7 @@ The claim is deliberately scoped to generation speed against the established pac
 
 Each row compares uniku's generator against the npm package it targets: `uuid` for UUID v4/v7, `ulid`, `@paralleldrive/cuid2`, `@owpz/ksuid`, `bson` for ObjectID, `nexid` for XID, `tsid-ts`, `nanoid`, and `typeid-js`.
 
-This snapshot comes from a [four-repetition CI run](https://github.com/jkomyno/uniku/actions/runs/29329215014) on July 14, 2026. Treat the ratios as directional because shared-runner noise and dependency updates can move them. The [rolling baseline](https://raw.githubusercontent.com/jkomyno/uniku/gh-benchmarks/baseline.json) tracks results across CI runs for regression detection.
+This snapshot comes from a [four-repetition CI run](https://github.com/jkomyno/uniku/actions/runs/29329215014) on July 14, 2026. UUID v5 was added after this snapshot, so it has no row yet. Treat the ratios as directional because shared-runner noise and dependency updates can move them. The [rolling baseline](https://raw.githubusercontent.com/jkomyno/uniku/gh-benchmarks/baseline.json) tracks results across CI runs for regression detection.
 
 | Generator | uniku vs npm |
 | --- | ---: |
@@ -32,25 +32,26 @@ The [compatibility benchmark](https://github.com/jkomyno/uniku/blob/main/package
 
 ## Bundle size
 
-Every entry point is independently importable and tree-shakeable: importing `uniku/ulid` does not pull in the ULID, TypeID, or KSUID code. Minified and gzipped sizes per entry point:
+Every entry point is independently importable and tree-shakeable: importing `uniku/ulid` does not pull in the UUID, TypeID, or KSUID code. Minified and gzipped sizes per entry point:
 
 | Import | Minified + gzipped |
 | --- | ---: |
-| `uniku/ulid` | ~1.9 KB |
-| `uniku/typeid` | ~2.7 KB |
-| `uniku/uuid/v7` | ~1.6 KB |
-| `uniku/tsid` | ~1.6 KB |
-| `uniku/ksuid` | ~1.3 KB |
-| `uniku/objectid` | ~1.4 KB |
-| `uniku/xid` | ~1.9 KB |
-| `uniku/nanoid` | ~1.2 KB |
 | `uniku/uuid/v4` | ~1.2 KB |
-| `uniku/cuid/v2` | ~1015 B |
+| `uniku/uuid/v5` | ~1.8 KB |
+| `uniku/uuid/v7` | ~1.7 KB |
+| `uniku/ulid` | ~1.9 KB |
+| `uniku/typeid` | ~2.9 KB |
 | `uniku/cuid2` | ~1.0 KB |
-| `uniku/errors` | ~184 B |
+| `uniku/cuid/v2` | ~1.0 KB |
+| `uniku/nanoid` | ~1.2 KB |
+| `uniku/ksuid` | ~1.5 KB |
+| `uniku/objectid` | ~1.6 KB |
+| `uniku/tsid` | ~1.6 KB |
+| `uniku/xid` | ~2.1 KB |
+| `uniku/errors` | ~445 B |
 | `uniku/generators` | ~101 B |
 
-The CUID v2 entry point imports SHA3-512 from `@noble/hashes`, uniku's one runtime dependency; the size above excludes that external dependency's own weight.
+The CUID v2 entry point imports SHA3-512 from `@noble/hashes`, uniku's one runtime dependency; the size above excludes that external dependency's own weight. The UUID v5 entry point inlines its SHA-1, so its size includes the whole hash and it has no runtime dependency.
 
 ## Reproduce these numbers
 

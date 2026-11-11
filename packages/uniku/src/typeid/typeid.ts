@@ -1,5 +1,6 @@
 import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError, ParseError } from '../errors'
+import { formatUuidUnchecked, parseUuidFor } from '../uuid/common/uuid'
 import type { UuidV7Options } from '../uuid/v7'
 import { uuidv7 } from '../uuid/v7'
 
@@ -17,21 +18,21 @@ export type Typeid = {
   ): TBuf
   /** Generate a TypeID string with optional timestamp, counter, or random bytes. */
   (prefix: string, options?: TypeidOptions, buf?: undefined, offset?: number): string
-  /** Convert a TypeID's UUID v7 suffix to its canonical 16-byte representation. */
+  /** Convert a TypeID's suffix to its 16 UUID bytes. */
   toBytes(id: string): Uint8Array
-  /** Build a TypeID from a prefix and canonical UUID v7 bytes. */
+  /** Build a TypeID from a prefix and 16 UUID bytes of any version. */
   fromBytes(prefix: string, bytes: Uint8Array): string
-  /** Convert a TypeID to its UUID v7 string. */
+  /** Convert a TypeID to its UUID string. */
   toUuid(id: string): string
-  /** Build a TypeID from a prefix and UUID v7 string. */
+  /** Build a TypeID from a prefix and a UUID string of any version. */
   fromUuid(prefix: string, uuid: string): string
-  /** Read the UUID v7 timestamp embedded in a TypeID, in milliseconds. */
+  /** Read the UUID v7 timestamp embedded in a TypeID, in milliseconds. Throws for a TypeID that does not wrap a UUID v7. */
   timestamp(id: string): number
   /** Read a TypeID's entity prefix. */
   prefix(id: string): string
-  /** Read a TypeID's UUID v7 suffix. */
+  /** Read a TypeID's base32 suffix. */
   suffix(id: string): string
-  /** Return whether a value is a syntactically valid TypeID. */
+  /** Return whether a value is a syntactically valid TypeID, whatever UUID version it wraps. */
   isValid(id: unknown): id is string
 }
 
@@ -180,34 +181,6 @@ function decodeSuffixToBytes(suffix: string): Uint8Array {
   return bytes
 }
 
-function assertUuidV7Bytes(bytes: Uint8Array): void {
-  if (bytes.length !== TYPEID_UUID_BYTE_LENGTH) {
-    throw new InvalidInputError('BYTES_INVALID_LENGTH', `UUID bytes must be 16 bytes, got ${bytes.length}`, {
-      strategy: 'typeid',
-    })
-  }
-
-  if (bytes[6] >> 4 !== 7 || (bytes[8] & 0xc0) !== 0x80) {
-    throw new InvalidInputError('UUID_NOT_V7', 'TypeID UUID bytes must encode a UUID v7 value', {
-      strategy: 'typeid',
-    })
-  }
-}
-
-function uuidV7BytesFromSuffix(suffix: string): Uint8Array {
-  const bytes = decodeSuffixToBytes(suffix)
-  assertUuidV7Bytes(bytes)
-  return bytes
-}
-
-function uuidV7BytesFromUuid(uuid: string): Uint8Array {
-  if (!uuidv7.isValid(uuid)) {
-    throw new InvalidInputError('UUID_NOT_V7', 'TypeID can only wrap UUID v7 values', { strategy: 'typeid' })
-  }
-
-  return uuidv7.toBytes(uuid)
-}
-
 function parseTypeid(id: string): ParsedTypeid {
   const separatorIndex = id.lastIndexOf('_')
 
@@ -219,7 +192,7 @@ function parseTypeid(id: string): ParsedTypeid {
   const suffix = separatorIndex === -1 ? id : id.slice(separatorIndex + 1)
 
   assertValidPrefix(prefix)
-  const bytes = uuidV7BytesFromSuffix(suffix)
+  const bytes = decodeSuffixToBytes(suffix)
 
   return { prefix, suffix, bytes }
 }
@@ -228,13 +201,18 @@ function joinPrefixAndSuffix(prefix: string, suffix: string): string {
   return prefix === '' ? suffix : `${prefix}_${suffix}`
 }
 
-function formatTypeidFromUuidV7Bytes(prefix: string, bytes: Uint8Array): string {
+function formatTypeid(prefix: string, bytes: Uint8Array): string {
   assertValidPrefix(prefix)
-  assertUuidV7Bytes(bytes)
   return joinPrefixAndSuffix(prefix, encodeBytesToSuffix(bytes))
 }
 
 function timestampFromUuidV7Bytes(bytes: Uint8Array): number {
+  if (bytes[6] >> 4 !== 7 || (bytes[8] & 0xc0) !== 0x80) {
+    throw new InvalidInputError('UUID_NOT_V7', 'TypeID must wrap a UUID v7 to have a timestamp', {
+      strategy: 'typeid',
+    })
+  }
+
   let msecs = 0
   for (let i = 0; i < 6; i += 1) {
     msecs = msecs * 256 + bytes[i]
@@ -305,7 +283,7 @@ function typeidFn<TBuf extends Uint8Array = Uint8Array>(
   }
 
   const bytes = uuidv7(options, new Uint8Array(TYPEID_UUID_BYTE_LENGTH))
-  return formatTypeidFromUuidV7Bytes(prefix, bytes)
+  return formatTypeid(prefix, bytes)
 }
 
 function typeidToBytes(id: string): Uint8Array {
@@ -313,15 +291,15 @@ function typeidToBytes(id: string): Uint8Array {
 }
 
 function typeidFromBytes(prefix: string, bytes: Uint8Array): string {
-  return formatTypeidFromUuidV7Bytes(prefix, bytes)
+  return formatTypeid(prefix, bytes)
 }
 
 function typeidToUuid(id: string): string {
-  return uuidv7.fromBytes(typeidToBytes(id))
+  return formatUuidUnchecked(typeidToBytes(id))
 }
 
 function typeidFromUuid(prefix: string, uuid: string): string {
-  return formatTypeidFromUuidV7Bytes(prefix, uuidV7BytesFromUuid(uuid))
+  return formatTypeid(prefix, parseUuidFor(uuid, 'typeid'))
 }
 
 function timestamp(id: string): number {
@@ -354,8 +332,11 @@ function isValid(id: unknown): id is string {
  * Generate a TypeID string backed by UUID v7.
  *
  * TypeID combines a lowercase snake_case type prefix with a 26-character
- * modified base32 encoding of a UUID v7, producing sortable domain identifiers
- * such as `user_01h2xcejqtf2nbrexx3vqjhp41`.
+ * modified base32 encoding of a UUID, producing domain identifiers such as
+ * `user_01h2xcejqtf2nbrexx3vqjhp41`. Generated TypeIDs always wrap a UUID v7,
+ * so they sort by creation time. As the TypeID specification recommends, the
+ * conversion and validation functions accept any 128-bit value, such as a
+ * name-based UUID v5.
  *
  * @example
  * ```ts

@@ -78,6 +78,38 @@ const generators: GeneratorDefinition[] = [
   },
   {
     examples: {
+      uuidv5: {
+        input: "uuidv5('www.example.com', uuidv5.DNS)",
+        output: "'2ed6657d-e927-568b-95e1-2665a8aea6a2'",
+      },
+      namespace: {
+        input: "uuidv5.namespace(uuidv5.URL)('https://example.com/')",
+        output: "'dd2c1780-811a-5296-81c5-178a0ef488bc'",
+      },
+      toBytes: {
+        input: "uuidv5.toBytes('2ed6657d-e927-568b-95e1-2665a8aea6a2')",
+        output: 'Uint8Array [46, 214, 101, 125, 233, 39, 86, 139, 149, 225, 38, 101, 168, 174, 166, 162]',
+      },
+      fromBytes: {
+        input:
+          'uuidv5.fromBytes(Uint8Array.from([46, 214, 101, 125, 233, 39, 86, 139, 149, 225, 38, 101, 168, 174, 166, 162]))',
+        output: "'2ed6657d-e927-568b-95e1-2665a8aea6a2'",
+      },
+      isValid: { input: "uuidv5.isValid('2ed6657d-e927-568b-95e1-2665a8aea6a2')", output: 'true' },
+      DNS: { input: 'uuidv5.DNS', output: "'6ba7b810-9dad-11d1-80b4-00c04fd430c8'" },
+      URL: { input: 'uuidv5.URL', output: "'6ba7b811-9dad-11d1-80b4-00c04fd430c8'" },
+      OID: { input: 'uuidv5.OID', output: "'6ba7b812-9dad-11d1-80b4-00c04fd430c8'" },
+      X500: { input: 'uuidv5.X500', output: "'6ba7b814-9dad-11d1-80b4-00c04fd430c8'" },
+      NIL: { input: 'uuidv5.NIL', output: "'00000000-0000-0000-0000-000000000000'" },
+      MAX: { input: 'uuidv5.MAX', output: "'ffffffff-ffff-ffff-ffff-ffffffffffff'" },
+    },
+    id: 'uuid-v5',
+    exportName: 'uuidv5',
+    sourcePath: 'packages/uniku/src/uuid/v5.ts',
+    typeName: 'UuidV5',
+  },
+  {
+    examples: {
       uuidv7: {
         input: 'uuidv7()',
         output: "'019f5732-0342-75f9-9efd-fc3c1f8da7fd'",

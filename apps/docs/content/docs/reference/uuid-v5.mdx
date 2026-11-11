@@ -1,0 +1,105 @@
+---
+title: UUID v5
+description: Name-based UUIDs derived from a namespace and a name, with no state to keep.
+icon: Fingerprint
+---
+
+UUID v5 derives an ID from something you already have. It hashes a namespace and a name with SHA-1 (RFC 9562, section 5.5), so the same inputs give the same ID in every process, on every runtime, a year later. Use it when you receive an identifier from a system you do not control and want your own stable ID for it.
+
+```ts
+import { uuidv5 } from 'uniku/uuid/v5'
+
+const id = uuidv5('www.example.com', uuidv5.DNS)
+// '2ed6657d-e927-568b-95e1-2665a8aea6a2' (string, RFC 9562 appendix A.4)
+
+uuidv5('www.example.com', uuidv5.DNS) === id
+// true
+```
+
+The arguments are `(name, namespace)`, in the same order as the `uuid` package. Both accept a string or a `Uint8Array`. Like every uniku generator, `uuidv5()` is synchronous: the SHA-1 implementation is small and inlined, so the entry point has no runtime dependency and imports no other generator.
+
+## Derive many IDs in one namespace
+
+Most callers use one namespace for many names. `uuidv5.namespace()` validates and parses the namespace once and returns a function that takes only the name:
+
+```ts
+const sessionId = uuidv5.namespace(uuidv5.URL)
+
+sessionId('https://example.com/')
+// 'dd2c1780-811a-5296-81c5-178a0ef488bc'
+```
+
+The bound function holds the namespace, not past results. It copies namespace bytes, so changing your array afterwards does not change the IDs it derives.
+
+## Choose a namespace
+
+`uuidv5.DNS`, `uuidv5.URL`, `uuidv5.OID`, and `uuidv5.X500` are the RFC 9562 namespaces for domain names, URLs, ISO object identifiers, and X.500 distinguished names. Use them only for names of that kind.
+
+For application names, pick your own namespace. Generate one UUID once, for example with `uuidv4()`, hard-code it, and never change it. A different namespace gives different IDs for every name.
+
+```ts
+// Generated once with uuidv4(), then hard-coded.
+const APP_NAMESPACE = '1b671a64-40d5-491e-99b0-da01ff1f3341'
+
+const userId = uuidv5.namespace(APP_NAMESPACE)
+userId('github:1234')
+```
+
+## Compose inputs by chaining namespaces
+
+Do not concatenate parts into one name. `'a' + 'bc'` and `'ab' + 'c'` give the same name, so they give the same ID. Derive a namespace for the outer part instead, and use it for the inner part:
+
+```ts
+const tenant = uuidv5('acme', APP_NAMESPACE)
+const orderId = uuidv5('order-42', tenant)
+// 'ceb3aa06-3b92-57b2-a658-27446ca0bd91'
+```
+
+## Strings are hashed as UTF-8, without normalization
+
+A string name is encoded as UTF-8 and hashed as is. uniku does not apply Unicode normalization, which matches other implementations. `'é'` written as one code point (NFC) and as `e` plus a combining accent (NFD) gives two different IDs. If your inputs can arrive in either form, normalize them first:
+
+```ts
+uuidv5(name.normalize('NFC'), APP_NAMESPACE)
+```
+
+A string with a lone surrogate is not valid Unicode. UTF-8 encoding replaces each one with U+FFFD, so `'a\uD800b'` and `'a\uFFFDb'` give the same ID. The `uuid` package throws for these strings instead. If your names can contain arbitrary UTF-16, check them first with `String.prototype.isWellFormed()` where your runtime supports it.
+
+## An identifier, not a secret
+
+A UUID v5 does not reveal its name. It is still not a secret: anyone who knows or can guess the name and namespace can compute the same ID. Do not use it as a token, and do not derive it from data that must stay private when the possible inputs are few or known.
+
+SHA-1 is fine for identity. It is not a security boundary: someone who controls the names can craft two that collide. uniku has no SHA-256 or UUID v8 variant. If names come from an untrusted party and a collision would matter, do not rely on the ID alone.
+
+## No timestamp
+
+A UUID v5 carries no time, so there is no `timestamp()` helper, as on UUID v4. IDs derived from different names have no useful order.
+
+## Why not memoize a random ID
+
+A `Map` from input to `uuidv7()` gives a stable ID only while the map lives. Another process, machine, or restart mints a different ID unless you add a shared, durable store, and two writers racing on first use can mint two IDs. A derived ID needs no store and cannot disagree: the function is the table.
+
+uniku keeps no cache. If a hot loop derives the same names repeatedly, cache the results in your own code, with a size bound you choose.
+
+## Adding a TypeID prefix
+
+`typeid.fromUuid()` wraps a UUID v5, so a derived ID can carry a readable prefix and stay deterministic:
+
+```ts
+import { typeid } from 'uniku/typeid'
+
+typeid.fromUuid('tool', uuidv5('https://example.com/tools/a', uuidv5.URL))
+// 'tool_5yx5xtd8m9bwna8eqneah4qjxw'
+```
+
+Such a TypeID has no timestamp: `typeid.timestamp()` throws an `InvalidInputError` with code `UUID_NOT_V7`.
+
+## Errors
+
+- A malformed namespace string throws a `ParseError` with code `INVALID_LENGTH`, `INVALID_FORMAT`, or `INVALID_CHAR`.
+- A namespace `Uint8Array` that is not exactly 16 bytes throws an `InvalidInputError` with code `BYTES_INVALID_LENGTH`.
+- A buffer offset that cannot hold 16 bytes throws a `BufferError` with code `BUFFER_OUT_OF_BOUNDS`.
+
+All three use strategy `'uuid'`. See [Errors](/docs/reference/errors) for the full catalog.
+
+<ApiReference generator="uuid-v5" />

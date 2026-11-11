@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ENTRYPOINTS } from './entrypoints.mjs'
 
@@ -117,12 +117,53 @@ const assertSourcesArePacked = (tarballPath) => {
   }
 }
 
+const SHARED_ENTRYPOINTS = new Set(['./errors', './generators'])
+// Generator-to-generator imports that exist by design: TypeID embeds a UUID v7,
+// and `cuid/v2` is the canonical name for `cuid2`.
+const ALLOWED_GENERATOR_IMPORTS = {
+  './typeid': ['./uuid/v7'],
+  './cuid/v2': ['./cuid2'],
+}
+const LOCAL_IMPORT = /\b(?:from|import)\s*\(?\s*["']((?:\.{1,2}\/|uniku\/)[^"']+)["']/g
+
+const assertEntryIsolation = (packageDir) => {
+  const generatorEntries = ENTRYPOINTS.filter((entry) => !SHARED_ENTRYPOINTS.has(entry.subpath))
+  const subpathByFile = new Map(generatorEntries.map((entry) => [resolve(packageDir, entry.mjs), entry.subpath]))
+  const fileBySpecifier = new Map(ENTRYPOINTS.map((entry) => [entry.name, resolve(packageDir, entry.mjs)]))
+
+  for (const entry of generatorEntries) {
+    const allowed = new Set(ALLOWED_GENERATOR_IMPORTS[entry.subpath] ?? [])
+    const start = resolve(packageDir, entry.mjs)
+    const seen = new Set([start])
+    const pending = [start]
+
+    while (pending.length > 0) {
+      const file = pending.pop()
+      for (const [, specifier] of readFileSync(file, 'utf8').matchAll(LOCAL_IMPORT)) {
+        const target = specifier.startsWith('.') ? resolve(dirname(file), specifier) : fileBySpecifier.get(specifier)
+        if (!target) {
+          fail(`${relative(packageDir, file)} imports ${specifier}, which is not a uniku entry point.`)
+        }
+        if (seen.has(target)) continue
+        seen.add(target)
+
+        const reached = subpathByFile.get(target)
+        if (reached && !allowed.has(reached)) {
+          fail(`uniku${entry.subpath.slice(1)} must not import uniku${reached.slice(1)} (via ${relative(packageDir, file)}).`)
+        }
+        pending.push(target)
+      }
+    }
+  }
+}
+
 const assertRuntimeResolution = (tarballPath, tempDir) => {
   const appDir = join(tempDir, 'app')
   const packageDir = join(appDir, 'node_modules', 'uniku')
   mkdirSync(packageDir, { recursive: true })
 
   run('tar', ['-xzf', tarballPath, '-C', packageDir, '--strip-components=1'])
+  assertEntryIsolation(packageDir)
 
   const resolutionScript = `
     const specifiers = ${JSON.stringify(runtimeSpecifiers)};

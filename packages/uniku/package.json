@@ -21,6 +21,7 @@
   "keywords": [
     "uuid",
     "uuidv4",
+    "uuidv5",
     "uuidv7",
     "ulid",
     "typeid",
@@ -54,6 +55,11 @@
         "types": "./build/uuid/v4.d.mts",
         "import": "./build/uuid/v4.mjs",
         "default": "./build/uuid/v4.mjs"
+      },
+      "./uuid/v5": {
+        "types": "./build/uuid/v5.d.mts",
+        "import": "./build/uuid/v5.mjs",
+        "default": "./build/uuid/v5.mjs"
       },
       "./uuid/v7": {
         "types": "./build/uuid/v7.d.mts",
@@ -136,6 +142,14 @@
         "default": "./build/uuid/v4.mjs"
       },
       "default": "./build/uuid/v4.mjs"
+    },
+    "./uuid/v5": {
+      "types": "./build/uuid/v5.d.mts",
+      "import": {
+        "@jkomyno/source": "./src/uuid/v5.ts",
+        "default": "./build/uuid/v5.mjs"
+      },
+      "default": "./build/uuid/v5.mjs"
     },
     "./uuid/v7": {
       "types": "./build/uuid/v7.d.mts",

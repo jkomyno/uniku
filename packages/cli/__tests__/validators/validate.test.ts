@@ -6,6 +6,7 @@ import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import { describe, expect, it } from 'vitest'
@@ -39,6 +40,13 @@ describe('validateAs', () => {
     expect(result.version).toBe(7)
   })
 
+  it('validates a valid UUID v5', () => {
+    const result = validateAs('2ed6657d-e927-568b-95e1-2665a8aea6a2', 'uuid')
+    expect(result.valid).toBe(true)
+    expect(result.type).toBe('uuid')
+    expect(result.version).toBe(5)
+  })
+
   it('rejects an invalid UUID', () => {
     const result = validateAs('not-a-uuid', 'uuid')
     expect(result.valid).toBe(false)
@@ -63,6 +71,17 @@ describe('validateAs', () => {
     expect(result.valid).toBe(true)
     expect(result.type).toBe('typeid')
     expect(result.version).toBe(7)
+  })
+
+  it('validates a TypeID that wraps a UUID v5 and reports its version', () => {
+    const id = typeid.fromUuid('sess', uuidv5('tool-a:3f2c', uuidv5.URL))
+    expect(validateAs(id, 'typeid')).toEqual({ id, valid: true, type: 'typeid', version: 5 })
+    expect(validateAutoDetect(id)).toEqual({ id, valid: true, type: 'typeid', version: 5 })
+  })
+
+  it('validates a TypeID that wraps a non-RFC value without a version', () => {
+    const id = typeid.fromUuid('', uuidv4.NIL)
+    expect(validateAs(id, 'typeid')).toEqual({ id, valid: true, type: 'typeid', version: undefined })
   })
 
   it('rejects an invalid TypeID', () => {
@@ -152,6 +171,13 @@ describe('validateAutoDetect', () => {
     expect(result.version).toBe(7)
   })
 
+  it('auto-detects UUID v5', () => {
+    const result = validateAutoDetect('2ed6657d-e927-568b-95e1-2665a8aea6a2')
+    expect(result.valid).toBe(true)
+    expect(result.type).toBe('uuid')
+    expect(result.version).toBe(5)
+  })
+
   it('auto-detects ULID', () => {
     const id = ulid()
     const result = validateAutoDetect(id)
@@ -165,6 +191,13 @@ describe('validateAutoDetect', () => {
     expect(result.valid).toBe(true)
     expect(result.type).toBe('typeid')
     expect(result.version).toBe(7)
+  })
+
+  it('auto-detects a ULID as ULID even though it is also a prefixless TypeID', () => {
+    // A lowercase ULID is a syntactically valid prefixless TypeID, so only prefixed or v7 TypeIDs win detection.
+    const id = ulid({ random: new Uint8Array(16) }).toLowerCase()
+    expect(validateAs(id, 'typeid').valid).toBe(true)
+    expect(validateAutoDetect(id)).toEqual({ id, valid: true, type: 'ulid' })
   })
 
   it('auto-detects KSUID', () => {

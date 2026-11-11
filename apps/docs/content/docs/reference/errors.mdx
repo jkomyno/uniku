@@ -73,7 +73,7 @@ The following codes form the v1 public contract:
 | `PREFIX_TOO_LONG` | `InvalidInputError` | `typeid` | A TypeID prefix exceeds 63 characters. |
 | `PREFIX_INVALID_CHAR` | `InvalidInputError` | `typeid` | A TypeID prefix contains a character outside `a-z` and `_`. |
 | `PREFIX_INVALID_BOUNDARY` | `InvalidInputError` | `typeid` | A TypeID prefix starts or ends with `_`. |
-| `UUID_NOT_V7` | `InvalidInputError` | `typeid` | A TypeID conversion received UUID bytes or text that are not UUID v7. |
+| `UUID_NOT_V7` | `InvalidInputError` | `typeid` | `typeid.timestamp()` received a TypeID that does not wrap a UUID v7. |
 | `BYTES_INVALID_LENGTH` | `InvalidInputError`, `BufferError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | A byte input does not have the format's canonical length. |
 | `BUFFER_OUT_OF_BOUNDS` | `BufferError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | A destination buffer offset or range cannot contain the encoded ID. |
 | `INVALID_CHAR` | `ParseError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | An ID string contains a character outside the format's alphabet. |

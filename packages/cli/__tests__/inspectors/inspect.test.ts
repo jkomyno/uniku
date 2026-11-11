@@ -8,6 +8,7 @@ import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import { inspectId } from '@/src/inspectors/inspect'
@@ -33,6 +34,14 @@ describe('inspectId', () => {
     expect(result.note).toContain('no decodable metadata')
   })
 
+  it('inspects UUID v5 with no-metadata note', () => {
+    const result = inspectId('2ed6657d-e927-568b-95e1-2665a8aea6a2')
+    assertTrue(result !== null)
+    expect(result.type).toBe('uuid')
+    expect(result.version).toBe(5)
+    expect(result.note).toContain('no decodable metadata')
+  })
+
   it('inspects ULID with timestamp', () => {
     const id = ulid()
     const result = inspectId(id, 'ulid')
@@ -54,6 +63,18 @@ describe('inspectId', () => {
     expect(result.timestamp).toBeDefined()
     expect(result.timestamp_ms).toBeTypeOf('number')
     expect(result.random).toBeDefined()
+  })
+
+  it('inspects a TypeID that wraps a UUID v5 without a timestamp', () => {
+    const id = typeid.fromUuid('sess', uuidv5('tool-a:3f2c', uuidv5.URL))
+    expect(inspectId(id)).toEqual({
+      id,
+      type: 'typeid',
+      version: 5,
+      prefix: 'sess',
+      suffix: typeid.suffix(id),
+      note: 'This TypeID does not wrap a UUID v7, so it has no timestamp.',
+    })
   })
 
   it('inspects KSUID with timestamp and random payload', () => {
