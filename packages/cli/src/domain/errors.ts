@@ -4,7 +4,7 @@ import type { UniqueIdError } from 'uniku/errors'
 /**
  * Structured CLI error with optional hint. Exit code 1.
  */
-export class CliError extends Schema.TaggedErrorClass<CliError>()('CliError', {
+export class CliError extends Schema.TaggedError<CliError>()('CliError', {
   code: Schema.String,
   message: Schema.String,
   hint: Schema.optionalKey(Schema.String),
@@ -15,7 +15,7 @@ export class CliError extends Schema.TaggedErrorClass<CliError>()('CliError', {
 /**
  * Error indicating validation failure (exit code 2).
  */
-export class ValidationFailedError extends Schema.TaggedErrorClass<ValidationFailedError>()('ValidationFailedError', {
+export class ValidationFailedError extends Schema.TaggedError<ValidationFailedError>()('ValidationFailedError', {
   message: Schema.String,
 }) {
   readonly code: string = 'VALIDATION_FAILED'

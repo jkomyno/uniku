@@ -5,7 +5,7 @@ import { Config, Console, Deferred, Effect, FileSystem, Option, Path, Schema } f
 const PASS_MARKER = 'UNIKU_BROWSER_SMOKE_OK'
 const PACKAGE_ROOT = `${import.meta.dir}/..`
 
-class BrowserSmokeError extends Schema.TaggedErrorClass<BrowserSmokeError>()('BrowserSmokeError', {
+class BrowserSmokeError extends Schema.TaggedError<BrowserSmokeError>()('BrowserSmokeError', {
   cause: Schema.Defect(),
   message: Schema.String,
 }) {}
@@ -31,7 +31,7 @@ const runCommand = Effect.fn('BrowserSmoke.runCommand')(function* (command: Read
 })
 
 const findBrowser = Effect.fn('BrowserSmoke.findBrowser')(function* () {
-  const override = yield* Config.option(Config.string('CHROME_BIN'))
+  const override = yield* Config.option(Config.String('CHROME_BIN'))
   const candidates = [
     Option.getOrUndefined(override),
     'google-chrome-stable',

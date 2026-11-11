@@ -10,7 +10,7 @@ import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import { CliError } from '@/src/domain/errors'
-import { cli, MockOutput, TestLive } from '../__utils__'
+import { cli, MockOutput, TestLive } from '../../__utils__'
 
 describe('CLI: uniku inspect', () => {
   const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'
@@ -188,6 +188,15 @@ describe('CLI: uniku inspect', () => {
         const output = yield* MockOutput.getStdout
         expect(output[0]).toContain('nanoid')
         expect(output[0]).toContain('no decodable metadata')
+      }),
+    )
+
+    it.effect('[Given] a global flag before inspect and an operand after -- [Then] inspects the operand', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['--log-level', 'info', 'inspect', '--', dashLeadingNanoid])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('nanoid')
       }),
     )
 

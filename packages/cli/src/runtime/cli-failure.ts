@@ -1,8 +1,9 @@
 import * as Console from 'effect/Console'
+import type { CliError as CliFrameworkError } from 'effect/cli'
 import * as Effect from 'effect/Effect'
 import * as Match from 'effect/Match'
-import type { CliError as CliFrameworkError } from 'effect/unstable/cli'
 import type { CliFailure } from '@/src/domain/errors'
+import { hasOptionToken } from '@/src/runtime/args'
 import { errorOutput, OutputService } from '@/src/services/OutputService'
 
 const EXIT_CODE_SUCCESS = 0
@@ -15,7 +16,7 @@ const EXIT_CODE_FAILURE = 1
 export type CliRunFailure = CliFailure | CliFrameworkError.CliError
 
 function usesJsonOutput(args: readonly string[]): boolean {
-  return args.includes('--json')
+  return hasOptionToken(args, '--json')
 }
 
 /**
@@ -33,8 +34,10 @@ export const exitCodeFor: (error: CliRunFailure) => number = Match.type<CliRunFa
     'DuplicateOption',
     'MissingOption',
     'MissingArgument',
+    'UnexpectedArgument',
     'InvalidValue',
     'UnknownSubcommand',
+    'ValidationError',
     'UserError',
     () => EXIT_CODE_FAILURE,
   ),
@@ -50,18 +53,21 @@ export const handleCliFailure = Effect.fn('cli.handleCliFailure')(function* (
     Match.tag('CliError', 'ValidationFailedError', (failure) =>
       OutputService.use((output) => output.writeError(errorOutput(failure), { json: usesJsonOutput(args) })),
     ),
-    // Command.runWith renders ShowHelp (and the parse errors it wraps) itself.
-    Match.tag('ShowHelp', () => Effect.void),
-    // Global-flag parse failures (e.g. --log-level bogus) escape Command.runWith
-    // unrendered.
+    // Command.runWith renders ShowHelp (and the parse errors it wraps) and
+    // UserError (through its user message) itself.
+    Match.tag('ShowHelp', 'UserError', () => Effect.void),
+    // Command.runWith wraps every parse failure in ShowHelp, so a bare
+    // framework error can only come from a handler; render it so the CLI
+    // never exits silently.
     Match.tag(
       'UnrecognizedOption',
       'DuplicateOption',
       'MissingOption',
       'MissingArgument',
+      'UnexpectedArgument',
       'InvalidValue',
       'UnknownSubcommand',
-      'UserError',
+      'ValidationError',
       (failure) => Console.error(`Error: ${failure.message}`),
     ),
     Match.exhaustive,

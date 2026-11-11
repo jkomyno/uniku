@@ -10,7 +10,7 @@ import { existsSync } from 'node:fs'
 import * as BunRuntime from '@effect/platform-bun/BunRuntime'
 import * as BunServices from '@effect/platform-bun/BunServices'
 import { Console, Effect } from 'effect'
-import { ChildProcess, ChildProcessSpawner } from 'effect/unstable/process'
+import { ChildProcess, ChildProcessSpawner } from 'effect/process'
 import { exec } from './exec'
 
 // ── Constants ───────────────────────────────────────────────────────
