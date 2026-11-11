@@ -2,10 +2,10 @@
 
 Open this when writing `@effect/vitest` tests, checking v4 test APIs, or asserting typed Effect failures.
 
-The `packages/cli` tests run on Effect v4 with `@effect/vitest` pinned to the same exact beta as `effect` (never a floating `@beta` range). Two hard constraints:
+The `packages/cli` tests run on Effect 4.1 with `@effect/vitest` pinned to the same exact version as `effect`. Two hard constraints:
 
-- `packages/cli` must use the workspace catalog vitest (v4): `@effect/vitest`'s dist imports `@vitest/runner` directly, which pnpm resolves to the hoisted copy from the root catalog. A package-local older vitest splits the runner instances and every `layer(...)` block fails with "Vitest failed to find the current suite".
-- CLI test layers must deep-import `@effect/platform-bun/BunServices` — the package barrel pulls in `BunRedis`, which imports the `bun` builtin and crashes the Node-based vitest runner.
+- `packages/cli` must use the default workspace catalog Vitest (v5): `@effect/vitest` 4.1 declares `vitest >=5`. Only `packages/uniku` and the Cloudflare e2e use the `vitest4` catalog.
+- CLI test layers deep-import `@effect/platform-bun/BunServices`: the package barrel re-exports modules written for the Bun runtime, and Vitest runs under Node.
 
 Verify the v4 surface from `repos/effect` before writing tests:
 
@@ -24,7 +24,7 @@ import { assert, describe, it } from '@effect/vitest'
 import { assertTrue } from '@effect/vitest/utils'
 import { Effect, Exit, Schema } from 'effect'
 
-class DivideByZero extends Schema.TaggedErrorClass<DivideByZero>()('DivideByZero', {
+class DivideByZero extends Schema.TaggedError<DivideByZero>()('DivideByZero', {
   divisor: Schema.Number,
 }) {}
 
