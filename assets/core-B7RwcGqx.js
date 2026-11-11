@@ -1,0 +1,1 @@
+import{O as e}from"./dist-DB-Iuomd.js";export{e as isSpecialLang};
