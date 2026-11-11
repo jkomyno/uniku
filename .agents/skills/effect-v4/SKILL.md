@@ -1,133 +1,88 @@
 ---
 name: effect-v4
-description: Guides Effect v4 TypeScript work for uniku. Use for any Effect work in packages/cli (which runs on effect@4.0.0-beta.x), evaluating v3-to-v4 API changes, or checking @effect/vitest v4 examples against the local repos/effect source clone.
+description: Write, review, or upgrade Effect v4 code in uniku — the packages/cli command line (effect@4.1.x, every Effect package pinned to the same exact version) plus the Effect-based browser smoke script and docs example. Covers Context.Service with explicit layers, Schema.TaggedError and typed recovery, the effect/cli command surface and directory layout, and the repos/effect source oracle. Use when writing or reviewing Effect code, answering a v4 API question, adding or changing a CLI command, bumping the Effect pins, or verifying an unfamiliar API against repos/effect.
 ---
 
 # Effect v4
 
-The `uniku` CLI runs on Effect v4 (`effect@4.0.0-beta.x`, pinned exact — betas may break between releases, so never widen to `^` or `@beta` ranges). Updating `repos/effect` does not authorize a CLI dependency bump; change the package pins only as a deliberate, separately verified upgrade.
+The `uniku` CLI (`packages/cli`) runs on Effect 4.1. Every claim below is grounded in the
+migrated source and the `repos/effect` checkout, not memory of v3 or of the 4.0 betas.
 
-Use `repos/effect/` as the local source oracle for current Effect v4. It is a read-only submodule of the canonical Effect repository; if it is missing, run `git submodule update --init repos/effect`. The checkout may be ahead of the beta pinned by `packages/cli`; inspect `repos/effect/packages/effect/package.json`, `packages/cli/package.json`, and `git -C repos/effect rev-parse HEAD` before treating an API as compatible with the CLI.
+## Version matrix
 
-Effect v4 is NOT the Effect you know from training data (v3). Assume any remembered API name is wrong until verified — see the reference map below and the verification section at the bottom.
+`effect`, `@effect/platform-bun`, and `@effect/vitest` use the **same exact version**
+(no `^` ranges) everywhere they appear: `packages/cli`, `packages/uniku` (its
+`scripts/browser-smoke.ts`), and `examples` (the Effect docs example).
+`@effect/platform-node-shared` comes in through `@effect/platform-bun`; do not add it as a
+direct dependency. `@effect/cli` and `@effect/platform` are v3 packages with no v4
+equivalent; their surfaces live in `effect` and `effect/*`.
+
+`@effect/vitest` 4.1 requires Vitest 5, the workspace default. See
+[versions.json](versions.json) for the exact example-check matrix, and
+[references/upgrade-workflow.md](references/upgrade-workflow.md) before changing any pin.
+
+## Read next
+
+- [references/core-patterns.md](references/core-patterns.md) — services, layers, typed
+  errors, `Effect.fn` vs `Effect.gen`, `Option` combinators, `TestClock`, and the v3→v4
+  rename table (labeled historical, for recognizing stale patterns).
+- [references/cli-surface.md](references/cli-surface.md) — `effect/cli`: the command
+  directory layout, `Command`, `Flag`, `Argument`, built-in global flags, how
+  `Command.runWith` renders help and errors, and how failures become exit codes.
+- [references/upgrade-workflow.md](references/upgrade-workflow.md) — procedure for
+  bumping to a newer Effect release.
+
+Excerpts that quote repo files carry a `no-check` fence and name their source file. The
+cited source wins when an excerpt disagrees with it.
 
 ## Non-negotiables
 
-- Sequence with `Effect.gen(function* () { ... })` + `yield*`. For functions that return Effects, use `Effect.fn("Name.method")(function* (...) { ... })` — never `(x) => Effect.gen(...)`, and never wrap an `Effect.fn` in `.pipe(...)` (pass extra combinators as additional `Effect.fn` arguments).
-- Model expected failures as typed errors: `class E extends Schema.TaggedErrorClass<E>()("E", { ...fields }) {}`, raised with `return yield* new E({ ... })`.
-- Services: `class Db extends Context.Service<Db, Shape>()("pkg/path/Db") {}` with an explicit `static readonly layer = Layer.effect(Db, ...)` returning `Db.of({ ... })`. v4 never auto-generates layers; wire dependencies with `Layer.provide`.
-- No `async`/`await`, no `try`/`catch` in Effect code. Wrap fallible promises with `Effect.tryPromise({ try, catch })` — `Effect.promise` converts rejections into defects that bypass `Effect.catch`/`catchTag`.
-- No `Date.now()`/`new Date()` (use `Clock`/`DateTime`), no `process.env` reads outside adapters (use `Config`), no `Math.random()` (use `Random`).
-- Map domain errors at boundaries with `Match.type<E>()`/`Match.value(e)` + `Match.tag(...)` + `Match.exhaustive` so unhandled tags are compile errors.
-- Never compare `error._tag` by hand (`if (error._tag === 'Foo')`, `expect(error._tag).toBe('Foo')`). Use the dedicated helper for the context: `Effect.catchTag`/`Effect.catchTags` in pipelines, `Match.tag` for branching, `Predicate.isTagged(e, 'Foo')` for standalone predicates (e.g. `Schedule` `while:`), and `assertInstanceOf(error, Foo)` from `@effect/vitest/utils` in tests (v4 tagged errors are classes). Narrowing an inner discriminated union that has no class or helper (e.g. `PlatformError`'s `reason._tag`) is the one accepted exception.
+- Functions that return Effects use `Effect.fn('span.name')(function* (...) { ... })` —
+  every command handler and parser in `packages/cli` does. Effect values use
+  `Effect.gen(function* () { ... })`. Never wrap an `Effect.fn` in `.pipe(...)`; pass extra
+  combinators as additional `Effect.fn` arguments.
+- Define services with `Context.Service<Self, Shape>()('uniku/cli/Name')` and an explicit
+  `static readonly layer` built with `Layer.succeed`/`Layer.effect`. v4 never generates a
+  layer for you.
+- Model expected failures with `Schema.TaggedError<E>()('E', { ...fields })` and raise them
+  with `return yield* new E({ ... })`. `Schema.TaggedErrorClass` was the 4.0 beta name; it
+  no longer exists.
+- Recover with `Effect.catchTag`/`catchTags`, branch with `Match.tag` + `Match.exhaustive`,
+  guard with `Predicate.isTagged`, and assert with `assertInstanceOf` from
+  `@effect/vitest/utils`. Never compare `error._tag` by hand.
+- Wrap fallible Promises with `Effect.tryPromise({ try, catch })`; `Effect.promise` turns a
+  rejection into a defect. No `async`/`await` or `try`/`catch` inside Effect code.
+- Read time with `Clock`, configuration with `Config` (`Config.String`, `Config.option`),
+  and randomness with `Random`, not `Date.now()`, `process.env`, or `Math.random()`.
+- Treat every remembered v3 or 4.0-beta API name as wrong until you verify it against
+  `repos/effect` (read-only — never edit or import from it) and the installed typings.
 
-## Error modeling at infrastructure boundaries
+## Repo-specific gotchas
 
-Domain errors that wrap infrastructure failures (SQL, HTTP, file I/O) must preserve a live `cause` for tracing. Do not assume the schema-encoded `cause` is safe to publish: SQL and SDK errors can include bound params, headers, payloads, or other caller data in `error.message`.
+- **Deep-import `@effect/platform-bun`**: the barrel re-exports modules written for the
+  Bun runtime (`BunRedis`, `BunHttpPlatform`), while the published bin and Vitest run under
+  Node. Import `@effect/platform-bun/BunRuntime` and `@effect/platform-bun/BunServices`.
+- **Only the Cloudflare e2e and `packages/uniku` stay on Vitest 4** (the `vitest4`
+  catalog in `pnpm-workspace.yaml`). `packages/cli` must use the default catalog, because
+  `@effect/vitest` 4.1 declares `vitest >=5`.
+- **`-V` is rewritten to `--version`** in `src/runtime/args.ts`, because the built-in
+  version flag only aliases `-v`. A subcommand-local flag with the same alias wins at its
+  own level, which is how `uniku uuid -v 7` still selects `--uuid-version`.
 
-```typescript
-import { Schema, SchemaGetter } from 'effect'
+## Verification
 
-class StorageError extends Schema.TaggedErrorClass<StorageError>()('StorageError', {
-  cause: Schema.optionalKey(Schema.Defect()).pipe(
-    Schema.encodeTo(Schema.optionalKey(Schema.Defect()), {
-      decode: SchemaGetter.passthroughSupertype<Schema.Json, unknown>(),
-      encode: SchemaGetter.omit(),
-    }),
-  ),
-  message: Schema.String,
-  operation: Schema.String,
-}) {}
-
-// Construct: pass the raw caught value directly — no sanitization
-declare const caughtValue: unknown
-const err = new StorageError({ cause: caughtValue, operation: 'enqueue', message: '...' })
+```bash
+pnpm --filter @uniku/cli typecheck
+pnpm --filter @uniku/cli test
+pnpm --filter @uniku/cli build
+pnpm examples:check
 ```
 
-**Why `cause` must stay:**
+After editing this skill or `../testing/references/effect-vitest.md`, compile their
+TypeScript blocks against the pinned packages:
 
-- `Cause.pretty(exit.cause, { renderErrorCause: true })` walks the `.cause` chain to produce `exception.stacktrace`. Without `cause` on the domain error, OTel traces show only the static domain message — the infrastructure root cause disappears.
-- Public typed-error serialization must not expose raw infrastructure causes. Use `SchemaGetter.omit()` or an explicit redacted encoded shape for public errors; keep the raw cause only on the runtime instance.
-
-**Never pre-sanitize the cause** at construction time (e.g. `cause: sanitizeCause(e)`). That strips the live runtime object and defeats `Cause.pretty`. Make the schema's encoded shape safe instead.
-
-**At `Layer.catchCause` boundaries**, use `Cause.squash` to collapse a full `Cause<E>` to its most meaningful value:
-
-```typescript
-import { Cause, Context, Effect, Layer, Schema } from 'effect'
-
-class StorageError extends Schema.TaggedErrorClass<StorageError>()('StorageError', {
-  cause: Schema.Defect(),
-  message: Schema.String,
-  operation: Schema.String,
-}) {}
-
-class MyService extends Context.Service<MyService, { readonly query: Effect.Effect<void> }>()('MyService') {}
-
-declare const layer: Layer.Layer<MyService, StorageError>
-
-const guarded = layer.pipe(
-  Layer.catchCause((cause) =>
-    Layer.effect(
-      MyService,
-      Effect.fail(new StorageError({ cause: Cause.squash(cause), operation: 'layer init', message: '...' })),
-    ),
-  ),
-)
+```bash
+node .agents/skills/effect-v4/scripts/check-examples.mjs
 ```
 
-`Cause.squash` handles typed failures, defects, and interrupts — always extracting a single meaningful value from the cause tree.
-
-## Top v3 → v4 traps
-
-| v3 (training-data habit)                                               | v4 (this codebase)                                                                                                                                                                    |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Effect.catchAll` / `catchAllCause` / `catchAllDefect`                 | `Effect.catch` / `catchCause` / `catchDefect`                                                                                                                                         |
-| `Either.right(x)` / `Either.left(e)`                                   | `Result.succeed(x)` / `Result.fail(e)` — Either is gone                                                                                                                               |
-| `Context.Tag("Id")<Self, Shape>()`, `Effect.Service` + `.Default`      | `Context.Service<Self, Shape>()("Id")` + explicit `static layer`                                                                                                                      |
-| `Schema.TaggedError`                                                   | `Schema.TaggedErrorClass` (`Data.TaggedError` still exists but its fields are not Schema-backed — this codebase uses `TaggedErrorClass`)                                              |
-| `FiberRef.make` / `Effect.locally`                                     | `Context.Reference` + `Effect.provideService`                                                                                                                                         |
-| `import { FileSystem } from "@effect/platform"`                        | `@effect/platform` is gone: `FileSystem`/`Path`/`Terminal`/`Config` from `"effect"`; http/persistence/process under `"effect/unstable/*"`; Node layers from `"@effect/platform-node"` |
-| `Runtime<R>`, `Effect.runPromise(provided)`                            | `Runtime<R>` removed — `ManagedRuntime.make(layer)` for integration, `NodeRuntime.runMain`/`Layer.launch` for entrypoints                                                             |
-| `Mailbox`; `Queue<A>` without an error channel                         | `Mailbox` is gone — one `Queue<A, E>` module: `Queue.make`, completion via `Queue.end`                                                                                                |
-| `Stream.runCollect` → `Chunk`; `Stream.async*`                         | plain arrays everywhere; `Stream.callback`                                                                                                                                            |
-| `Schema.Literal("a", "b")`, `Schema.Union(A, B)`, `Schema.Tuple(A, B)` | array forms: `Schema.Literals([...])`, `Schema.Union([...])`, `Schema.Tuple([...])`                                                                                                   |
-| `Schema.String.pipe(Schema.minLength(3))`                              | `Schema.String.check(Schema.isMinLength(3))` — filters renamed `is*`, attached via `.check`                                                                                           |
-| `Schema.transform(from, to, {...})` / `Schema.compose`                 | `from.pipe(Schema.decodeTo(to, SchemaTransformation.transform({...})))`                                                                                                               |
-| `ParseError` / `ParseResult.*Formatter`                                | `SchemaError` (tag `"SchemaError"`, holds `.issue`) + `SchemaIssue` formatters                                                                                                        |
-| `Schema.parseJson(S)`                                                  | `Schema.fromJsonString(S)`                                                                                                                                                            |
-| `JSONSchema.make(S)`                                                   | `Schema.toJsonSchemaDocument(S)`                                                                                                                                                      |
-| `Layer.scoped` / `Effect.async`                                        | `Layer.effect` / `Effect.callback`                                                                                                                                                    |
-
-Full rename maps, behavioral changes (layer memoization, fiber keep-alive, structural equality, flattened `Cause`), and removed APIs: `references/v3-to-v4-changes.md`.
-
-## Reference map
-
-Open the file matching the task before writing code:
-
-| File                                                              | Open when                                                                                                                                      |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| [v3-to-v4-changes.md](references/v3-to-v4-changes.md)             | Translating v3-style code; a remembered API name fails to resolve; before writing service, fork, or entrypoint code                            |
-| [core-patterns.md](references/core-patterns.md)                   | Writing any service, layer, error, resource, entrypoint, or use case; ports/adapters; the "what not to do" list                                |
-| [error-management.md](references/error-management.md)             | Failure handling: catch\*/match, defects vs expected errors, flattened Cause, Result, retries/timeouts with Schedule, error accumulation       |
-| [data-pipelines.md](references/data-pipelines.md)                 | Stream creation/transform/consumption, concurrency and backpressure, batching, broadcast/partition, `Queue<A, E>`, dead-letter queues          |
-| [platform.md](references/platform.md)                             | Env vars and Config/ConfigProvider, FileSystem, Path, child processes, KeyValueStore, Terminal, wiring Node services                           |
-| [schema-basics.md](references/schema-basics.md)                   | Defining schemas: structs, literals, checks, optionality, unions, recursion, classes; decode/encode entrypoints                                |
-| [schema-transformations.md](references/schema-transformations.md) | Transforming during decode, branded types, custom messages, SchemaError/SchemaIssue formatting, effectful validation, fallbacks                |
-| [schema-json-http.md](references/schema-json-http.md)             | Decoding anything that crosses a process boundary: JSON strings/files, schema evolution, DB JSON columns, HTTP responses, web-standard formats |
-| [schema-config-forms-ai.md](references/schema-config-forms-ai.md) | `Config.schema` + Redacted secrets, form-style validation (collect all issues, cross-field rules), JSON Schema for LLM structured output       |
-
-## Repo-specific gotchas (learned during the v3→v4 port)
-
-- **Deep-import `@effect/platform-bun`**: the package barrel re-exports `BunRedis`, which imports the `bun` builtin. The published CLI bin and vitest both run under Node, so import `@effect/platform-bun/BunRuntime` / `@effect/platform-bun/BunServices` directly, never the barrel.
-- **`@effect/vitest` v4 must share the workspace vitest**: its dist imports `@vitest/runner` directly (undeclared), which pnpm resolves to the hoisted copy dictated by the root catalog. `packages/cli` must use `vitest: "catalog:"` (v4); pinning an older vitest in the package splits the runner instances and every `layer(...)` block fails with "Vitest failed to find the current suite".
-- **`Command.runWith` renders `ShowHelp` itself** (help via `Console.log`, attached parse errors via `Console.error`) and then re-fails with the `ShowHelp` error. The entrypoint only maps errors to exit codes (`src/runtime/cli-failure.ts`); it must not re-render framework errors. A parent command without a handler fails with `ShowHelp({ errors: [] })` → exit 0.
-- **Built-in global flags own `-h`/`-v`** (help/version) plus `--completions` and `--log-level`. A subcommand-local flag with the same alias wins at its own command level (see `unstable/cli/SEMANTICS.md`), which is how `uniku uuid -v 7` still selects `--uuid-version`.
-
-## Ground truth and verification
-
-- The local Effect source at `repos/effect/` is the authority for what exists in the checked-out upstream v4: `packages/effect/src/<Module>.ts` (API surface), `migration/*.md` (v3→v4 guides), `LLMS.md` (idioms), `ai-docs/src/**` (runnable examples). The installed package and compiler are the final compatibility check for the CLI's pinned beta. The submodule is read-only reference — never edit it and never import from `repos/**`.
-- Before emitting an API you have not used in this session, confirm it: `grep -nE "(const|function|class|as) <name>\b" repos/effect/packages/effect/src/<Module>.ts` — anchoring on `export const` alone misses `export function` declarations and aliased exports such as `catch_ as catch`.
-- Migration docs can drift from the checked-out source, and their rename maps are not exhaustive. When docs and source disagree, the source and the compiler win.
-- Validate real changes with `pnpm typecheck` (and `pnpm lint:ci`, `pnpm test`, `pnpm build` before handoff).
-- Every `ts` code block in this skill should compile against the Effect version declared by `repos/effect/packages/effect/package.json`. After editing examples or refreshing the local clone, re-verify with `node .agents/skills/effect-v4/scripts/check-examples.mjs`.
+The checker also fails when `versions.json` and the `packages/cli` pins disagree.

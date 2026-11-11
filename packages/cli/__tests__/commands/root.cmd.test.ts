@@ -1,7 +1,7 @@
 import { describe, expect, layer } from '@effect/vitest'
 import { assertInstanceOf } from '@effect/vitest/utils'
+import { CliError as CliFrameworkError } from 'effect/cli'
 import * as Effect from 'effect/Effect'
-import { CliError as CliFrameworkError } from 'effect/unstable/cli'
 import { exitCodeFor } from '@/src/runtime/cli-failure'
 import { cli, TestConsole, TestLive } from '../__utils__'
 
@@ -18,6 +18,19 @@ describe('CLI: uniku root', () => {
         expect(output).toContain('generate')
         expect(output).toContain('validate')
         expect(output).toContain('inspect')
+      }),
+    )
+  })
+
+  layer(TestLive())('global flags', (it) => {
+    it.effect('[Given] --help flag [Then] lists the built-in global flags without --wizard', () =>
+      Effect.gen(function* () {
+        yield* cli(['--help'])
+        const lines = yield* TestConsole.getLines({ stripAnsi: true })
+        const output = lines.join('\n')
+        expect(output).toContain('--completions')
+        expect(output).toContain('--log-level')
+        expect(output).not.toContain('--wizard')
       }),
     )
   })
@@ -65,6 +78,41 @@ describe('CLI: uniku root', () => {
         expect(output).toContain('USAGE')
         expect(output).toContain('SUBCOMMANDS')
         expect(output).toContain('generate')
+      }),
+    )
+  })
+
+  layer(TestLive())('parse failures', (it) => {
+    const parseFailure = (args: ReadonlyArray<string>) =>
+      Effect.gen(function* () {
+        const error = yield* cli(args).pipe(Effect.flip)
+        assertInstanceOf(error, CliFrameworkError.ShowHelp)
+        expect(error.errors).toHaveLength(1)
+        expect(exitCodeFor(error)).toBe(1)
+        return error.errors[0]
+      })
+
+    it.effect('[Given] an invalid global flag value [Then] fails with ShowHelp wrapping InvalidValue', () =>
+      Effect.gen(function* () {
+        assertInstanceOf(yield* parseFailure(['--log-level', 'bogus', 'uuid']), CliFrameworkError.InvalidValue)
+      }),
+    )
+
+    it.effect('[Given] an extra positional argument [Then] fails with ShowHelp wrapping UnexpectedArgument', () =>
+      Effect.gen(function* () {
+        assertInstanceOf(yield* parseFailure(['uuid', 'extra']), CliFrameworkError.UnexpectedArgument)
+      }),
+    )
+
+    it.effect('[Given] a repeated single-value flag [Then] fails with ShowHelp wrapping InvalidValue', () =>
+      Effect.gen(function* () {
+        assertInstanceOf(yield* parseFailure(['uuid', '-n', '2', '-n', '3']), CliFrameworkError.InvalidValue)
+      }),
+    )
+
+    it.effect('[Given] a negative --count [Then] fails with ShowHelp instead of printing nothing', () =>
+      Effect.gen(function* () {
+        yield* parseFailure(['uuid', '-n', '-1'])
       }),
     )
   })

@@ -1,6 +1,6 @@
 import { describe, expect, layer } from '@effect/vitest'
+import { CliError as CliFrameworkError } from 'effect/cli'
 import * as Effect from 'effect/Effect'
-import { CliError as CliFrameworkError } from 'effect/unstable/cli'
 import { CliError, ValidationFailedError } from '@/src/domain/errors'
 import { handleCliFailure } from '@/src/runtime/cli-failure'
 import { MockOutput, TestConsole, TestLive } from '../__utils__'
@@ -63,6 +63,22 @@ describe('CLI failure handling', () => {
       }),
     )
 
+    it.effect('[Given] a literal --json operand after -- [Then] writes friendly stderr', () =>
+      Effect.gen(function* () {
+        yield* resetExitCode
+        yield* MockOutput.reset
+
+        yield* handleCliFailure(new ValidationFailedError({ message: 'One or more IDs are invalid' }), [
+          'validate',
+          '--',
+          '--json',
+        ])
+
+        const stderr = yield* MockOutput.getStderr
+        expect(stderr).toEqual(['Error: One or more IDs are invalid'])
+      }),
+    )
+
     it.effect('[Given] ValidationFailedError [Then] writes stderr and exits with code 2', () =>
       Effect.gen(function* () {
         yield* resetExitCode
@@ -121,9 +137,8 @@ describe('CLI failure handling', () => {
         yield* resetExitCode
         yield* MockOutput.reset
 
-        // Global-flag parse failures (e.g. --log-level bogus) escape
-        // Command.runWith unrendered — the failure handler must not exit
-        // silently.
+        // Command.runWith wraps parse failures in ShowHelp, so a bare
+        // framework error can only come from a handler.
         yield* handleCliFailure(
           new CliFrameworkError.InvalidValue({
             option: 'log-level',
@@ -137,6 +152,22 @@ describe('CLI failure handling', () => {
         const errorLines = yield* TestConsole.getErrorLines()
         expect(errorLines.join('\n')).toContain('Error:')
         expect(errorLines.join('\n')).toContain('log-level')
+        expect(process.exitCode).toBe(1)
+      }),
+    )
+
+    it.effect('[Given] UserError [Then] leaves rendering to Command.runWith and exits 1', () =>
+      Effect.gen(function* () {
+        yield* resetExitCode
+        yield* MockOutput.reset
+
+        const before = (yield* TestConsole.getErrorLines()).length
+        yield* handleCliFailure(new CliFrameworkError.UserError({ cause: 'boom' }), ['uuid'])
+
+        const errorLines = yield* TestConsole.getErrorLines()
+        const stderr = yield* MockOutput.getStderr
+        expect(errorLines.slice(before)).toEqual([])
+        expect(stderr).toEqual([])
         expect(process.exitCode).toBe(1)
       }),
     )

@@ -9,7 +9,7 @@ import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import { CliError, ValidationFailedError } from '@/src/domain/errors'
-import { cli, MockOutput, TestLive } from '../__utils__'
+import { cli, MockOutput, TestLive } from '../../__utils__'
 
 describe('CLI: uniku validate', () => {
   const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'

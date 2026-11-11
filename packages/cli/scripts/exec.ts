@@ -1,5 +1,5 @@
 import { Console, Effect } from 'effect'
-import { ChildProcess, ChildProcessSpawner } from 'effect/unstable/process'
+import { ChildProcess, ChildProcessSpawner } from 'effect/process'
 
 /**
  * Run a command with inherited stdio, failing when it exits non-zero.

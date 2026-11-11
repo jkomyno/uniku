@@ -236,6 +236,7 @@ describe('shouldNotifyUpdate', () => {
     expect(shouldNotifyUpdate(['node', 'uniku', 'uuid'], Option.some(info))).toBe(true)
     expect(shouldNotifyUpdate(['node', 'uniku', 'uuid', '--json'], Option.some(info))).toBe(false)
     expect(shouldNotifyUpdate(['node', 'uniku', 'uuid'], Option.none())).toBe(false)
+    expect(shouldNotifyUpdate(['node', 'uniku', 'validate', '--', '--json'], Option.some(info))).toBe(true)
   })
 })
 
