@@ -146,8 +146,10 @@ function v5<TBuf extends Uint8Array = Uint8Array>(
 }
 
 function namespace(namespace: UuidV5Namespace): UuidV5Deriver {
-  // Copy caller bytes so later mutation cannot change derived IDs.
-  const namespaceBytes = typeof namespace === 'string' ? parseUuid(namespace) : parseNamespace(namespace).slice()
+  // Copy caller bytes so later mutation cannot change derived IDs. `new Uint8Array()` always copies,
+  // unlike `.slice()` on a Node.js Buffer, which returns a view of the same memory.
+  const namespaceBytes =
+    typeof namespace === 'string' ? parseUuid(namespace) : new Uint8Array(parseNamespace(namespace))
 
   function deriver(name: UuidV5Name, buf?: undefined, offset?: number): string
   function deriver<TBuf extends Uint8Array = Uint8Array>(name: UuidV5Name, buf: TBuf, offset?: number): TBuf

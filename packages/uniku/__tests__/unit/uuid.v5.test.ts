@@ -178,6 +178,13 @@ describe('uuidv5', () => {
       expect(derive('name')).toBe(uuidv5('name', APP_NAMESPACE))
     })
 
+    it('snapshots a Uint8Array subclass whose slice() shares memory, such as a Node.js Buffer', () => {
+      const namespace = Buffer.from(uuidv5.toBytes(APP_NAMESPACE))
+      const derive = uuidv5.namespace(namespace)
+      namespace.fill(0)
+      expect(derive('name')).toBe(uuidv5('name', APP_NAMESPACE))
+    })
+
     it('writes into a caller buffer', () => {
       const derive = uuidv5.namespace(uuidv5.DNS)
       const buf = new Uint8Array(20)
