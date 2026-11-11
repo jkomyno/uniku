@@ -7,6 +7,7 @@ import { tsid } from '@/src/tsid/tsid'
 import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
+import { uuidv5 } from '@/src/uuid/v5'
 import { uuidv7 } from '@/src/uuid/v7'
 import { xid } from '@/src/xid/xid'
 
@@ -17,12 +18,39 @@ const benchOptions = {
   warmupIterations: 50,
 }
 
+const deriveDnsV5 = uuidv5.namespace(uuidv5.DNS)
+const LONG_V5_NAME = 'x'.repeat(256)
+
 // === Generation Benchmarks ===
 describe('ID Generation', () => {
   bench(
     'uuidv4',
     () => {
       uuidv4()
+    },
+    benchOptions,
+  )
+
+  bench(
+    'uuidv5',
+    () => {
+      uuidv5('www.example.com', uuidv5.DNS)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'uuidv5.namespace()',
+    () => {
+      deriveDnsV5('www.example.com')
+    },
+    benchOptions,
+  )
+
+  bench(
+    'uuidv5 (256-char name)',
+    () => {
+      uuidv5(LONG_V5_NAME, uuidv5.DNS)
     },
     benchOptions,
   )
@@ -120,6 +148,7 @@ describe('ID Generation', () => {
 describe('ID toBytes', () => {
   // Pre-generate input data outside benchmark
   const v4String = uuidv4()
+  const v5String = uuidv5('www.example.com', uuidv5.DNS)
   const v7String = uuidv7()
   const ulidString = ulid()
   const typeidString = typeid('user')
@@ -132,6 +161,14 @@ describe('ID toBytes', () => {
     'uuidv4.toBytes',
     () => {
       uuidv4.toBytes(v4String)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'uuidv5.toBytes',
+    () => {
+      uuidv5.toBytes(v5String)
     },
     benchOptions,
   )
@@ -197,6 +234,7 @@ describe('ID toBytes', () => {
 describe('ID fromBytes', () => {
   // Pre-generate input data outside benchmark
   const v4Bytes = uuidv4.toBytes(uuidv4())
+  const v5Bytes = uuidv5.toBytes(uuidv5('www.example.com', uuidv5.DNS))
   const v7Bytes = uuidv7.toBytes(uuidv7())
   const ulidBytes = ulid.toBytes(ulid())
   const typeidBytes = typeid.toBytes(typeid('user'))
@@ -209,6 +247,14 @@ describe('ID fromBytes', () => {
     'uuidv4.fromBytes',
     () => {
       uuidv4.fromBytes(v4Bytes)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'uuidv5.fromBytes',
+    () => {
+      uuidv5.fromBytes(v5Bytes)
     },
     benchOptions,
   )
@@ -274,6 +320,7 @@ describe('ID fromBytes', () => {
 describe('ID isValid', () => {
   // Pre-generate input data outside benchmark
   const v4String = uuidv4()
+  const v5String = uuidv5('www.example.com', uuidv5.DNS)
   const v7String = uuidv7()
   const ulidString = ulid()
   const typeidString = typeid('user')
@@ -287,6 +334,14 @@ describe('ID isValid', () => {
     'uuidv4.isValid',
     () => {
       uuidv4.isValid(v4String)
+    },
+    benchOptions,
+  )
+
+  bench(
+    'uuidv5.isValid',
+    () => {
+      uuidv5.isValid(v5String)
     },
     benchOptions,
   )

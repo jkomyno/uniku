@@ -11,6 +11,7 @@ The library may reach `1.0.0` while the CLI remains on `0.x`.
 The `uniku@1.x` public entry points are:
 
 - `uniku/uuid/v4`
+- `uniku/uuid/v5`
 - `uniku/uuid/v7`
 - `uniku/ulid`
 - `uniku/typeid`
@@ -103,6 +104,11 @@ they are never clamped, truncated, or wrapped silently.
 generator overloads may accept larger destination buffers, but the offset must
 be a non-negative integer and the full ID must fit.
 
+TypeID generation always produces a UUID v7. TypeID conversion and validation
+accept any 128-bit value, as the TypeID specification recommends, so
+`typeid.fromUuid()` can wrap a UUID v4 or v5. Only `typeid.timestamp()`
+requires a UUID v7, and it throws `UUID_NOT_V7` otherwise.
+
 Caller-owned random byte arrays and destination buffers have distinct rules:
 
 - random input is read without mutation;
@@ -138,6 +144,12 @@ starts.
 
 Monotonicity is process-local. It does not coordinate independent machines or
 isolates.
+
+UUID v5 is name-based and keeps no monotonic state. Its output depends only on
+the name and namespace, so the same inputs give the same ID in every process
+and on every runtime. String names are hashed as UTF-8 without Unicode
+normalization, with each lone surrogate encoded as U+FFFD; that encoding is
+part of the canonical output and will not change within `1.x`.
 
 ## Performance and bundle discipline
 
@@ -177,6 +189,12 @@ underlying CSPRNG or provide cross-process uniqueness.
 
 Random generators use `globalThis.crypto`. CUID2 uses SHA3-512 from
 `@noble/hashes`; this dependency sets the Node.js minimum version.
+
+UUID v5 uses SHA-1, as RFC 9562 requires, through a small inlined
+implementation with no runtime dependency. SHA-1 is adequate for identity but
+is not a security boundary: someone who controls the names can craft two that
+collide. A UUID v5 is also not a secret, because anyone who knows or can guess
+the name and namespace can compute it.
 
 An identifier can provide entropy or make enumeration harder, but it does not
 provide authorization. Applications must not treat possession of an ID as

@@ -8,9 +8,11 @@ import { tsid } from 'uniku/tsid'
 import { ulid } from 'uniku/ulid'
 import { xid } from 'uniku/xid'
 import { CliError } from '@/src/domain/errors'
-import { cli, MockOutput, TestConsole, TestLive } from '../__utils__'
+import { cli, MockOutput, TestConsole, TestLive } from '../../__utils__'
 
 const TIMESTAMP_MSECS = 1_720_000_000_123
+// RFC 9562 Appendix A.4: UUID v5 of "www.example.com" in the DNS namespace.
+const RFC_V5_DNS_ID = '2ed6657d-e927-568b-95e1-2665a8aea6a2'
 const SECOND_PRECISION_TIMESTAMP_MSECS = 1_720_000_000_000
 
 const timestampCases: ReadonlyArray<{
@@ -131,6 +133,83 @@ describe('CLI: uniku generate uuid', () => {
 
     it.effect('[Given] generate uuid -l [Then] rejects the removed lowercase alias', () =>
       expectCliRejects(['generate', 'uuid', '-l']),
+    )
+
+    it.effect('[Given] generate uuid -v 5 --name --namespace dns [Then] derives the RFC 9562 vector', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['generate', 'uuid', '-v', '5', '--name', 'www.example.com', '--namespace', 'dns'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual([RFC_V5_DNS_ID])
+      }),
+    )
+
+    it.effect('[Given] uuid -v 5 with an explicit namespace UUID [Then] derives the same ID', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli([
+          'uuid',
+          '-v',
+          '5',
+          '--name',
+          'www.example.com',
+          '--namespace',
+          '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+        ])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual([RFC_V5_DNS_ID])
+      }),
+    )
+
+    it.effect('[Given] uuid -v 5 --json [Then] outputs the ID as a JSON string', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['uuid', '--uuid-version', '5', '--name', 'www.example.com', '--namespace', 'DNS', '--json'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toHaveLength(1)
+        expect(JSON.parse(output[0])).toBe(RFC_V5_DNS_ID)
+      }),
+    )
+
+    const v5UsageErrorCases: ReadonlyArray<{ readonly title: string; readonly args: ReadonlyArray<string> }> = [
+      { title: '-v 5 without --name', args: ['uuid', '-v', '5', '--namespace', 'dns'] },
+      { title: '-v 5 without --namespace', args: ['uuid', '-v', '5', '--name', 'www.example.com'] },
+      {
+        title: '-v 5 with -n 2',
+        args: ['uuid', '-v', '5', '--name', 'www.example.com', '--namespace', 'dns', '-n', '2'],
+      },
+      { title: '--name with the default v4', args: ['uuid', '--name', 'www.example.com'] },
+      { title: '--namespace with -v 7', args: ['generate', 'uuid', '-v', '7', '--namespace', 'dns'] },
+    ]
+
+    for (const { title, args } of v5UsageErrorCases) {
+      it.effect(`[Given] ${title} [Then] fails with an INVALID_OPTIONS CliError`, () =>
+        Effect.gen(function* () {
+          yield* MockOutput.reset
+          const error = yield* cli(args).pipe(Effect.flip)
+          assertInstanceOf(error, CliError)
+          expect(error.code).toBe('INVALID_OPTIONS')
+          const output = yield* MockOutput.getStdout
+          expect(output).toEqual([])
+        }),
+      )
+    }
+
+    it.effect('[Given] uuid -v 5 with a malformed --namespace [Then] fails with the library parse code', () =>
+      Effect.gen(function* () {
+        const error = yield* cli([
+          'uuid',
+          '-v',
+          '5',
+          '--name',
+          'www.example.com',
+          '--namespace',
+          '6ba7b810-9dad-11d1-80b4-00c04fd430cz',
+        ]).pipe(Effect.flip)
+        assertInstanceOf(error, CliError)
+        expect(error.code).toBe('INVALID_CHAR')
+        expect(error.hint).toContain('dns')
+      }),
     )
   })
 })
@@ -437,6 +516,18 @@ describe('CLI: uniku generate tsid', () => {
         expect(error.code).toBe('INVALID_TIMESTAMP')
         expect(error.message).toBe('Invalid timestamp: "abc"')
         expect(error.hint).toBe('Provide a Unix timestamp in milliseconds or "now"')
+      }),
+    )
+
+    it.effect('[Given] generate tsid with a negative --node or --node-bits [Then] fails with coded CliErrors', () =>
+      Effect.gen(function* () {
+        const nodeError = yield* cli(['generate', 'tsid', '--node', '-1']).pipe(Effect.flip)
+        assertInstanceOf(nodeError, CliError)
+        expect(nodeError.code).toBe('INVALID_NODE')
+
+        const nodeBitsError = yield* cli(['generate', 'tsid', '--node-bits', '-1']).pipe(Effect.flip)
+        assertInstanceOf(nodeBitsError, CliError)
+        expect(nodeBitsError.code).toBe('INVALID_NODE_BITS')
       }),
     )
 

@@ -9,26 +9,40 @@ Migration is usually an import change first. Keep the stored identifier format s
 ## From `uuid`
 
 ```diff
-- import { v4 as uuidv4, v7 as uuidv7 } from 'uuid'
+- import { v4 as uuidv4, v5 as uuidv5, v7 as uuidv7 } from 'uuid'
 + import { uuidv4 } from 'uniku/uuid/v4'
++ import { uuidv5 } from 'uniku/uuid/v5'
 + import { uuidv7 } from 'uniku/uuid/v7'
 ```
 
 ```ts
 const randomId: string = uuidv4()
 const orderedId: string = uuidv7()
+const derivedId: string = uuidv5('www.example.com', uuidv5.DNS)
 ```
 
-uniku only generates UUID v4 and v7. There is no uniku equivalent for v1, v3, v5, or v6; keep the `uuid` package for those, or generate them elsewhere and only use uniku for v4 and v7 values.
+uniku generates UUID v4, v5, and v7. There is no uniku equivalent for v1, v3, or v6; keep the `uuid` package for those, or generate them elsewhere and only use uniku for v4, v5, and v7 values.
 
 The rest of `uuid`'s API maps onto uniku's per-generator methods, scoped to the version you imported:
 
 | `uuid` | uniku |
 | --- | --- |
-| `parse(id)` | `uuidv4.toBytes(id)` / `uuidv7.toBytes(id)` |
-| `stringify(bytes)` | `uuidv4.fromBytes(bytes)` / `uuidv7.fromBytes(bytes)` |
-| `validate(id)` | `uuidv4.isValid(id)` / `uuidv7.isValid(id)` |
-| `version(id)` | Implied by which `isValid` matches: `uuidv4.isValid` accepts only version 4, `uuidv7.isValid` accepts only version 7. |
+| `parse(id)` | `uuidv4.toBytes(id)` / `uuidv5.toBytes(id)` / `uuidv7.toBytes(id)` |
+| `stringify(bytes)` | `uuidv4.fromBytes(bytes)` / `uuidv5.fromBytes(bytes)` / `uuidv7.fromBytes(bytes)` |
+| `validate(id)` | `uuidv4.isValid(id)` / `uuidv5.isValid(id)` / `uuidv7.isValid(id)` |
+| `version(id)` | Implied by which `isValid` matches: each accepts only its own version. |
+
+### Name-based UUID v5
+
+`uuid`'s `v5(name, namespace)` becomes `uuidv5(name, namespace)`, with the same argument order. The buffer form `v5(name, namespace, buf, offset)` keeps its order too. Both produce the same IDs for the same inputs, so stored v5 values stay valid.
+
+| `uuid` | uniku |
+| --- | --- |
+| `v5(name, namespace)` | `uuidv5(name, namespace)` |
+| `v5(name, namespace, buf, offset)` | `uuidv5(name, namespace, buf, offset)` |
+| `v5.DNS` / `v5.URL` | `uuidv5.DNS` / `uuidv5.URL` |
+
+uniku also exposes `uuidv5.OID` and `uuidv5.X500`, and `uuidv5.namespace(ns)` to parse a namespace once for many names. See [UUID v5](/docs/reference/uuid-v5).
 
 ## From `nanoid`
 

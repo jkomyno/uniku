@@ -6,6 +6,7 @@ import * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
 import * as Layer from 'effect/Layer'
 import * as Option from 'effect/Option'
+import { hasOptionToken } from '@/src/runtime/args'
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export function isNewerVersion(latest: string, current: string): boolean {
 // ── Skip conditions ──────────────────────────────────────────────────
 
 function optionalConfigString(name: string): Effect.Effect<Option.Option<string>> {
-  return Config.option(Config.string(name)).pipe(Effect.catch(() => Effect.succeed(Option.none())))
+  return Config.option(Config.String(name)).pipe(Effect.catch(() => Effect.succeed(Option.none())))
 }
 
 function isTruthyConfig(value: Option.Option<string>): boolean {
@@ -186,7 +187,7 @@ export function shouldNotifyUpdate(
   args: readonly string[],
   result: Option.Option<UpdateInfo>,
 ): result is Option.Some<UpdateInfo> {
-  return Option.isSome(result) && !args.includes('--json')
+  return Option.isSome(result) && !hasOptionToken(args, '--json')
 }
 
 // ── Cache helpers (plain Node.js — maximally resilient) ──────────────

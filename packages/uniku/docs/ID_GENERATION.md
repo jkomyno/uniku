@@ -42,11 +42,47 @@ export const tsid = Object.assign(tsidFn, {
 not already a string. Every other generator's methods already operate on a string, so it never
 needed a dedicated pair of conversions to and from one.
 
+### Name-Based Variant (uuidv5)
+
+Every generator above creates a new value on each call. `uuidv5` derives one: its output is a
+pure function of a name and a namespace (RFC 9562 section 5.5, SHA-1). That changes three things.
+
+```typescript
+export const uuidv5 = Object.assign(v5, {
+  namespace: bindNamespace, // (ns) => (name, buf?, offset?) => string | buf (NEW: bound deriver)
+  toBytes: parseFunction,
+  fromBytes: formatFunction,
+  isValid: validator,
+  DNS: '...',               // RFC 9562 namespace constants (NEW)
+  URL: '...',
+  OID: '...',
+  X500: '...',
+  NIL: '...',
+  MAX: '...',
+})
+```
+
+- **Positional inputs, no options object.** The signature is `(name, namespace, buf?, offset?)`,
+  matching the `uuid` package's `v5`. The name and namespace are required inputs, not tuning
+  knobs, so there is no `UuidV5Options` type and no `random`/`msecs`/`counter` fields.
+- **No module state.** There is no monotonic state to keep and no `timestamp()`. Module-level
+  buffers are scratch space only; they never carry information from one call to the next.
+- **`namespace()` bound deriver.** `uuidv5.namespace(ns)` validates and parses the namespace once
+  and returns `(name, buf?, offset?)`. It copies caller-owned namespace bytes so later mutation
+  cannot change derived IDs. It holds the namespace, never past results: the library keeps no
+  cache.
+
+String names are encoded as UTF-8 without Unicode normalization. SHA-1 is a small inlined
+implementation in `src/uuid/common/sha1.ts`, so the entry point stays synchronous and has no
+runtime dependency.
+
 ## Function Overloads
 
 Generators support two modes via overloads:
 - **String mode** (default): `generator()` returns a string
 - **Buffer mode**: `generator(options, buf, offset)` writes to provided `Uint8Array`
+
+`uuidv5` takes `(name, namespace)` in place of `options`; see the name-based variant above.
 
 ## Options Type
 
@@ -153,9 +189,9 @@ strategy prefix — `strategy` carries the attribution.
 ## Entry Point
 
 Each generator has its own entry point (no barrel exports):
-- `uniku/uuid/v4`, `uniku/uuid/v7`, `uniku/ulid`, etc.
+- `uniku/uuid/v4`, `uniku/uuid/v5`, `uniku/uuid/v7`, `uniku/ulid`, etc.
 
-Versioned generators use a versioned subpath: `uniku/uuid/v4`, `uniku/uuid/v7`, and
+Versioned generators use a versioned subpath: `uniku/uuid/v4`, `uniku/uuid/v5`, `uniku/uuid/v7`, and
 `uniku/cuid/v2` (the sole CUID v2 entry point).
 
 Two non-generator, metadata-only entry points follow the same standalone-module convention:

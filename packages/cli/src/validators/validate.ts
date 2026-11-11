@@ -6,6 +6,7 @@ import { tsid } from 'uniku/tsid'
 import { typeid } from 'uniku/typeid'
 import { ulid } from 'uniku/ulid'
 import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import type { IdType, ValidationResult } from '@/src/domain/types'
@@ -69,10 +70,17 @@ export function validateAutoDetect(id: string): ValidationResult {
   if (uuidv4.isValid(id)) {
     return { id, valid: true, type: 'uuid', version: 4 }
   }
+  if (uuidv5.isValid(id)) {
+    return { id, valid: true, type: 'uuid', version: 5 }
+  }
 
-  // 2. TypeID (optional prefix + UUID v7 base32 suffix)
+  // 2. TypeID (optional prefix + base32 UUID suffix). A prefixless TypeID that
+  // does not wrap a UUID v7 falls through, so it does not claim ULID-shaped input.
   if (typeid.isValid(id)) {
-    return { id, valid: true, type: 'typeid', version: 7 }
+    const version = typeidUuidVersion(id)
+    if (version === 7 || typeid.prefix(id) !== '') {
+      return { id, valid: true, type: 'typeid', version }
+    }
   }
 
   // 3. ULID (26 chars, Crockford Base32)
@@ -120,6 +128,9 @@ function validateUuid(id: string): ValidationResult {
   if (uuidv4.isValid(id)) {
     return { id, valid: true, type: 'uuid', version: 4 }
   }
+  if (uuidv5.isValid(id)) {
+    return { id, valid: true, type: 'uuid', version: 5 }
+  }
   return { id, valid: false, type: 'uuid', error: 'invalid UUID format' }
 }
 
@@ -130,9 +141,15 @@ function validateUlid(id: string): ValidationResult {
   return { id, valid: false, type: 'ulid', error: 'invalid ULID format' }
 }
 
+/** Return the RFC 9562 version of the UUID a valid TypeID wraps, or `undefined` for a non-RFC value such as nil. */
+export function typeidUuidVersion(id: string): number | undefined {
+  const bytes = typeid.toBytes(id)
+  return (bytes[8] & 0xc0) === 0x80 ? bytes[6] >> 4 : undefined
+}
+
 function validateTypeid(id: string): ValidationResult {
   if (typeid.isValid(id)) {
-    return { id, valid: true, type: 'typeid', version: 7 }
+    return { id, valid: true, type: 'typeid', version: typeidUuidVersion(id) }
   }
   return { id, valid: false, type: 'typeid', error: 'invalid TypeID format' }
 }

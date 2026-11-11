@@ -6,6 +6,7 @@ import { tsid } from '../build/tsid/tsid.mjs'
 import { typeid } from '../build/typeid/typeid.mjs'
 import { ulid } from '../build/ulid/ulid.mjs'
 import { uuidv4 } from '../build/uuid/v4.mjs'
+import { uuidv5 } from '../build/uuid/v5.mjs'
 import { uuidv7 } from '../build/uuid/v7.mjs'
 import { xid } from '../build/xid/xid.mjs'
 
@@ -44,5 +45,18 @@ assert(tsid.isValid(tsidId), 'tsid should validate its generated bigint')
 const tsidStr = tsid.toString(tsidId)
 assert(typeof tsidStr === 'string' && tsidStr.length > 0, 'tsid.toString should produce a non-empty string')
 
-const coveredCount = generators.length + 1
+// RFC 9562 Appendix A.4, and a non-ASCII name hashed as UTF-8 (computed with `uuid`'s v5).
+const uuidv5Vectors = [
+  ['www.example.com', uuidv5.DNS, '2ed6657d-e927-568b-95e1-2665a8aea6a2'],
+  ['日本語🦄', uuidv5.URL, 'd2cdb36d-613b-5f03-a81c-eaa948daae54'],
+]
+for (const [name, namespace, expected] of uuidv5Vectors) {
+  const id = uuidv5(name, namespace)
+  assert(id === expected, `uuidv5(${JSON.stringify(name)}) should be ${expected}, got ${id}`)
+  assert(uuidv5.namespace(namespace)(name) === expected, `uuidv5.namespace should derive ${expected}`)
+  assert(uuidv5.isValid(id), 'uuidv5 should validate its derived ID')
+  assert(uuidv5.fromBytes(uuidv5.toBytes(id)) === id, 'uuidv5 should round-trip through bytes')
+}
+
+const coveredCount = generators.length + 2
 console.info(`Runtime smoke passed for ${coveredCount} uniku entry points.`)

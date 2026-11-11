@@ -1,10 +1,10 @@
 ---
 title: TypeID
-description: UUID v7 identifiers with a readable, domain-specific prefix.
+description: UUID identifiers with a readable, domain-specific prefix, generated as UUID v7.
 icon: Tags
 ---
 
-TypeID wraps a UUID v7 suffix in a lowercase prefix such as `user_` or `order_`. It is useful when a public identifier should reveal the kind of resource it identifies.
+TypeID puts a lowercase prefix such as `user_` or `order_` in front of a base32-encoded UUID. It is useful when a public identifier should reveal the kind of resource it identifies. `typeid()` always generates a UUID v7, so new TypeIDs sort by creation time.
 
 ```ts
 import { typeid } from 'uniku/typeid'
@@ -13,5 +13,25 @@ const userId = typeid('user')
 // 'user_01kxbk40t3egn9xec2thzpa2w7' (string)
 typeid.prefix(userId) // 'user'
 ```
+
+## Wrapping an existing UUID
+
+`typeid.fromUuid()` and `typeid.fromBytes()` accept a UUID of any version, as the [TypeID specification](https://github.com/jetify-com/typeid/tree/main/spec) recommends. So do `toUuid()`, `toBytes()`, `prefix()`, `suffix()`, and `isValid()`. Wrapping a name-based [UUID v5](/docs/reference/uuid-v5) gives a TypeID that is the same every time you derive it.
+
+```ts
+import { uuidv5 } from 'uniku/uuid/v5'
+
+typeid.fromUuid('user', '019f5732-0343-742a-9eb9-82d47f650b87')
+// 'user_01kxbk40t3egn9xec2thzpa2w7'
+
+typeid.fromUuid('tool', uuidv5('https://example.com/tools/a', uuidv5.URL))
+// 'tool_5yx5xtd8m9bwna8eqneah4qjxw'
+```
+
+A string that is not a UUID throws a `ParseError` with code `INVALID_LENGTH`, `INVALID_FORMAT`, or `INVALID_CHAR`.
+
+## Timestamps
+
+`typeid.timestamp()` reads the creation time from a TypeID that wraps a UUID v7, in milliseconds. For any other UUID it throws an `InvalidInputError` with code `UUID_NOT_V7`, because those bits are not a time.
 
 <ApiReference generator="typeid" />

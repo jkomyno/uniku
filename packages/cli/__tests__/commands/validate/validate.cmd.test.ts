@@ -9,7 +9,7 @@ import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import { CliError, ValidationFailedError } from '@/src/domain/errors'
-import { cli, MockOutput, TestLive } from '../__utils__'
+import { cli, MockOutput, TestLive } from '../../__utils__'
 
 describe('CLI: uniku validate', () => {
   const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'
@@ -80,6 +80,15 @@ describe('CLI: uniku validate', () => {
         const output = yield* MockOutput.getStdout
         expect(output.join('')).toContain('valid')
         expect(output.join('')).toContain('uuid')
+      }),
+    )
+
+    it.effect('[Given] --type uuid and valid UUID v5 [Then] validates as UUID v5', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['validate', '2ed6657d-e927-568b-95e1-2665a8aea6a2', '--type', 'uuid'])
+        const output = yield* MockOutput.getStdout
+        expect(output).toEqual(['valid (uuid v5)'])
       }),
     )
 

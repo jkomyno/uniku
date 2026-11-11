@@ -4,8 +4,15 @@ import { ObjectId as npmObjectId } from 'bson'
 import { nanoid as npmNanoid } from 'nanoid'
 import { init as initNeXid, XID as npmNeXid } from 'nexid'
 import { TSID as npmTsid } from 'tsid-ts'
+import { TypeID as NpmTypeID, fromUUID as npmTypeidFromUuid } from 'typeid-js'
 import { ulid as npmUlid } from 'ulid'
-import { v4 as npmUuidV4, v7 as npmUuidV7, validate as uuidValidate, version as uuidVersion } from 'uuid'
+import {
+  v4 as npmUuidV4,
+  v5 as npmUuidV5,
+  v7 as npmUuidV7,
+  validate as uuidValidate,
+  version as uuidVersion,
+} from 'uuid'
 import { beforeAll } from 'vitest'
 import { Xid as npmXid } from 'xid-ts'
 import { cuidv2 } from '@/src/cuid/v2'
@@ -13,8 +20,10 @@ import { ksuid } from '@/src/ksuid/ksuid'
 import { nanoid } from '@/src/nanoid/nanoid'
 import { objectid } from '@/src/objectid/objectid'
 import { tsid } from '@/src/tsid/tsid'
+import { typeid } from '@/src/typeid/typeid'
 import { ulid } from '@/src/ulid/ulid'
 import { uuidv4 } from '@/src/uuid/v4'
+import { uuidv5 } from '@/src/uuid/v5'
 import { uuidv7 } from '@/src/uuid/v7'
 import { xid } from '@/src/xid/xid'
 
@@ -22,7 +31,22 @@ const BATCH_SIZE = 100
 
 // npm uuid requires validate() + version() for version-specific validation
 const npmIsValidUuidV4 = (id: string): boolean => uuidValidate(id) && uuidVersion(id) === 4
+const npmIsValidUuidV5 = (id: string): boolean => uuidValidate(id) && uuidVersion(id) === 5
 const npmIsValidUuidV7 = (id: string): boolean => uuidValidate(id) && uuidVersion(id) === 7
+
+const randomInt = (max: number): number => Math.floor(Math.random() * max)
+
+// Well-formed Unicode only: npm uuid encodes through encodeURIComponent, which throws on lone surrogates.
+function randomUnicodeName(): string {
+  const codePoints = Array.from({ length: randomInt(120) }, () => {
+    const roll = randomInt(4)
+    if (roll === 0) return 0x20 + randomInt(0x5f) // printable ASCII
+    if (roll === 1) return 0x80 + randomInt(0x780) // 2-byte UTF-8
+    if (roll === 2) return 0xe000 + randomInt(0x2000) // 3-byte UTF-8, past the surrogates
+    return 0x10000 + randomInt(0x10000) // 4-byte UTF-8 (surrogate pairs)
+  })
+  return String.fromCodePoint(...codePoints)
+}
 
 // ulid npm (v2.3.0) has no isValid(), use regex for Crockford Base32 validation
 // First char 0-7 to prevent overflow, rest is Crockford alphabet (excludes I, L, O, U)
@@ -51,6 +75,40 @@ describe('Cross-Validation: UUID v4', () => {
   })
 })
 
+describe('Cross-Validation: UUID v5', () => {
+  it('derives the same IDs as npm uuid for random string names and namespaces', () => {
+    for (let i = 0; i < BATCH_SIZE; i += 1) {
+      const namespace = npmUuidV4()
+      const name = randomUnicodeName()
+      expect(uuidv5(name, namespace), JSON.stringify(name)).toBe(npmUuidV5(name, namespace))
+    }
+  })
+
+  it('derives the same IDs as npm uuid for random byte names and namespaces', () => {
+    for (let i = 0; i < BATCH_SIZE; i += 1) {
+      const namespace = crypto.getRandomValues(new Uint8Array(16))
+      const name = crypto.getRandomValues(new Uint8Array(randomInt(300)))
+      expect(uuidv5(name, namespace)).toBe(npmUuidV5(name, namespace))
+    }
+  })
+
+  it('matches npm uuid for the RFC namespaces and buffer output', () => {
+    for (const namespace of [uuidv5.DNS, uuidv5.URL, uuidv5.OID, uuidv5.X500]) {
+      expect(uuidv5('www.example.com', namespace)).toBe(npmUuidV5('www.example.com', namespace))
+      expect(uuidv5('www.example.com', namespace, new Uint8Array(20), 2)).toEqual(
+        npmUuidV5('www.example.com', namespace, new Uint8Array(20), 2),
+      )
+    }
+  })
+
+  it('uniku and npm IDs pass both validators', () => {
+    const ids = Array.from({ length: BATCH_SIZE }, (_, i) => uuidv5(`name-${i}`, uuidv5.URL))
+    expect(ids.filter((id) => !npmIsValidUuidV5(id))).toHaveLength(0)
+    const npmIds = Array.from({ length: BATCH_SIZE }, (_, i) => npmUuidV5(`name-${i}`, npmUuidV5.URL))
+    expect(npmIds.filter((id) => !uuidv5.isValid(id))).toHaveLength(0)
+  })
+})
+
 describe('Cross-Validation: UUID v7', () => {
   it('uniku IDs pass npm validation', () => {
     const ids = Array.from({ length: BATCH_SIZE }, () => uuidv7())
@@ -62,6 +120,25 @@ describe('Cross-Validation: UUID v7', () => {
     const ids = Array.from({ length: BATCH_SIZE }, () => npmUuidV7())
     const invalid = ids.filter((id) => !uuidv7.isValid(id))
     expect(invalid).toHaveLength(0)
+  })
+})
+
+describe('Cross-Validation: TypeID', () => {
+  it('encodes UUID v4, v5, and v7 like typeid-js', () => {
+    for (let i = 0; i < BATCH_SIZE; i += 1) {
+      for (const uuid of [npmUuidV4(), npmUuidV5(randomUnicodeName(), npmUuidV4()), npmUuidV7()]) {
+        const id = typeid.fromUuid('sess', uuid)
+        expect(id, uuid).toBe(npmTypeidFromUuid(uuid, 'sess').toString())
+        expect(NpmTypeID.fromString(id).toUUID()).toBe(uuid)
+      }
+    }
+  })
+
+  it('decodes typeid-js IDs', () => {
+    for (let i = 0; i < BATCH_SIZE; i += 1) {
+      const uuid = npmUuidV5(`name-${i}`, npmUuidV5.URL)
+      expect(typeid.toUuid(npmTypeidFromUuid(uuid, 'sess').toString())).toBe(uuid)
+    }
   })
 })
 

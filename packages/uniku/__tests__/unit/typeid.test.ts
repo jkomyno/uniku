@@ -1,5 +1,6 @@
-import { BufferError, InvalidInputError, typeid } from '@/src/typeid/typeid'
+import { BufferError, InvalidInputError, ParseError, typeid } from '@/src/typeid/typeid'
 import { uuidv4 } from '@/src/uuid/v4'
+import { uuidv5 } from '@/src/uuid/v5'
 import { uuidv7 } from '@/src/uuid/v7'
 import { expectValidTypeGuard } from '../helpers/assertions'
 
@@ -7,6 +8,64 @@ const FIXED_MSECS = 1_702_387_456_789
 const ZERO_RANDOM = new Uint8Array(16)
 const FIXED_UUID = '0188bac7-4afa-78aa-bc3b-bd1eef28d881'
 const FIXED_TYPEID = 'prefix_01h2xcejqtf2nbrexx3vqjhp41'
+
+// Conformance vectors from the TypeID specification v0.3.0 (Apache-2.0):
+// https://github.com/jetify-com/typeid/tree/main/spec
+const SPEC_VALID = [
+  { name: 'nil', typeid: '00000000000000000000000000', prefix: '', uuid: '00000000-0000-0000-0000-000000000000' },
+  { name: 'one', typeid: '00000000000000000000000001', prefix: '', uuid: '00000000-0000-0000-0000-000000000001' },
+  { name: 'ten', typeid: '0000000000000000000000000a', prefix: '', uuid: '00000000-0000-0000-0000-00000000000a' },
+  { name: 'sixteen', typeid: '0000000000000000000000000g', prefix: '', uuid: '00000000-0000-0000-0000-000000000010' },
+  {
+    name: 'thirty-two',
+    typeid: '00000000000000000000000010',
+    prefix: '',
+    uuid: '00000000-0000-0000-0000-000000000020',
+  },
+  { name: 'max-valid', typeid: '7zzzzzzzzzzzzzzzzzzzzzzzzz', prefix: '', uuid: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
+  {
+    name: 'valid-alphabet',
+    typeid: 'prefix_0123456789abcdefghjkmnpqrs',
+    prefix: 'prefix',
+    uuid: '0110c853-1d09-52d8-d73e-1194e95b5f19',
+  },
+  {
+    name: 'valid-uuidv7',
+    typeid: 'prefix_01h455vb4pex5vsknk084sn02q',
+    prefix: 'prefix',
+    uuid: '01890a5d-ac96-774b-bcce-b302099a8057',
+  },
+  {
+    name: 'prefix-underscore',
+    typeid: 'pre_fix_00000000000000000000000000',
+    prefix: 'pre_fix',
+    uuid: '00000000-0000-0000-0000-000000000000',
+  },
+]
+
+const SPEC_INVALID = [
+  ['prefix-uppercase', 'PREFIX_00000000000000000000000000'],
+  ['prefix-numeric', '12345_00000000000000000000000000'],
+  ['prefix-period', 'pre.fix_00000000000000000000000000'],
+  ['prefix-non-ascii', 'préfix_00000000000000000000000000'],
+  ['prefix-spaces', '  prefix_00000000000000000000000000'],
+  ['prefix-64-chars', `${'abcdefghijklmnopqrstuvwxyz'.repeat(2)}abcdefghijkl_00000000000000000000000000`],
+  ['separator-empty-prefix', '_00000000000000000000000000'],
+  ['separator-empty', '_'],
+  ['suffix-short', 'prefix_1234567890123456789012345'],
+  ['suffix-long', 'prefix_123456789012345678901234567'],
+  ['suffix-spaces', 'prefix_1234567890123456789012345 '],
+  ['suffix-uppercase', 'prefix_0123456789ABCDEFGHJKMNPQRS'],
+  ['suffix-hyphens', 'prefix_123456789-123456789-123456'],
+  ['suffix-wrong-alphabet', 'prefix_ooooooiiiiiiuuuuuuulllllll'],
+  ['suffix-ambiguous-crockford', 'prefix_i23456789ol23456789oi23456'],
+  ['suffix-hyphens-crockford', 'prefix_123456789-0123456789-0123456'],
+  ['suffix-overflow', 'prefix_8zzzzzzzzzzzzzzzzzzzzzzzzz'],
+  ['prefix-underscore-start', '_prefix_00000000000000000000000000'],
+  ['prefix-underscore-end', 'prefix__00000000000000000000000000'],
+  ['empty', ''],
+  ['prefix-empty', 'prefix_'],
+]
 
 describe('typeid', () => {
   it('generates a valid prefixed TypeID string', () => {
@@ -161,19 +220,65 @@ describe('typeid', () => {
     })
   })
 
+  describe('specification vectors', () => {
+    it.each(SPEC_VALID)('decodes and encodes $name', (vector) => {
+      expect(typeid.isValid(vector.typeid)).toBe(true)
+      expect(typeid.prefix(vector.typeid)).toBe(vector.prefix)
+      expect(typeid.toUuid(vector.typeid)).toBe(vector.uuid)
+      expect(typeid.fromUuid(vector.prefix, vector.uuid)).toBe(vector.typeid)
+      expect(typeid.fromBytes(vector.prefix, typeid.toBytes(vector.typeid))).toBe(vector.typeid)
+    })
+
+    it.each(SPEC_INVALID)('rejects %s', (_name, id) => {
+      expect(typeid.isValid(id)).toBe(false)
+      expect(() => typeid.toUuid(id)).toThrow()
+    })
+  })
+
+  describe('wrapping other UUID versions', () => {
+    it('wraps UUID v4 and v5 strings and bytes', () => {
+      for (const uuid of [uuidv4(), uuidv5('tool-a:3f2c', uuidv5.URL)]) {
+        const id = typeid.fromUuid('sess', uuid)
+
+        expect(typeid.isValid(id)).toBe(true)
+        expect(typeid.toUuid(id)).toBe(uuid)
+        expect(typeid.fromBytes('sess', uuidv4.toBytes(uuid))).toBe(id)
+      }
+    })
+
+    it('derives the same TypeID from the same name-based UUID', () => {
+      const derive = () => typeid.fromUuid('sess', uuidv5('tool-a:3f2c', uuidv5.URL))
+      expect(derive()).toBe(derive())
+    })
+
+    it('accepts an uppercase UUID string and returns lowercase', () => {
+      const uuid = uuidv5('www.example.com', uuidv5.DNS)
+      expect(typeid.toUuid(typeid.fromUuid('sess', uuid.toUpperCase()))).toBe(uuid)
+    })
+
+    it('throws UUID_NOT_V7 from timestamp() for a TypeID that does not wrap a UUID v7', () => {
+      // Version 7 nibble with a non-RFC variant still has no RFC 9562 timestamp.
+      const v7WithWrongVariant = '01890a5d-ac96-774b-ccce-b302099a8057'
+      for (const uuid of [uuidv4(), uuidv5('name', uuidv5.DNS), uuidv4.NIL, uuidv4.MAX, v7WithWrongVariant]) {
+        expect(() => typeid.timestamp(typeid.fromUuid('sess', uuid)), uuid).toThrow(
+          expect.objectContaining({ _tag: 'InvalidInputError', code: 'UUID_NOT_V7', strategy: 'typeid' }),
+        )
+      }
+    })
+  })
+
   describe('conversion validation', () => {
-    it('rejects invalid UUID strings', () => {
-      expect(() => typeid.fromUuid('user', 'not-a-uuid')).toThrow('TypeID can only wrap UUID v7 values')
+    it.each([
+      ['INVALID_LENGTH', 'not-a-uuid'],
+      ['INVALID_FORMAT', '2ed6657d_e927_568b_95e1_2665a8aea6a2'],
+      ['INVALID_CHAR', 'zed6657d-e927-568b-95e1-2665a8aea6a2'],
+    ])('rejects a UUID string with %s', (code, uuid) => {
+      expect(() => typeid.fromUuid('user', uuid)).toThrow(ParseError)
+      expect(() => typeid.fromUuid('user', uuid)).toThrow(expect.objectContaining({ code, strategy: 'typeid' }))
     })
 
     it('rejects invalid byte lengths', () => {
       expect(() => typeid.fromBytes('user', new Uint8Array(15))).toThrow('UUID bytes must be 16 bytes, got 15')
-    })
-
-    it('rejects non-v7 UUID bytes', () => {
-      expect(() => typeid.fromBytes('user', uuidv4.toBytes(uuidv4()))).toThrow(
-        'TypeID UUID bytes must encode a UUID v7 value',
-      )
     })
   })
 
@@ -191,7 +296,6 @@ describe('typeid', () => {
       expect(typeid.isValid(`user_${suffix.slice(1)}`)).toBe(false)
       expect(typeid.isValid(`user_${suffix.toUpperCase()}`)).toBe(false)
       expect(typeid.isValid(`user_8${suffix.slice(1)}`)).toBe(false)
-      expect(typeid.isValid(`user_${'0'.repeat(14)}4${'0'.repeat(11)}`)).toBe(false)
       expect(typeid.isValid('')).toBe(false)
     })
 

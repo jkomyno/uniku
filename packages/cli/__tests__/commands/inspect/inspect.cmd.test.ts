@@ -10,7 +10,7 @@ import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import { CliError } from '@/src/domain/errors'
-import { cli, MockOutput, TestLive } from '../__utils__'
+import { cli, MockOutput, TestLive } from '../../__utils__'
 
 describe('CLI: uniku inspect', () => {
   const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'
@@ -160,6 +160,17 @@ describe('CLI: uniku inspect', () => {
       }),
     )
 
+    it.effect('[Given] UUID v5 --json [Then] reports version 5', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['inspect', '2ed6657d-e927-568b-95e1-2665a8aea6a2', '--json'])
+        const output = yield* MockOutput.getStdout
+        const parsed = JSON.parse(output[0])
+        expect(parsed.type).toBe('uuid')
+        expect(parsed.version).toBe(5)
+      }),
+    )
+
     it.effect('[Given] --type uuid [Then] forces UUID inspection', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset
@@ -177,6 +188,15 @@ describe('CLI: uniku inspect', () => {
         const output = yield* MockOutput.getStdout
         expect(output[0]).toContain('nanoid')
         expect(output[0]).toContain('no decodable metadata')
+      }),
+    )
+
+    it.effect('[Given] a global flag before inspect and an operand after -- [Then] inspects the operand', () =>
+      Effect.gen(function* () {
+        yield* MockOutput.reset
+        yield* cli(['--log-level', 'info', 'inspect', '--', dashLeadingNanoid])
+        const output = yield* MockOutput.getStdout
+        expect(output[0]).toContain('nanoid')
       }),
     )
 

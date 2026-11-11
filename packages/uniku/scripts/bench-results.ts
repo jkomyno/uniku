@@ -105,8 +105,14 @@ export function mergeBenchmarkHistory(
   const baselineHistory = baseline ? (baseline.history ?? [toSnapshot(baseline)]) : []
   const currentHistory = current.history ?? [toSnapshot(current)]
   const currentAction = aggregateBenchmarkSnapshots(currentHistory, 'withinActionRme')
-  const history = [...baselineHistory, currentAction].slice(-maxHistory)
+  const currentMatrix = benchmarkMatrixOf(currentAction)
+  const compatibleHistory = baselineHistory.filter((snapshot) => benchmarkMatrixOf(snapshot) === currentMatrix)
+  const history = [...compatibleHistory, currentAction].slice(-maxHistory)
   return { ...aggregateBenchmarkSnapshots(history, 'crossActionRme'), history }
+}
+
+function benchmarkMatrixOf(snapshot: BenchmarkSnapshot): string {
+  return [...collectBenchmarks(snapshot).keys()].sort().join('\n')
 }
 
 function toSnapshot(result: BenchmarkSnapshot): BenchmarkSnapshot {

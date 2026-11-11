@@ -51,7 +51,7 @@ Use this skill for typecheck failures, declaration emit constraints, exported AP
 
 ## Effect v4
 
-- The CLI runs on Effect v4 (`effect@4.0.0-beta.x`, pinned exact). Never use Effect v3 packages (`@effect/cli`, `@effect/platform`) — they have no v4 equivalents.
+- The CLI runs on Effect 4.1 (`effect@4.1.x`, pinned exact). Never use Effect v3 packages (`@effect/cli`, `@effect/platform`) — they have no v4 equivalents.
 - For any Effect work in the CLI, use `.agents/skills/effect-v4` and verify unfamiliar APIs against `repos/effect/`.
 - Treat `repos/effect/` as a read-only local source reference; never import from it.
 - Use the `effect-v4` skill for exact generator syntax, function helpers, Schema-backed tagged errors, services, layers, and v4 traps.

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A TypeScript library providing multiple unique ID generation strategies (UUID v4/v7, ULID, CUID2, Nanoid, KSUID) that works across all JavaScript runtimes.
+A TypeScript library providing multiple unique ID generation strategies (UUID v4/v5/v7, ULID, CUID2, Nanoid, KSUID) that works across all JavaScript runtimes.
 
 ## Commands
 
@@ -49,7 +49,7 @@ Current child guidance:
 - **Time-ordered IDs** (uuidv7, ulid, ksuid): Maintain module-level state for monotonic sequencing
 - **Random byte pooling**: Pre-allocated buffers for performance
 - **Tree-shakeable**: Each generator is a separate entry point
-- **Effect CLI**: `packages/cli` uses Effect v4 (`effect@4.0.0-beta.x`, pinned exact — no `^` or `@beta` ranges; do not auto-bump betas). Read `.agents/skills/effect-v4` before any Effect work in the CLI; verify current upstream APIs against `repos/effect` and compatibility against the installed CLI pin. Never use Effect v3 packages (`@effect/cli`, `@effect/platform`) — they have no v4 equivalents.
+- **Effect CLI**: `packages/cli` uses Effect 4.1 (`effect@4.1.x`, every Effect package pinned to the same exact version — no `^` ranges). Each command lives in `src/commands/<name>/` as a `<name>.cmd.ts` definition plus a `<name>.handler.ts`; a group's subcommands live in `<group>/<sub>/<group>.<sub>.*.ts`. Read `.agents/skills/effect-v4` before any Effect work in the CLI; verify APIs against `repos/effect` (checked out at the matching `effect@` tag) and the installed pin. Never use Effect v3 packages (`@effect/cli`, `@effect/platform`) — they have no v4 equivalents.
 
 ## Local Agent Skills
 
@@ -57,7 +57,7 @@ Repo-local skills live under `.agents/skills`:
 
 - `typescript`: strict TypeScript, declaration emit, package boundaries, and CLI Effect interop.
 - `testing`: Vitest, CLI tests, integration tests, Cloudflare e2e tests, and Effect v4 CLI tests.
-- `effect-v4`: source-grounded Effect v4 guidance for the CLI (conventions, v3→v4 rename maps, verification workflow).
+- `effect-v4`: source-grounded Effect 4.1 guidance for the CLI (conventions, `effect/cli` surface and command layout, upgrade workflow).
 
 `repos/effect` is a read-only submodule clone of <https://github.com/Effect-TS/effect> for Effect v4 source lookup. If it is missing, run `git submodule update --init repos/effect`. Never import from or edit `repos/**`; use installed package dependencies in source code.
 
@@ -66,6 +66,7 @@ Repo-local skills live under `.agents/skills`:
 - Unit tests validate generator output and edge cases
 - Integration tests cross-validate with npm reference packages
 - E2E tests run in Cloudflare Workers environment
+- Vitest 5 is the default (`catalog:`). `packages/uniku` (benchmarks use the `bench()` API Vitest 5 removed) and the Cloudflare e2e workspace (`@cloudflare/vitest-pool-workers` requires Vitest 4) use the `vitest4` catalog in `pnpm-workspace.yaml`
 - CI compatibility benchmarks run each implementation in a fresh process, alternate balanced launch orders across four repetitions, aggregate per-row medians, and retain rolling action-level baselines; cold starts stay separate from warmed throughput.
 
 ## Package Guidelines

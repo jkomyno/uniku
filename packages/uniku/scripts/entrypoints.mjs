@@ -14,6 +14,7 @@
 /** @type {ReadonlyArray<{ subpath: string, src: string, hasExternal?: boolean }>} */
 const ENTRIES = [
   { subpath: './uuid/v4', src: 'src/uuid/v4.ts' },
+  { subpath: './uuid/v5', src: 'src/uuid/v5.ts' },
   { subpath: './uuid/v7', src: 'src/uuid/v7.ts' },
   { subpath: './ulid', src: 'src/ulid/ulid.ts' },
   { subpath: './typeid', src: 'src/typeid/typeid.ts' },
