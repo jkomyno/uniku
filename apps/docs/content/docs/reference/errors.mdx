@@ -57,7 +57,6 @@ The following codes form the v1 public contract:
 | Code | Error class(es) | Strategies | Meaning |
 | --- | --- | --- | --- |
 | `TIMESTAMP_OUT_OF_RANGE` | `InvalidInputError`, `ParseError` | `uuid`, `ulid`, `typeid`, `ksuid`, `objectid`, `tsid`, `xid` | A timestamp option is not an integer in the format's range, or a decoded timestamp overflows. |
-| `CONFLICTING_OPTIONS` | `InvalidInputError` | `uuid`, `typeid`, `nanoid`, `ksuid`, `objectid`, `xid` | Mutually exclusive compatibility and canonical options were supplied together. |
 | `COUNTER_OUT_OF_RANGE` | `InvalidInputError` | `uuid`, `typeid`, `objectid`, `tsid`, `xid` | A counter option is outside the format's supported bit width. |
 | `NODE_OUT_OF_RANGE` | `InvalidInputError` | `tsid` | A TSID node value is outside the configured node-bit range. |
 | `NODE_BITS_OUT_OF_RANGE` | `InvalidInputError` | `tsid` | A TSID node-bit allocation is invalid. |

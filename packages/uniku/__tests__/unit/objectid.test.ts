@@ -103,31 +103,6 @@ describe('objectid', () => {
     })
   })
 
-  describe('deprecated secs alias', () => {
-    // TODO(v1-rc.1): remove this block together with the `secs` option.
-    it('accepts whole seconds until 1.0.0-rc.1', () => {
-      const id = objectid({ secs: 1_700_000_000, random: new Uint8Array(5), counter: 0 })
-      expect(objectid.timestamp(id)).toBe(1_700_000_000_000)
-    })
-
-    it('validates the seconds range', () => {
-      expect(() => objectid({ secs: -1 })).toThrow(InvalidInputError)
-      expect(() => objectid({ secs: 0x100000000 })).toThrow(InvalidInputError)
-    })
-
-    it('rejects passing both msecs and secs', () => {
-      let error: unknown
-      try {
-        objectid({ msecs: 1_700_000_000_000, secs: 1_700_000_000 })
-      } catch (caught) {
-        error = caught
-      }
-
-      expect(error).toBeInstanceOf(InvalidInputError)
-      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'objectid' })
-    })
-  })
-
   describe('round-trips', () => {
     it('round-trips through byte helpers for a hot-path generated id', () => {
       const id = objectid()

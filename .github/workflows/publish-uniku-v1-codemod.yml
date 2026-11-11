@@ -1,0 +1,114 @@
+name: Publish uniku v1 Codemod
+
+on:
+  push:
+    tags:
+      - "uniku-v1-codemod@*"
+
+concurrency:
+  group: publish-uniku-v1-codemod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish Registry package
+    if: github.repository == 'jkomyno/uniku'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: codemod-registry
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout approved tag source
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.ref }}
+
+      - name: Verify immutable source and version
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          expected_workflow_ref="$GITHUB_REPOSITORY/.github/workflows/publish-uniku-v1-codemod.yml@"
+          if [[ "$GITHUB_WORKFLOW_REF" != "$expected_workflow_ref"* ]]; then
+            echo "::error::Unexpected workflow identity: $GITHUB_WORKFLOW_REF"
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" != refs/tags/uniku-v1-codemod@* ]]; then
+            echo "::error::Unexpected publication ref: $GITHUB_REF"
+            exit 1
+          fi
+
+          tag_version="${GITHUB_REF_NAME#uniku-v1-codemod@}"
+          package_version="$(jq -r '.version' codemods/v1/package.json)"
+          manifest_version="$(awk -F '"' '/^version:/ { print $2; exit }' codemods/v1/codemod.yaml)"
+          if [[ ! "$tag_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag version is not an exact stable semantic version: $tag_version"
+            exit 1
+          fi
+          if [[ "$tag_version" != "$package_version" ]] || [[ "$tag_version" != "$manifest_version" ]]; then
+            echo "::error::Tag, package, and manifest versions must match"
+            exit 1
+          fi
+
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          tag_source_sha="$(git rev-parse "$GITHUB_REF^{commit}")"
+          approved_source_sha="$(git rev-parse "$GITHUB_SHA^{commit}")"
+          checkout_source_sha="$(git rev-parse HEAD)"
+          main_source_sha="$(git rev-parse origin/main)"
+          if [[ "$tag_source_sha" != "$approved_source_sha" || "$checkout_source_sha" != "$approved_source_sha" || "$main_source_sha" != "$approved_source_sha" ]]; then
+            echo "::error::Tag, checkout, approved source, and current origin/main must identify the same commit"
+            exit 1
+          fi
+
+          echo "sha=$approved_source_sha" >> "$GITHUB_OUTPUT"
+          echo "version=$tag_version" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Verify locked Codemod CLI
+        run: test "$(pnpm --filter @jkomyno/uniku-v1 exec codemod --version)" = "codemod 1.14.0"
+
+      - name: Validate package
+        run: |
+          pnpm --filter @jkomyno/uniku-v1 typecheck
+          pnpm --filter @jkomyno/uniku-v1 test
+          pnpm --filter @jkomyno/uniku-v1 workflow:validate
+
+      - name: Request Codemod OIDC token
+        id: oidc
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const token = await core.getIDToken('https://codemod.com')
+            core.setSecret(token)
+            core.setOutput('token', token)
+
+      - name: Publish exact Registry version
+        working-directory: codemods/v1
+        env:
+          CODEMOD_AUTH_TOKEN: ${{ steps.oidc.outputs.token }}
+        run: pnpm exec codemod publish . --disable-analytics
+
+      - name: Record publication evidence
+        env:
+          PACKAGE_VERSION: ${{ steps.source.outputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          {
+            echo "### Codemod Registry publication"
+            echo
+            echo "- Package: \`@jkomyno/uniku-v1@$PACKAGE_VERSION\`"
+            echo "- Tag: \`$GITHUB_REF_NAME\`"
+            echo "- Source SHA: \`$SOURCE_SHA\`"
+            echo "- Workflow run: $RUN_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

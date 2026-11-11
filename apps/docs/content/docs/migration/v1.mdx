@@ -8,7 +8,7 @@ uniku v1 keeps its canonical identifier formats stable while finalizing its pre-
 
 ## Move CUID v2 to the versioned entry point
 
-`uniku/cuid2` is a pre-v1 alias. Use the canonical versioned import before upgrading:
+V1 removes the pre-v1 `uniku/cuid2` alias. Use the canonical versioned import:
 
 ```diff
 - import { cuid2 } from 'uniku/cuid2'
@@ -16,6 +16,51 @@ uniku v1 keeps its canonical identifier formats stable while finalizing its pre-
 ```
 
 The generator behavior is the same. This is an import migration, not a data migration: existing CUID v2 values remain valid.
+
+## Convert second-based timestamp options to milliseconds
+
+KSUID, ObjectID, and XID now expose only the shared `msecs` timestamp option. Convert an existing Unix-seconds value before passing it:
+
+```diff
+- const ksuidValue = ksuid({ secs })
+- const objectIdValue = objectid({ secs })
+- const xidValue = xid({ secs })
++ const ksuidValue = ksuid({ msecs: secs * 1000 })
++ const objectIdValue = objectid({ msecs: secs * 1000 })
++ const xidValue = xid({ msecs: secs * 1000 })
+```
+
+The conversion is `msecs = secs * 1000`; these formats still store whole seconds, so equivalent deterministic inputs produce the same identifier data.
+
+## Rename UUID v7 and TypeID counters
+
+The pre-v1 `seq` spelling is now `counter` for UUID v7 and for TypeID, which inherits the UUID v7 options:
+
+```diff
+- const uuid = uuidv7({ seq: 42 })
+- const userId = typeid('user', { seq: 42 })
++ const uuid = uuidv7({ counter: 42 })
++ const userId = typeid('user', { counter: 42 })
+```
+
+Only the option name changes. The counter value is packed identically.
+
+## Rename Nanoid's object-form length
+
+Use `length` instead of `size` in Nanoid's object form:
+
+```diff
+- const id = nanoid({ alphabet: '0123456789abcdef', size: 12 })
++ const id = nanoid({ alphabet: '0123456789abcdef', length: 12 })
+```
+
+The positional `nanoid(number)` overload is unchanged:
+
+```ts
+const id = nanoid(12)
+```
+
+These migrations change imports and option names, not identifier formats. Existing persisted UUID v7, TypeID, KSUID, ObjectID, XID, Nanoid, and CUID v2 values require no data migration.
 
 ## Update error-code matches
 

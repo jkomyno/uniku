@@ -133,10 +133,10 @@ type ObjectIdOptions = {
    */
   random?: Uint8Array
   /**
-   * Timestamp in seconds since Unix epoch.
-   * Defaults to Math.floor(Date.now() / 1000).
+   * Timestamp in milliseconds since Unix epoch.
+   * Defaults to Date.now(); ObjectID stores whole seconds.
    */
-  secs?: number
+  msecs?: number
   /**
    * 24-bit counter value (0 to 0xFFFFFF).
    */
@@ -169,7 +169,7 @@ persistent random value, and the next value of the persistent counter.
 ```
 objectid(options) -> string
 ```
-Generate ObjectID with optional custom timestamp (secs), random bytes
+Generate ObjectID with optional custom timestamp (msecs), random bytes
 (random), and/or counter value. Any field supplied via options bypasses
 persistent module state entirely for that field.
 
@@ -251,13 +251,13 @@ sequence number tied to a particular timestamp.
 
 ### Options Bypass State Entirely
 
-Passing any of `random` (must be `>= 5` bytes), `secs` (`[0,
-0xFFFFFFFF]`), or `counter` (`[0, 0xFFFFFF]`) sources *every* field
+Passing any of `random` (must be `>= 5` bytes), `msecs` (`[0,
+0xFFFFFFFF * 1000 + 999]`), or `counter` (`[0, 0xFFFFFF]`) sources *every* field
 fresh — from the given value, or from an independent default — and
 never reads from or writes to persistent state:
 
 ```typescript
-secs = optSecs ?? Math.floor(Date.now() / 1000)
+secs = optMsecs === undefined ? Math.floor(Date.now() / 1000) : Math.floor(optMsecs / 1000)
 random = optRandom ?? rng().subarray(0, RANDOM_BYTES)
 counter = optCounter ?? randomUint32() & MAX_COUNTER
 ```
@@ -370,7 +370,7 @@ When to choose ObjectID:
 ### Example 2: Known Deterministic Output (hand-computed test vector)
 ```typescript
 const random = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05])
-const id = objectid({ secs: 1_700_000_000, random, counter: 0x010203 })
+const id = objectid({ msecs: 1_700_000_000_000, random, counter: 0x010203 })
 // id === '6553f1000102030405010203'
 ```
 - **Timestamp**: 1,700,000,000 -> big-endian hex `6553f100`
@@ -396,7 +396,7 @@ const id = objectid({ secs: 1_700_000_000, random, counter: 0x010203 })
 
 ### Example 5: Round-Trip Verification
 ```typescript
-const id = objectid({ secs: 1_700_000_000, random: new Uint8Array([9, 8, 7, 6, 5]), counter: 42 })
+const id = objectid({ msecs: 1_700_000_000_000, random: new Uint8Array([9, 8, 7, 6, 5]), counter: 42 })
 const bytes = objectid.toBytes(id)
 const restored = objectid.fromBytes(bytes)
 // restored === id
@@ -404,9 +404,9 @@ const restored = objectid.fromBytes(bytes)
 
 ### Example 6: Timestamp Extraction
 ```typescript
-const secs = 1_702_387_456
-const id = objectid({ secs, random: new Uint8Array(5), counter: 0 })
-objectid.timestamp(id) === secs * 1000 // Returns milliseconds
+const msecs = 1_702_387_456_000
+const id = objectid({ msecs, random: new Uint8Array(5), counter: 0 })
+objectid.timestamp(id) === msecs // Returns milliseconds
 ```
 
 ## Prior Art

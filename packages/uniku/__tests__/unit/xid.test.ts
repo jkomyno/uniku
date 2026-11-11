@@ -138,31 +138,6 @@ describe('xid', () => {
     expect(() => xid.fromBytes(new Uint8Array(11))).toThrow(BufferError)
   })
 
-  describe('deprecated secs alias', () => {
-    // TODO(v1-rc.1): remove this block together with the `secs` option.
-    it('accepts whole seconds until 1.0.0-rc.1', () => {
-      const id = xid({ secs: 1_700_000_000, machineId: new Uint8Array(3), processId: 0, counter: 0 })
-      expect(xid.timestamp(id)).toBe(1_700_000_000_000)
-    })
-
-    it('validates the seconds range', () => {
-      expect(() => xid({ secs: -1 })).toThrow(InvalidInputError)
-      expect(() => xid({ secs: 0x100000000 })).toThrow(InvalidInputError)
-    })
-
-    it('rejects passing both msecs and secs', () => {
-      let error: unknown
-      try {
-        xid({ msecs: 1_700_000_000_000, secs: 1_700_000_000 })
-      } catch (caught) {
-        error = caught
-      }
-
-      expect(error).toBeInstanceOf(InvalidInputError)
-      expect(error).toMatchObject({ code: 'CONFLICTING_OPTIONS', strategy: 'xid' })
-    })
-  })
-
   it.each([
     'c6e52g2mrqcjl44hf179',
     '9M4E2MR0UI3E8A215N4G',

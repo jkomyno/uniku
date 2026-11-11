@@ -1,5 +1,6 @@
 packages:
   - 'apps/*'
+  - 'codemods/*'
   - 'examples'
   - 'packages/*'
   - 'packages/uniku/__tests__/e2e/runtimes/cloudflare'

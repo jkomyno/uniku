@@ -84,13 +84,13 @@ ab                           (2 chars, minimum)
 ### Type Definitions
 
 ```typescript
-type Cuid2Options = {
+type CuidV2Options = {
   length?: number       // 2-32 characters (default: 24)
   random?: Uint8Array   // Custom random bytes for deterministic testing
 }
 
-type Cuid2 = {
-  (options?: Cuid2Options): string
+type CuidV2 = {
+  (options?: CuidV2Options): string
   isValid(id: unknown): id is string
 }
 ```
@@ -98,21 +98,21 @@ type Cuid2 = {
 ### Function Signatures
 
 ```
-cuid2() -> string
+cuidv2() -> string
 ```
 Generate a 24-character CUID2 using default settings.
 
 ```
-cuid2(options) -> string
+cuidv2(options) -> string
 ```
 Generate a CUID2 with custom options.
 - `options.length`: Length of ID (default: 24, range: 2-32)
 - `options.random`: Deterministic random bytes for testing
 
-Throws RangeError if length < 2 or > 32.
+Throws `InvalidInputError` if length < 2 or > 32.
 
 ```
-cuid2.isValid(id) -> boolean
+cuidv2.isValid(id) -> boolean
 ```
 Validate CUID2 format.
 Returns true if: string, length 2-32, starts with a-z, contains only a-z and 0-9.
@@ -270,34 +270,34 @@ due to SHA3-512 hashing. This provides:
 
 ### Example 1: Default Generation
 ```typescript
-const id = cuid2()
+const id = cuidv2()
 // => "pfh0haxfpzowht3oi213cqos" (24 characters, starts with letter)
 ```
 
 ### Example 2: Custom Length
 ```typescript
-const shortId = cuid2({ length: 10 })
+const shortId = cuidv2({ length: 10 })
 // => "tz4a98xxat" (10 characters)
 
-const longId = cuid2({ length: 32 })
+const longId = cuidv2({ length: 32 })
 // => "abcdefghij0123456789abcdefghijkl" (32 characters)
 ```
 
 ### Example 3: Validation
 ```typescript
-cuid2.isValid("pfh0haxfpzowht3oi213cqos")  // true
-cuid2.isValid("ab")                         // true (minimum valid length)
-cuid2.isValid("a")                          // false (too short)
-cuid2.isValid("1abc")                       // false (starts with digit)
-cuid2.isValid("ABCD")                       // false (uppercase not allowed)
-cuid2.isValid("ab-cd")                      // false (hyphen not allowed)
+cuidv2.isValid("pfh0haxfpzowht3oi213cqos")  // true
+cuidv2.isValid("ab")                         // true (minimum valid length)
+cuidv2.isValid("a")                          // false (too short)
+cuidv2.isValid("1abc")                       // false (starts with digit)
+cuidv2.isValid("ABCD")                       // false (uppercase not allowed)
+cuidv2.isValid("ab-cd")                      // false (hyphen not allowed)
 ```
 
 ### Example 4: Invalid Inputs
 | Input | Reason Invalid |
 |-------|----------------|
-| `cuid2({ length: 1 })` | Length < 2 throws RangeError |
-| `cuid2({ length: 33 })` | Length > 32 throws RangeError |
+| `cuidv2({ length: 1 })` | Length < 2 throws `InvalidInputError` |
+| `cuidv2({ length: 33 })` | Length > 32 throws `InvalidInputError` |
 | `""` | Empty string fails validation |
 | `"1abcdefghij"` | Starts with digit |
 | `"UPPERCASE"` | Contains uppercase letters |
@@ -305,13 +305,13 @@ cuid2.isValid("ab-cd")                      // false (hyphen not allowed)
 ### Example 5: Deterministic Testing
 ```typescript
 // For testing with predictable output
-const deterministicId = cuid2({ random: new Uint8Array(64).fill(42) })
+const deterministicId = cuidv2({ random: new Uint8Array(64).fill(42) })
 // Output is deterministic given same random bytes
 ```
 
 ### Example 6: Format Verification
 ```typescript
-const id = cuid2()
+const id = cuidv2()
 // Properties that always hold:
 // - typeof id === 'string'
 // - id.length === 24 (default)

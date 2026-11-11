@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "composite": false,
+    "allowImportingTsExtensions": true,
+    "declaration": false,
+    "declarationMap": false,
+    "isolatedDeclarations": false,
+    "noEmit": true,
+    "types": ["@codemod.com/jssg-types", "vitest/globals"]
+  },
+  "include": ["scripts/**/*.ts", "tests/unit/**/*.ts", "tests/run-integration.test.ts", "vitest.config.ts"]
+}

@@ -1,0 +1,12 @@
+{
+  "mode": "pre",
+  "tag": "rc",
+  "initialVersions": {
+    "@uniku/docs": "0.0.0",
+    "@uniku/examples": "0.0.1",
+    "@uniku/cli": "0.7.0",
+    "uniku": "0.6.0",
+    "@uniku/e2e-cloudflare": "0.0.5"
+  },
+  "changesets": ["bright-rivers-release", "quiet-aliases-retire"]
+}

@@ -24,6 +24,7 @@ pnpm changeset      # Create changeset for versioning
 - **Monorepo**: pnpm workspaces + Turborepo
 - **Toolchain**: `mise.toml` is the canonical runtime version source; shared CI setup reads its Node.js, Bun, Deno, and compatibility pins, while compatibility jobs may switch runtimes after dependency installation
 - **Published packages**: `packages/uniku` (ID generators) and `packages/cli` (the `uniku` command)
+- **Registry codemods**: `codemods/v1` is a private workspace published only through the Codemod Registry; verify it with `pnpm --filter @jkomyno/uniku-v1 test` and `pnpm --filter @jkomyno/uniku-v1 workflow:validate`
 - **Release scope**: Changesets versions and tags only the published packages; keep private workspaces such as `examples` and the Cloudflare E2E workspace out of generated versions, tags, and changelogs
 - **Runnable docs examples**: `examples` contains Bun tests for the typechecked Hono, Drizzle v1, and Effect v4 examples rendered by the docs site
 - **E2E workspace**: Cloudflare Workers tests live under `packages/uniku/__tests__/e2e/runtimes/cloudflare`

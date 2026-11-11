@@ -1,0 +1,24 @@
+{
+  "name": "@jkomyno/uniku-v1",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic source migration from uniku 0.6 to v1",
+  "license": "MIT",
+  "scripts": {
+    "test": "pnpm test:unit && pnpm test:fixtures",
+    "test:fixtures": "pnpm test:javascript && pnpm test:typescript && pnpm test:tsx",
+    "test:javascript": "codemod jssg test -l javascript $PWD/scripts/transform.ts $PWD/tests/javascript --strictness strict --sequential",
+    "test:tsx": "codemod jssg test -l tsx $PWD/scripts/transform.ts $PWD/tests/tsx --strictness strict --sequential",
+    "test:typescript": "codemod jssg test -l typescript $PWD/scripts/transform.ts $PWD/tests/typescript --strictness strict --sequential",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "workflow:validate": "codemod workflow validate -w workflow.yaml"
+  },
+  "devDependencies": {
+    "@codemod.com/jssg-types": "1.6.3",
+    "codemod": "1.14.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
