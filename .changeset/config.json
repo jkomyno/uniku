@@ -11,5 +11,5 @@
     "version": false,
     "tag": false
   },
-  "ignore": ["@uniku/cli", "@uniku/e2e-cloudflare"]
+  "ignore": ["@uniku/e2e-cloudflare"]
 }
