@@ -39,7 +39,7 @@ export type GeneratorApi = {
 
 export const generatorApis: Record<GeneratorId, GeneratorApi> = {
   "uuid-v4": {
-    "description": "Generate a UUID v4 string or write the bytes into a buffer. UUID v4 is a purely random UUID with 122 bits of entropy. It's the most widely compatible UUID format, supported by virtually all databases and systems. Use when you need maximum compatibility and don't require time-ordering.",
+    "description": "Generate a UUID v4 string or write the bytes into a buffer. UUID v4 is a purely random UUID with 122 bits of entropy. It's the most widely compatible UUID format, supported by virtually all databases and systems. Use when you need maximum compatibility and don't require time-ordering. The no-argument form uses `crypto.randomUUID()` when the runtime provides it and falls back to the shared CSPRNG pool otherwise, so importing this entry point never requires a secure context.",
     "members": [
       {
         "example": {
