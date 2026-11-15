@@ -1,1 +1,0 @@
-import{O as e}from"./dist-CtQmdnTs.js";export{e as isSpecialLang};
