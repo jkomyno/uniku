@@ -65,7 +65,6 @@ The following codes form the v1 public contract:
 | `PROCESS_ID_OUT_OF_RANGE` | `InvalidInputError` | `xid` | An XID process ID is outside its supported range. |
 | `MACHINE_ID_BYTES_TOO_SHORT` | `InvalidInputError` | `xid` | Caller-provided XID machine-ID bytes are too short. |
 | `RANDOM_BYTES_TOO_SHORT` | `InvalidInputError` | `uuid`, `ulid`, `typeid`, `nanoid`, `cuid`, `ksuid`, `objectid` | Caller-provided random bytes cannot satisfy the requested ID. |
-| `RANDOM_OVERFLOW` | `InvalidInputError` | `ulid` | A monotonic ULID random component overflowed. |
 | `LENGTH_OUT_OF_RANGE` | `InvalidInputError` | `nanoid`, `cuid` | A Nanoid or CUID v2 output length is outside its supported range. |
 | `ALPHABET_OUT_OF_RANGE` | `InvalidInputError` | `nanoid` | A Nanoid alphabet has fewer than 2 or more than 256 characters. |
 | `ALPHABET_INVALID_CHAR` | `InvalidInputError` | `nanoid` | A Nanoid alphabet contains a non-printable ASCII character. |

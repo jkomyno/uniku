@@ -182,6 +182,15 @@ function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?:
   } else {
     state.seq = (state.seq + 1) | 0
     if (state.seq < 0) {
+      // The 31-bit sequence wrapped. Borrow the next millisecond instead of emitting a
+      // duplicate, but never past the 48-bit timestamp field: saturation makes every further
+      // call fail closed rather than write a timestamp that silently wraps to zero.
+      if (state.msecs >= MAX_MSECS) {
+        state.seq = 0x7fffffff
+        throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'UUID v7 timestamp range is exhausted', {
+          strategy: 'uuid',
+        })
+      }
       state.seq = 0
       state.msecs++
     }

@@ -45,7 +45,6 @@ This table maps every machine-readable code emitted by `uniku@0.4.3` to its v1 r
 | `UUID_BYTES_INVALID_LENGTH`, `ULID_BYTES_INVALID_LENGTH`, `KSUID_BYTES_INVALID_LENGTH`, `KSUID_BYTES_TOO_SHORT`, `OBJECTID_BYTES_INVALID_LENGTH`, `OBJECTID_BYTES_TOO_SHORT`, `XID_BYTES_INVALID_LENGTH`, `TSID_BYTES_INVALID_LENGTH`, `TYPEID_UUID_BYTES_INVALID_LENGTH` | `BYTES_INVALID_LENGTH` |
 | `UUID_BUFFER_OUT_OF_BOUNDS`, `ULID_BUFFER_OUT_OF_BOUNDS`, `KSUID_BUFFER_OUT_OF_BOUNDS`, `OBJECTID_BUFFER_OUT_OF_BOUNDS`, `XID_BUFFER_OUT_OF_BOUNDS`, `TSID_BUFFER_OUT_OF_BOUNDS` | `BUFFER_OUT_OF_BOUNDS` |
 | `UUID_RANDOM_BYTES_TOO_SHORT`, `ULID_RANDOM_BYTES_TOO_SHORT`, `KSUID_RANDOM_BYTES_TOO_SHORT`, `OBJECTID_RANDOM_BYTES_TOO_SHORT`, `NANOID_RANDOM_BYTES_INSUFFICIENT`, `CUID2_RANDOM_BYTES_EMPTY` | `RANDOM_BYTES_TOO_SHORT` |
-| `ULID_RANDOM_OVERFLOW` | `RANDOM_OVERFLOW` |
 | `UUID_SEQUENCE_OUT_OF_RANGE`, `OBJECTID_COUNTER_OUT_OF_RANGE`, `XID_COUNTER_OUT_OF_RANGE`, `TSID_COUNTER_OUT_OF_RANGE` | `COUNTER_OUT_OF_RANGE` |
 | `TSID_NODE_OUT_OF_RANGE` | `NODE_OUT_OF_RANGE` |
 | `TSID_NODE_BITS_OUT_OF_RANGE` | `NODE_BITS_OUT_OF_RANGE` |
@@ -62,6 +61,18 @@ This table maps every machine-readable code emitted by `uniku@0.4.3` to its v1 r
 | `NANOID_SIZE_INVALID`, `NANOID_SIZE_TOO_LARGE`, `CUID2_LENGTH_OUT_OF_RANGE` | `LENGTH_OUT_OF_RANGE` |
 
 Several old codes intentionally converge on one v1 meaning. This only changes error handling; generated and persisted identifier data is unaffected.
+
+### Removed codes
+
+`ULID_RANDOM_OVERFLOW` has no v1 replacement. Exhausting ULID's 80-bit monotonic
+random portion no longer fails: the generator advances its timestamp by one
+millisecond and continues, which is what UUID v7 already did with its counter. The
+`RANDOM_OVERFLOW` code that briefly replaced it is gone for the same reason — there
+is no longer a failure to report. If you matched on either code, delete the branch.
+
+A ULID or UUID v7 whose 48-bit timestamp field is already at its maximum now
+throws `TIMESTAMP_OUT_OF_RANGE` instead, because borrowing the next millisecond
+would no longer fit.
 
 ## What remains stable
 

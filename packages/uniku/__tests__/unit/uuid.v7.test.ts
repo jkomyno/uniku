@@ -2,6 +2,8 @@ import { afterEach } from 'vitest'
 import { InvalidInputError, uuidv7 } from '@/src/uuid/v7'
 import { expectValidTypeGuard } from '../helpers/assertions'
 
+const MAX_MSECS = 0xffffffffffff
+
 async function importFreshUuidV7Module() {
   vi.resetModules()
   return import('@/src/uuid/v7')
@@ -264,6 +266,18 @@ describe('uuidv7', () => {
       expect(freshUuidV7.timestamp(first)).toBe(ms)
       expect(freshUuidV7.timestamp(second)).toBe(ms + 1)
       expect(compareBytes(freshUuidV7.toBytes(first), freshUuidV7.toBytes(second))).toBeLessThan(0)
+    })
+
+    it('fails closed instead of wrapping the timestamp past 48 bits', async () => {
+      const { uuidv7: freshUuidV7 } = await importFreshUuidV7ModuleWithRandom(randomBytesWithV7Sequence(0x7fffffff))
+      vi.spyOn(Date, 'now').mockReturnValue(MAX_MSECS)
+
+      const first = freshUuidV7()
+      expect(freshUuidV7.timestamp(first)).toBe(MAX_MSECS)
+
+      // No later millisecond fits in the 48-bit field, so every further call must fail.
+      expect(() => freshUuidV7()).toThrow(expect.objectContaining({ code: 'TIMESTAMP_OUT_OF_RANGE', strategy: 'uuid' }))
+      expect(() => freshUuidV7()).toThrow(expect.objectContaining({ code: 'TIMESTAMP_OUT_OF_RANGE' }))
     })
   })
 })
