@@ -1,0 +1,1 @@
+import{O as e}from"./dist-BUW93Wna.js";export{e as isSpecialLang};
