@@ -136,10 +136,12 @@ starts.
   backward.
 - ObjectID keeps its process-random field and always-incrementing counter.
 - XID keeps a random per-runtime identity and always-incrementing counter.
-- TSID keeps its node ID and advances virtual time if its per-millisecond
-  counter overflows.
-- Explicit timestamp, sequence, random, node, or counter options do not mutate
-  the default generator state.
+- TSID keeps its node ID, clock, and counter when only `node`, `nodeBits`, or
+  `epoch` is configured, including an empty options object. Its stateful calls
+  share one sequence per isolate and advance virtual time on counter overflow.
+  An explicit `msecs` or `counter` bypasses that sequence.
+- UUID v7, ULID, and ObjectID bypass their default state when given explicit
+  options. XID retains its shared counter unless `counter` is supplied.
 
 Monotonicity is process-local. It does not coordinate independent machines or
 isolates.

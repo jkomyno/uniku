@@ -113,6 +113,54 @@ describe('tsid', () => {
   })
 
   describe('counter overflow within a simulated single millisecond', () => {
+    it.each([
+      { node: 1 },
+      { node: 1, nodeBits: 20 },
+      { node: 1, epoch: 1_600_000_000_000 },
+    ])('keeps configured generation unique through counter overflow: %j', async (options) => {
+      const { tsid: freshTsid } = await importFreshTsidModule()
+      vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
+
+      const ids = Array.from({ length: 5_000 }, () => freshTsid(options))
+
+      expect(new Set(ids).size).toBe(ids.length)
+      expect(ids.every((id, index) => index === 0 || id > ids[index - 1])).toBe(true)
+    })
+
+    it('shares the sequence between empty options and no-option calls', async () => {
+      const { tsid: freshTsid } = await importFreshTsidModule()
+      vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
+
+      const first = freshTsid()
+      const second = freshTsid({})
+      const third = freshTsid()
+
+      expect(second).toBeGreaterThan(first)
+      expect(third).toBeGreaterThan(second)
+      expect((second >> 12n) & 1023n).toBe((first >> 12n) & 1023n)
+    })
+
+    it('keeps configured generation increasing when the clock moves backward', async () => {
+      const { tsid: freshTsid } = await importFreshTsidModule()
+      const now = vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
+      const first = freshTsid({ node: 1 })
+
+      now.mockReturnValue(1_699_999_999_000)
+      const second = freshTsid({ node: 1 })
+
+      expect(second).toBeGreaterThan(first)
+      expect(freshTsid.timestamp(second)).toBeGreaterThanOrEqual(freshTsid.timestamp(first))
+    })
+
+    it('rejects sequence overflow beyond the final representable timestamp', async () => {
+      const { tsid: freshTsid } = await importFreshTsidModule()
+      vi.spyOn(Date, 'now').mockReturnValue(Number(MAX_TIMESTAMP_DIFF))
+
+      expect(() => Array.from({ length: 5 }, () => freshTsid({ epoch: 0, node: 1, nodeBits: 20 }))).toThrowError(
+        expect.objectContaining({ code: 'TIMESTAMP_OUT_OF_RANGE' }),
+      )
+    })
+
     it('advances the internal virtual timestamp and resets the counter, staying strictly increasing', async () => {
       const { tsid: freshTsid } = await importFreshTsidModule()
       const ms = 1_700_000_000_000

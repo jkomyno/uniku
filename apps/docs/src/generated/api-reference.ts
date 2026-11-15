@@ -1114,7 +1114,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Node ID (0 to 2^nodeBits - 1). Defaults to a lazily-initialized, persistent random value.",
+              "description": "Node ID (0 to 2^nodeBits - 1). Defaults to a persistent random value for stateful generation, or a fresh random value when an explicit timestamp or counter bypasses state.",
               "name": "node",
               "optional": true,
               "type": "number"
@@ -1126,7 +1126,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Per-millisecond counter (0 to 2^(22 - nodeBits) - 1). Defaults to a fresh random value on a new millisecond, or the previous value incremented by 1 within the same millisecond.",
+              "description": "Per-millisecond counter (0 to 2^(22 - nodeBits) - 1). Defaults to a fresh random value on a new millisecond, or the previous value incremented by 1 within the same millisecond. An explicit msecs bypasses sequencing and draws a fresh counter when this is omitted.",
               "name": "counter",
               "optional": true,
               "type": "number"
