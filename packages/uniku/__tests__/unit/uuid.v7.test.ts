@@ -97,6 +97,28 @@ describe('uuidv7', () => {
     expect(uuidv7.timestamp(id)).toBe(ms)
   })
 
+  describe('timestamp version guard', () => {
+    it('rejects UUIDs that are not version 7', () => {
+      const notV7 = [
+        'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        '2ed6657d-e927-568b-95e1-2665a8aea6a2',
+        // Version 7 nibble with a non-RFC variant is not a UUID v7 either.
+        '01890a5d-ac96-774b-ccce-b302099a8057',
+      ]
+
+      for (const id of notV7) {
+        expect(() => uuidv7.timestamp(id), id).toThrow(
+          expect.objectContaining({ _tag: 'InvalidInputError', code: 'UUID_NOT_V7', strategy: 'uuid' }),
+        )
+      }
+    })
+
+    it('still accepts the NIL and MAX sentinels', () => {
+      expect(uuidv7.timestamp(uuidv7.NIL)).toBe(0)
+      expect(uuidv7.timestamp(uuidv7.MAX)).toBe(0xffffffffffff)
+    })
+  })
+
   it('increases lexicographically within the same millisecond', async () => {
     const { uuidv7: freshUuidV7 } = await importFreshUuidV7Module()
     const ms = 1_702_387_456_789

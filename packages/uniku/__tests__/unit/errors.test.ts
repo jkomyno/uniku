@@ -52,7 +52,7 @@ const EXPECTED_ERROR_METADATA = [
   { code: 'PREFIX_TOO_LONG', classes: ['InvalidInputError'], strategies: ['typeid'] },
   { code: 'PREFIX_INVALID_CHAR', classes: ['InvalidInputError'], strategies: ['typeid'] },
   { code: 'PREFIX_INVALID_BOUNDARY', classes: ['InvalidInputError'], strategies: ['typeid'] },
-  { code: 'UUID_NOT_V7', classes: ['InvalidInputError'], strategies: ['typeid'] },
+  { code: 'UUID_NOT_V7', classes: ['InvalidInputError'], strategies: ['uuid', 'typeid'] },
   {
     code: 'BYTES_INVALID_LENGTH',
     classes: ['InvalidInputError', 'BufferError'],
