@@ -12,10 +12,10 @@ export const Route = createRootRoute({
       { content: 'width=device-width, initial-scale=1', name: 'viewport' },
       {
         content:
-          "Ten type-safe ID strategies behind one consistent API. In uniku's current CI benchmark, every generator beats its dedicated npm alternative.",
+          "Eleven type-safe ID strategies behind one consistent API, with independent entry points and published performance measurements.",
         name: 'description',
       },
-      { title: 'uniku: ten type-safe ID strategies, each benchmarked fastest' },
+      { title: 'uniku: eleven type-safe ID strategies' },
     ],
   }),
 })
