@@ -65,8 +65,8 @@ The library is ESM-only and targets ES2023 plus the Web Crypto API.
 
 The v1 compatibility matrix covers:
 
-- Node.js `>=20.19.0`, tested at that exact floor and on the Mise-pinned latest
-  Node.js 25.x release;
+- Node.js `>=22.12.0`, tested at that exact floor, on Node.js 24 LTS, and on the
+  Mise-pinned Node.js 25.x release;
 - current stable Bun, with the latest canary exercised in CI;
 - the Mise-pinned latest stable Deno 2 release;
 - Cloudflare Workers;
@@ -187,7 +187,9 @@ underlying CSPRNG or provide cross-process uniqueness.
 ## Security posture
 
 Random generators use `globalThis.crypto`. CUID2 uses SHA3-512 from
-`@noble/hashes`; this dependency sets the Node.js minimum version.
+`@noble/hashes`. The supported Node.js floor is 22.12.0, matching the minimum
+Node.js 22 release supported by the test runtime. Development builds use the
+Mise-pinned Node.js version.
 
 UUID v5 uses SHA-1, as RFC 9562 requires, through a small inlined
 implementation with no runtime dependency. SHA-1 is adequate for identity but

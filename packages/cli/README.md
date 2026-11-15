@@ -47,7 +47,7 @@ See the [complete command reference](https://jkomyno.github.io/uniku/docs/cli/) 
 
 ## Platform support
 
-The standalone binary supports macOS x64/arm64 and Linux x64/arm64. The npm package requires Node.js `>=20.19.0`.
+The standalone binary supports macOS x64/arm64 and Linux x64/arm64. The npm package requires Node.js `>=22.12.0`.
 
 The library and CLI publish independently and may have different version numbers.
 
