@@ -1,1 +1,0 @@
-import{O as e}from"./dist-Dqao4-Lk.js";export{e as isSpecialLang};
