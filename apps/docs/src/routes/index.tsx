@@ -23,7 +23,7 @@ function Home() {
             <h1>One install. Every ID strategy.</h1>
             <p className="hero-summary">
               <code>uniku</code> puts UUID v4/v5/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID behind one
-              consistent API. In the current CI benchmark, every benchmarked generator beats its dedicated npm alternative.
+              consistent API. Each generator has a direct entry point, with published compatibility and performance measurements.
             </p>
             <div className="hero-actions">
               <Link className="primary-action" to="/docs/$" params={{ _splat: '' }}>
@@ -58,9 +58,9 @@ function Home() {
         <section className="value-grid" aria-label="Why use uniku">
           <article>
             <Gauge aria-hidden="true" size={20} />
-            <h2>Fastest across the suite</h2>
+            <h2>Measured across formats</h2>
             <p>
-              Every strategy beats its dedicated npm alternative in the current isolated-process{' '}
+              Compare generation throughput and per-entry bundle sizes in the isolated-process{' '}
               <Link to="/docs/$" params={{ _splat: 'guides/performance' }}>
                 CI benchmark
               </Link>
