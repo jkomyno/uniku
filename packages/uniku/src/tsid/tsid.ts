@@ -44,7 +44,8 @@ export type TsidOptions = {
   epoch?: number
   /**
    * Node ID (0 to 2^nodeBits - 1).
-   * Defaults to a lazily-initialized, persistent random value.
+   * Defaults to a persistent random value for stateful generation, or a fresh
+   * random value when an explicit timestamp or counter bypasses state.
    */
   node?: number
   /**
@@ -56,7 +57,8 @@ export type TsidOptions = {
   /**
    * Per-millisecond counter (0 to 2^(22 - nodeBits) - 1).
    * Defaults to a fresh random value on a new millisecond, or the previous
-   * value incremented by 1 within the same millisecond.
+   * value incremented by 1 within the same millisecond. An explicit msecs
+   * bypasses sequencing and draws a fresh counter when this is omitted.
    */
   counter?: number
 }
@@ -98,14 +100,44 @@ type TsidState = {
  *
  * IMPORTANT: This state persists across all tsid() calls in the module's lifetime.
  * - In serverless/edge functions with warm starts, state persists between invocations.
- * - For isolated state, pass explicit `msecs`, `epoch`, `node`, `nodeBits`, or
- *   `counter` via options - doing so bypasses `state` entirely.
+ * - Node, nodeBits, and epoch configure generation while retaining the shared
+ *   clock and counter. An explicit msecs or counter bypasses this state.
  * - Tests should mock Date.now() or provide explicit options for deterministic behavior.
  */
 const state: TsidState = {
   node: undefined,
   msecs: -Infinity,
   counter: 0,
+}
+
+function persistentNode(mask: number): number {
+  state.node ??= randomUint32()
+  return state.node & mask
+}
+
+function advanceSequence(now: number, counterMask: number, epoch: number): bigint {
+  let msecs = state.msecs
+  let counter = state.counter
+  if (now > msecs) {
+    msecs = now
+    counter = randomUint32() & counterMask
+  } else {
+    counter += 1
+    if (counter > counterMask) {
+      msecs += 1
+      counter = 0
+    }
+  }
+
+  const diff = BigInt(msecs) - BigInt(epoch)
+  if (diff < 0n || diff > MAX_TIMESTAMP_DIFF) {
+    throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'TSID sequence exceeds its 42-bit timestamp range', {
+      strategy: 'tsid',
+    })
+  }
+  state.msecs = msecs
+  state.counter = counter
+  return diff
 }
 
 function pack(msecsDiff: bigint, node: number, counterBits: number, counter: number): bigint {
@@ -156,18 +188,23 @@ function resolveTsidOptions(options: TsidOptions): ResolvedTsidOptions {
   if (!Number.isInteger(msecs)) {
     throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'msecs must be a finite integer', { strategy: 'tsid' })
   }
-  const msecsDiff = BigInt(msecs) - BigInt(epoch)
+  let msecsDiff = BigInt(msecs) - BigInt(epoch)
   if (msecsDiff < 0n || msecsDiff > MAX_TIMESTAMP_DIFF) {
     throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', `msecs - epoch must be between 0 and ${MAX_TIMESTAMP_DIFF}`, {
       strategy: 'tsid',
     })
   }
 
+  const stateful = options.msecs === undefined && optCounter === undefined
+  if (stateful) {
+    msecsDiff = advanceSequence(msecs, counterMask, epoch)
+  }
+
   return {
     msecsDiff,
-    node: optNode ?? randomUint32() & nodeMask,
+    node: optNode ?? (stateful ? persistentNode(nodeMask) : randomUint32() & nodeMask),
     counterBits,
-    counter: optCounter ?? randomUint32() & counterMask,
+    counter: stateful ? state.counter : (optCounter ?? randomUint32() & counterMask),
   }
 }
 
@@ -196,11 +233,7 @@ function tsidFn<TBuf extends Uint8Array = Uint8Array>(options?: TsidOptions, buf
     counterBits = resolved.counterBits
     counter = resolved.counter
   } else {
-    // Lazily initialize the persistent node ID on first no-option call.
-    if (state.node === undefined) {
-      state.node = randomUint32() & DEFAULT_NODE_MASK
-    }
-    node = state.node
+    node = persistentNode(DEFAULT_NODE_MASK)
     counterBits = DEFAULT_COUNTER_BITS
 
     /**
@@ -209,22 +242,8 @@ function tsidFn<TBuf extends Uint8Array = Uint8Array>(options?: TsidOptions, buf
      * the entire duration of a request. Monotonic ordering within such a request
      * relies entirely on the counter (and its clock-drift-ahead overflow below).
      */
-    const now = Date.now()
-    if (now > state.msecs) {
-      state.msecs = now
-      state.counter = randomUint32() & DEFAULT_COUNTER_MASK
-    } else {
-      state.counter += 1
-      if (state.counter > DEFAULT_COUNTER_MASK) {
-        // Counter overflowed within this real millisecond: advance the internal
-        // virtual timestamp ahead of wall-clock time rather than throwing. A
-        // 12-bit counter (4096 values/ms) is a realistic throughput ceiling.
-        state.msecs += 1
-        state.counter = 0
-      }
-    }
+    msecsDiff = advanceSequence(Date.now(), DEFAULT_COUNTER_MASK, TSID_EPOCH)
     counter = state.counter
-    msecsDiff = BigInt(state.msecs) - BigInt(TSID_EPOCH)
   }
 
   const packed = pack(msecsDiff, node, counterBits, counter)

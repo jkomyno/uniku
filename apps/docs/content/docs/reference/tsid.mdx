@@ -14,4 +14,18 @@ const id = tsid()
 tsid.toString(id) // '0QZHJRV8P0DK7'
 ```
 
+Setting `node`, `nodeBits`, or `epoch` keeps stateful generation: repeated calls
+with the same configuration advance the counter, handle clock rollback, and
+advance virtual time when the counter fills. Calls share the isolate's sequence.
+
+```ts
+const id = tsid({ node: 1, nodeBits: 20 })
+const next = tsid({ node: 1, nodeBits: 20 })
+// next > id, even when both calls occur in the same millisecond
+```
+
+An explicit `msecs` or `counter` bypasses that sequence. For repeated generation
+at a fixed timestamp, supply distinct counters and advance the timestamp on
+counter overflow. Separate processes must coordinate node IDs themselves.
+
 <ApiReference generator="tsid" />
