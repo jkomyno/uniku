@@ -1,10 +1,13 @@
 import {
   aggregateBenchResults,
   type BenchResults,
+  benchmarkDispersion,
   collectBenchGroups,
   collectBenchmarks,
+  combineDispersion,
   compareBenchResults,
   isOwnedBenchmark,
+  isRatioWithinDispersion,
   mergeBenchmarkHistory,
 } from '../../scripts/bench-results'
 
@@ -218,3 +221,54 @@ function withCompatBench(leaf: string, hz: number, rme: number): BenchResults {
     ],
   }
 }
+
+describe('benchmark dispersion', () => {
+  it('prefers multi-run dispersion over a single run RME', () => {
+    expect(benchmarkDispersion({ name: 'uniku', hz: 1_000, rme: 0.2, rank: 1 })).toBe(0)
+    expect(benchmarkDispersion({ name: 'uniku', hz: 1_000, rme: 0.2, rank: 1, withinActionRme: 6 })).toBe(6)
+    expect(
+      benchmarkDispersion({ name: 'uniku', hz: 1_000, rme: 0.2, rank: 1, withinActionRme: 6, crossActionRme: 11 }),
+    ).toBe(11)
+  })
+
+  it('combines independent dispersions in quadrature', () => {
+    expect(combineDispersion(0, 0)).toBe(0)
+    expect(combineDispersion(3, 4)).toBeCloseTo(5)
+    expect(combineDispersion(15, 15)).toBeCloseTo(Math.SQRT2 * 15)
+  })
+
+  it('builds the parity band multiplicatively around parity', () => {
+    const looseSpread = combineDispersion(25, 25)
+    expect(looseSpread).toBeCloseTo(35.4, 1)
+
+    // Inside the band.
+    expect(isRatioWithinDispersion(1.3, looseSpread)).toBe(true)
+    expect(isRatioWithinDispersion(1 / 1.3, looseSpread)).toBe(true)
+
+    // Outside the band.
+    expect(isRatioWithinDispersion(3, combineDispersion(5, 5))).toBe(false)
+    expect(isRatioWithinDispersion(1.5, looseSpread)).toBe(false)
+  })
+
+  it('gives a ratio and its reciprocal the same verdict', () => {
+    // A symmetric absolute band would call 0.75x parity while calling its
+    // reciprocal 1.33x a win.
+    for (const spread of [10, 28.3, 50]) {
+      for (const ratio of [1.05, 1.25, 1.5, 2, 4]) {
+        expect(isRatioWithinDispersion(ratio, spread)).toBe(isRatioWithinDispersion(1 / ratio, spread))
+      }
+    }
+  })
+
+  it('does not collapse every ratio into parity when dispersion is large', () => {
+    // A symmetric absolute band would call 0.001x parity at 100% spread.
+    expect(isRatioWithinDispersion(0.001, 100)).toBe(false)
+    expect(isRatioWithinDispersion(0.4, 100)).toBe(false)
+    expect(isRatioWithinDispersion(1.5, 100)).toBe(true)
+  })
+
+  it('reports no parity-within-spread claim without dispersion data', () => {
+    expect(isRatioWithinDispersion(1, 0)).toBe(false)
+    expect(isRatioWithinDispersion(1.01, Number.NaN)).toBe(false)
+  })
+})
