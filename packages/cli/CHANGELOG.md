@@ -1,5 +1,18 @@
 # @uniku/cli
 
+## 0.9.0
+
+### Minor Changes
+
+- 09421e3: Require Node.js 22.12.0 or newer. Node.js 20 is no longer supported; CI covers the Node.js 22 minimum, Node.js 24 LTS, and Node.js 25.
+
+### Patch Changes
+
+- b223237: Validate explicitly selected ID formats before inspection and report malformed IDs as structured failures on stderr, including with --json. Use the library's stateful TSID generation for configured nodes, and retain one node identity within fixed-timestamp batches.
+- Updated dependencies [09421e3]
+- Updated dependencies [5b6ad76]
+  - uniku@0.8.0
+
 ## 0.8.0
 
 ### Minor Changes
