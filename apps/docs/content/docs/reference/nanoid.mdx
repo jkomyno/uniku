@@ -13,6 +13,6 @@ const inviteCode = nanoid()
 // 'tCDaBJOIwLpjLMxN_DYdU' (string)
 ```
 
-`nanoid.isValid()` validates the default alphabet, not values generated with a custom alphabet.
+`nanoid.isValid()` only checks that a value is a non-empty run of the default URL-safe alphabet. A nanoid carries neither a length nor an alphabet, so it cannot verify either: any length is accepted, and an ID built from a custom alphabet passes whenever that alphabet is a subset of the default one — a hex-only alphabet, for example. Compare `id.length` yourself when the boundary needs one size.
 
 <ApiReference generator="nanoid" />
