@@ -1,5 +1,15 @@
 # uniku
 
+## 0.8.0
+
+### Minor Changes
+
+- 09421e3: Require Node.js 22.12.0 or newer. Node.js 20 is no longer supported; CI covers the Node.js 22 minimum, Node.js 24 LTS, and Node.js 25.
+
+### Patch Changes
+
+- 5b6ad76: Preserve TSID sequencing when configuring node, nodeBits, or epoch. Configured calls and empty options now retain the per-isolate counter, handle clock rollback, and advance virtual time on counter overflow instead of sampling counters independently. Explicit timestamps and counters continue to bypass shared state.
+
 ## 0.7.0
 
 ### Minor Changes
