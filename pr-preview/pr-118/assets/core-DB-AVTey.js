@@ -1,0 +1,1 @@
+import{O as e}from"./dist-DFruAfMX.js";export{e as isSpecialLang};
