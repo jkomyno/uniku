@@ -1,0 +1,1 @@
+import{O as e}from"./dist-CtJ_5EMu.js";export{e as isSpecialLang};
