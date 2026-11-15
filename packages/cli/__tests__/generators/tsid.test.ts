@@ -1,9 +1,36 @@
 import { describe, expect, it } from '@effect/vitest'
 import * as Effect from 'effect/Effect'
 import { tsid } from 'uniku/tsid'
+import { afterEach, vi } from 'vitest'
 import { generateTsid } from '@/src/generators/tsid'
 
 describe('generateTsid', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it.effect('keeps configured batches unique across calls within one millisecond', () =>
+    Effect.gen(function* () {
+      vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000)
+      const options = { count: 8, node: 5, nodeBits: 20 }
+      const first = yield* generateTsid(options)
+      const second = yield* generateTsid(options)
+      const ids = [...first, ...second]
+
+      expect(new Set(ids).size).toBe(ids.length)
+      expect(ids).toEqual([...ids].sort())
+    }),
+  )
+
+  it.effect('keeps one node identity throughout a fixed-timestamp batch', () =>
+    Effect.gen(function* () {
+      const ids = yield* generateTsid({ count: 10, timestamp: 1_720_000_000_123, nodeBits: 20 })
+      const nodes = ids.map((id) => (tsid.fromString(id) >> 2n) & 0xfffffn)
+
+      expect(new Set(nodes).size).toBe(1)
+      expect(ids).toEqual([...ids].sort())
+      expect(new Set(ids).size).toBe(ids.length)
+    }),
+  )
+
   it.effect('generates a single TSID', () =>
     Effect.gen(function* () {
       const ids = yield* generateTsid({ count: 1 })
