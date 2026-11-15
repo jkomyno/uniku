@@ -1,10 +1,10 @@
 ---
 title: Performance and bundle size
-description: Every uniku generator beats its dedicated npm alternative in the current CI benchmark. See the measurements and bundle cost of each import.
+description: Recorded generation benchmarks, measurement methodology, and the bundle cost of each import.
 icon: Gauge
 ---
 
-Generation speed is a primary design constraint in uniku. In the current CI snapshot, every strategy it measures beats the dedicated npm implementation it targets. The smallest measured lead is 1.2× for UUID v4 and ObjectID; ULID reaches 116×.
+Generation speed is a primary design constraint in uniku. In the July 2026 CI snapshot below, every measured strategy beat the dedicated npm implementation it targeted. The smallest measured lead was 1.2× for UUID v4 and ObjectID; ULID reached 116×.
 
 The claim is deliberately scoped to generation speed against the established package for each format. Application performance still depends on where and how IDs are created.
 
@@ -13,6 +13,8 @@ The claim is deliberately scoped to generation speed against the established pac
 Each row compares uniku's generator against the npm package it targets: `uuid` for UUID v4/v7, `ulid`, `@paralleldrive/cuid2`, `@owpz/ksuid`, `bson` for ObjectID, `nexid` for XID, `tsid-ts`, `nanoid`, and `typeid-js`.
 
 This snapshot comes from a [four-repetition CI run](https://github.com/jkomyno/uniku/actions/runs/29329215014) on July 14, 2026. UUID v5 was added after this snapshot, so it has no row yet. Treat the ratios as directional because shared-runner noise and dependency updates can move them. The [rolling baseline](https://raw.githubusercontent.com/jkomyno/uniku/gh-benchmarks/baseline.json) tracks results across CI runs for regression detection.
+
+The reference dependencies have since been updated, including Nanoid 6. These historical ratios do not measure the updated versions; rerun the compatibility benchmark for a current comparison.
 
 | Generator | uniku vs npm |
 | --- | ---: |
