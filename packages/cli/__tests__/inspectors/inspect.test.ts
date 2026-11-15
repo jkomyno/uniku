@@ -11,6 +11,7 @@ import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
+import { ID_GENERATORS } from '@/src/domain/types'
 import { inspectId } from '@/src/inspectors/inspect'
 
 describe('inspectId', () => {
@@ -166,11 +167,8 @@ describe('inspectId', () => {
     expect(result.type).toBe('tsid')
   })
 
-  it('inspects an invalid TSID string with a note instead of throwing', () => {
-    const result = inspectId('not-a-valid-tsid', 'tsid')
-    assertTrue(result !== null)
-    expect(result.type).toBe('tsid')
-    expect(result.note).toContain('Unrecognized TSID format')
+  it.each(ID_GENERATORS)('rejects malformed input when %s is explicitly selected', (type) => {
+    expect(inspectId('!!!', type)).toBeNull()
   })
 
   it('returns null for unrecognizable ID', () => {
