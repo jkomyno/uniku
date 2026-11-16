@@ -10,6 +10,7 @@ import {
   GENERATOR_MIGRATIONS,
   type GeneratorMigration,
   type MigrationRule,
+  REMOVED_ERROR_CODES,
   RULES,
 } from './mappings.ts'
 
@@ -305,10 +306,21 @@ const TIMESTAMP_MULTIPLICAND_KINDS = new Set([
 const needsTimestampParentheses = (value: Node): boolean => !TIMESTAMP_MULTIPLICAND_KINDS.has(nodeKind(value))
 
 const processOptionCall = (call: Node, migration: GeneratorMigration, context: MigrationContext): void => {
-  const argument = callArguments(call)[migration.optionIndex]
+  const args = callArguments(call)
+  const spread = args.slice(0, migration.optionIndex + 1).find((argument) => argument.kind() === 'spread_element')
+  if (spread) {
+    addAudit(
+      context,
+      spread,
+      migration.rule,
+      'Spread arguments may contain retired options and require manual migration.',
+    )
+    return
+  }
+  const argument = args[migration.optionIndex]
   if (!argument) return
   if (argument.kind() !== 'object') {
-    if (migration.exportName !== 'nanoid') {
+    if (migration.exportName !== 'nanoid' || transparentExpression(argument).kind() !== 'number') {
       addAudit(
         context,
         argument,
@@ -345,6 +357,24 @@ const processOptionCall = (call: Node, migration: GeneratorMigration, context: M
   for (const property of sourceProperties) {
     const group = `option:${call.range().start.index}:${property.range().start.index}`
     const key = propertyKey(property)!
+
+    if (migration.multiplyByThousand) {
+      const value = nodeField(property, 'value')
+      const literal = value ? transparentExpression(value) : null
+      const integerLiteral =
+        literal &&
+        ['number', 'unary_expression'].includes(nodeKind(literal)) &&
+        Number.isInteger(Number(literal.text().replaceAll('_', '').replaceAll(/\s/g, '')))
+      if (!integerLiteral) {
+        addAudit(
+          context,
+          key,
+          migration.rule,
+          'Only integer-literal seconds are converted automatically; other values may be optional or invalid.',
+        )
+        continue
+      }
+    }
 
     if (property.kind() === 'shorthand_property_identifier') {
       const multiplier = migration.multiplyByThousand ? ' * 1000' : ''
@@ -627,7 +657,7 @@ const containingConjunction = (comparison: Node): Node | null => {
 const strategyConjunctState = (
   comparison: Node,
   receiverText: string,
-  expectedStrategy: string,
+  expectedStrategies: readonly string[],
 ): 'absent' | 'matching' | 'conflicting' => {
   const conjunction = containingConjunction(comparison)
   if (!conjunction) return 'absent'
@@ -638,7 +668,8 @@ const strategyConjunctState = (
     const predicate = equalityLiteral(conjunct)
     if (!predicate || predicate.access.receiver.text() !== receiverText) continue
 
-    if (binaryOperator(conjunct) === '===' && stringValue(predicate.literal) === expectedStrategy) matching = true
+    if (binaryOperator(conjunct) === '===' && expectedStrategies.includes(stringValue(predicate.literal) ?? ''))
+      matching = true
     else return 'conflicting'
   }
 
@@ -681,7 +712,7 @@ const processErrorComparisons = (context: MigrationContext): void => {
       continue
     }
 
-    const strategyState = strategyConjunctState(comparison, codeAccess.receiver.text(), migration.strategy)
+    const strategyState = strategyConjunctState(comparison, codeAccess.receiver.text(), migration.strategies)
     if (strategyState === 'conflicting') {
       addAudit(
         context,
@@ -700,7 +731,11 @@ const processErrorComparisons = (context: MigrationContext): void => {
 
     const quote = literal.text()[0]
     const codeComparison = comparisonWithTargetCode(comparison, literal, migration.targetCode)
-    const replacement = `(${codeComparison} && ${codeAccess.receiver.text()}.strategy === ${quote}${migration.strategy}${quote})`
+    const predicates = migration.strategies.map(
+      (strategy) => `${codeAccess.receiver.text()}.strategy === ${quote}${strategy}${quote}`,
+    )
+    const strategyCheck = predicates.length === 1 ? predicates[0] : `(${predicates.join(' || ')})`
+    const replacement = `(${codeComparison} && ${strategyCheck})`
     addEdit(context, comparison, replacement, group, RULES.error)
   }
 }
@@ -732,7 +767,17 @@ const unsupportedLegacyReason = (literal: Node): string => {
 
 const auditUnsupportedErrorCodes = (context: MigrationContext): void => {
   for (const literal of context.stringLiterals) {
-    const migration: ErrorCodeMigration | undefined = ERROR_CODE_BY_SOURCE.get(stringValue(literal) ?? '')
+    const code = stringValue(literal) ?? ''
+    if (REMOVED_ERROR_CODES.has(code)) {
+      addAudit(
+        context,
+        literal,
+        RULES.error,
+        `${code} has no v1 replacement; remove the obsolete error-handling branch.`,
+      )
+      continue
+    }
+    const migration: ErrorCodeMigration | undefined = ERROR_CODE_BY_SOURCE.get(code)
     if (!migration || context.handledLegacyStarts.has(literal.range().start.index)) continue
     addAudit(context, literal, RULES.error, unsupportedLegacyReason(literal))
   }

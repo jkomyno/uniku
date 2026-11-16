@@ -10,12 +10,35 @@ import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import { CliError } from '@/src/domain/errors'
+import { ID_GENERATORS } from '@/src/domain/types'
+import { handleCliFailure } from '@/src/runtime/cli-failure'
 import { cli, MockOutput, TestLive } from '../../__utils__'
 
 describe('CLI: uniku inspect', () => {
   const dashLeadingNanoid = '-aaaaaaaaaaaaaaaaaaaa'
 
   layer(TestLive())((it) => {
+    it.effect.each(ID_GENERATORS)('rejects malformed %s with JSON on stderr and empty stdout', (type) =>
+      Effect.gen(function* () {
+        const previousExitCode = process.exitCode
+        yield* Effect.addFinalizer(() =>
+          Effect.sync(() => {
+            process.exitCode = previousExitCode
+          }),
+        )
+        yield* MockOutput.reset
+        const args = ['inspect', '!!!', '--type', type, '--json']
+
+        yield* cli(args).pipe(Effect.catch((error) => handleCliFailure(error, args)))
+
+        expect(yield* MockOutput.getStdout).toEqual([])
+        const stderr = yield* MockOutput.getStderr
+        expect(stderr).toHaveLength(1)
+        expect(JSON.parse(stderr[0])).toMatchObject({ code: 'INVALID_ID' })
+        expect(process.exitCode).toBe(1)
+      }),
+    )
+
     it.effect('[Given] UUID v7 [Then] shows timestamp and random', () =>
       Effect.gen(function* () {
         yield* MockOutput.reset

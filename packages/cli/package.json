@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@uniku/cli",
-  "version": "0.8.0",
+  "version": "0.9.1",
   "description": "CLI tool for generating and validating unique identifiers",
   "author": {
     "name": "Alberto Schiabel",
@@ -23,7 +23,7 @@
     "uniku": "./build/bin.mjs"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.12.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",

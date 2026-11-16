@@ -1,0 +1,5 @@
+export const counter = error.code === 'UUID_SEQUENCE_OUT_OF_RANGE'
+export const timestamp = error.code === 'UUID_TIMESTAMP_OUT_OF_RANGE'
+export const random = error.code === 'UUID_RANDOM_BYTES_TOO_SHORT'
+export const typeidOnly = error.code === 'UUID_TIMESTAMP_OUT_OF_RANGE' && error.strategy === 'typeid'
+export const uuidOnly = error.code === 'UUID_SEQUENCE_OUT_OF_RANGE' && error.strategy === 'uuid'

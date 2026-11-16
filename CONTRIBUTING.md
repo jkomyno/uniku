@@ -57,7 +57,7 @@ pnpm test:e2e:cloudflare
 ```
 
 CI resolves its runtime versions from `mise.toml`. The package test suite runs on
-the pinned latest Node.js 25.x version and the exact supported minimum without
+the pinned Node.js 25.x and 24 LTS versions and the exact supported Node.js 22.12.0 minimum without
 invoking pnpm under the older runtime. Bun canary and the pinned latest Deno
 exercise the library runtime smokes. Add package-local `test:unit` or
 `test:integration` scripts to `scripts/ci-node-matrix-tests.sh` when new

@@ -2,6 +2,8 @@ import { afterEach } from 'vitest'
 import { uuidv7 } from '@/src/uuid/v7'
 import { expectValidTypeGuard } from '../helpers/assertions'
 
+const MAX_MSECS = 0xffffffffffff
+
 async function importFreshUuidV7Module() {
   vi.resetModules()
   return import('@/src/uuid/v7')
@@ -95,6 +97,28 @@ describe('uuidv7', () => {
     const ms = 1_702_387_456_789
     const id = uuidv7({ msecs: ms, counter: 0, random: new Uint8Array(16) })
     expect(uuidv7.timestamp(id)).toBe(ms)
+  })
+
+  describe('timestamp version guard', () => {
+    it('rejects UUIDs that are not version 7', () => {
+      const notV7 = [
+        'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        '2ed6657d-e927-568b-95e1-2665a8aea6a2',
+        // Version 7 nibble with a non-RFC variant is not a UUID v7 either.
+        '01890a5d-ac96-774b-ccce-b302099a8057',
+      ]
+
+      for (const id of notV7) {
+        expect(() => uuidv7.timestamp(id), id).toThrow(
+          expect.objectContaining({ _tag: 'InvalidInputError', code: 'UUID_NOT_V7', strategy: 'uuid' }),
+        )
+      }
+    })
+
+    it('still accepts the NIL and MAX sentinels', () => {
+      expect(uuidv7.timestamp(uuidv7.NIL)).toBe(0)
+      expect(uuidv7.timestamp(uuidv7.MAX)).toBe(0xffffffffffff)
+    })
   })
 
   it('increases lexicographically within the same millisecond', async () => {
@@ -209,6 +233,18 @@ describe('uuidv7', () => {
       expect(freshUuidV7.timestamp(first)).toBe(ms)
       expect(freshUuidV7.timestamp(second)).toBe(ms + 1)
       expect(compareBytes(freshUuidV7.toBytes(first), freshUuidV7.toBytes(second))).toBeLessThan(0)
+    })
+
+    it('fails closed instead of wrapping the timestamp past 48 bits', async () => {
+      const { uuidv7: freshUuidV7 } = await importFreshUuidV7ModuleWithRandom(randomBytesWithV7Sequence(0x7fffffff))
+      vi.spyOn(Date, 'now').mockReturnValue(MAX_MSECS)
+
+      const first = freshUuidV7()
+      expect(freshUuidV7.timestamp(first)).toBe(MAX_MSECS)
+
+      // No later millisecond fits in the 48-bit field, so every further call must fail.
+      expect(() => freshUuidV7()).toThrow(expect.objectContaining({ code: 'TIMESTAMP_OUT_OF_RANGE', strategy: 'uuid' }))
+      expect(() => freshUuidV7()).toThrow(expect.objectContaining({ code: 'TIMESTAMP_OUT_OF_RANGE' }))
     })
   })
 })

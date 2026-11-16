@@ -1,1 +1,2 @@
 pnpm-lock.yaml linguist-generated=true
+codemods/v1/tests/javascript/comments-crlf/*.js -text whitespace=cr-at-eol

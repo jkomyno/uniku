@@ -5,7 +5,7 @@ import { nanoid as npmNanoid } from 'nanoid'
 import { init as initNeXid, XID as npmNeXid } from 'nexid'
 import { TSID as npmTsid } from 'tsid-ts'
 import { TypeID as NpmTypeID, fromUUID as npmTypeidFromUuid } from 'typeid-js'
-import { ulid as npmUlid } from 'ulid'
+import { isValid as npmIsValidUlid, ulid as npmUlid } from 'ulid'
 import {
   v4 as npmUuidV4,
   v5 as npmUuidV5,
@@ -47,10 +47,6 @@ function randomUnicodeName(): string {
   })
   return String.fromCodePoint(...codePoints)
 }
-
-// ulid npm (v2.3.0) has no isValid(), use regex for Crockford Base32 validation
-// First char 0-7 to prevent overflow, rest is Crockford alphabet (excludes I, L, O, U)
-const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 
 // nanoid npm has no isValid(), use regex for default 21-char URL alphabet
 const NANOID_REGEX = /^[A-Za-z0-9_-]{21}$/
@@ -143,9 +139,9 @@ describe('Cross-Validation: TypeID', () => {
 })
 
 describe('Cross-Validation: ULID', () => {
-  it('uniku IDs pass regex validation', () => {
+  it('uniku IDs pass npm validation', () => {
     const ids = Array.from({ length: BATCH_SIZE }, () => ulid())
-    const invalid = ids.filter((id) => !ULID_REGEX.test(id))
+    const invalid = ids.filter((id) => !npmIsValidUlid(id))
     expect(invalid).toHaveLength(0)
   })
 

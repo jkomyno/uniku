@@ -5,10 +5,10 @@ declare const raw: unknown
 declare const seq: number
 
 export const values = [
-  objectid({ msecs: (raw as number) * 1000 }),
+  objectid({ secs: raw as number }),
   objectid({ msecs: -1 * 1000 }),
-  objectid({ msecs: source.current * 1000 }),
-  objectid({ msecs: (raw as number) * 1000 }),
+  objectid({ secs: source.current }),
+  objectid({ secs: (raw as number) }),
   makeObjectId({ msecs: 3 * 1000 }),
   uuidv7({ counter: seq }),
   makeUuid({ counter: 4 }),

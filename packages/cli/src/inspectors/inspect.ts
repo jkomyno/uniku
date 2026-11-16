@@ -8,7 +8,7 @@ import { uuidv5 } from 'uniku/uuid/v5'
 import { uuidv7 } from 'uniku/uuid/v7'
 import { xid } from 'uniku/xid'
 import type { IdType, InspectResult } from '@/src/domain/types'
-import { typeidUuidVersion, validateAutoDetect } from '@/src/validators/validate'
+import { typeidUuidVersion, validateAs, validateAutoDetect } from '@/src/validators/validate'
 
 /**
  * Inspect an ID and extract metadata.
@@ -16,7 +16,7 @@ import { typeidUuidVersion, validateAutoDetect } from '@/src/validators/validate
  */
 export function inspectId(id: string, type?: IdType): InspectResult | null {
   const resolvedType = type ?? detectType(id)
-  if (!resolvedType) return null
+  if (!resolvedType || !validateAs(id, resolvedType).valid) return null
 
   switch (resolvedType) {
     case 'uuid':

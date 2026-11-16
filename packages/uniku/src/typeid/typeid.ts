@@ -1,6 +1,6 @@
 import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError, ParseError } from '../errors'
-import { formatUuidUnchecked, parseUuidFor } from '../uuid/common/uuid'
+import { formatUuidUnchecked, isUuidVersion7, parseUuidFor } from '../uuid/common/uuid'
 import type { UuidV7Options } from '../uuid/v7'
 import { uuidv7 } from '../uuid/v7'
 
@@ -207,7 +207,7 @@ function formatTypeid(prefix: string, bytes: Uint8Array): string {
 }
 
 function timestampFromUuidV7Bytes(bytes: Uint8Array): number {
-  if (bytes[6] >> 4 !== 7 || (bytes[8] & 0xc0) !== 0x80) {
+  if (!isUuidVersion7(bytes)) {
     throw new InvalidInputError('UUID_NOT_V7', 'TypeID must wrap a UUID v7 to have a timestamp', {
       strategy: 'typeid',
     })

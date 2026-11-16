@@ -47,8 +47,17 @@ describe('legacy error-code mappings', () => {
 
     for (const migration of ERROR_CODE_MIGRATIONS) {
       expect(currentCodes.has(migration.targetCode), migration.sourceCode).toBe(true)
-      expect(currentStrategies.has(migration.strategy), migration.sourceCode).toBe(true)
-      expect(migration.strategy, migration.sourceCode).toBe(strategyForSource(migration.sourceCode))
+      for (const strategy of migration.strategies) {
+        expect(currentStrategies.has(strategy), migration.sourceCode).toBe(true)
+      }
+      const expectedStrategies = [
+        'UUID_TIMESTAMP_OUT_OF_RANGE',
+        'UUID_SEQUENCE_OUT_OF_RANGE',
+        'UUID_RANDOM_BYTES_TOO_SHORT',
+      ].includes(migration.sourceCode)
+        ? ['uuid', 'typeid']
+        : [strategyForSource(migration.sourceCode)]
+      expect(migration.strategies, migration.sourceCode).toEqual(expectedStrategies)
     }
   })
 })

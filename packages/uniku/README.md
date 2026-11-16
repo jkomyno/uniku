@@ -6,7 +6,7 @@
 [![Documentation](https://img.shields.io/badge/docs-read-5b5bd6.svg)](https://jkomyno.github.io/uniku/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Eleven ID strategies behind one consistent, type-safe API. The fastest implementation of each benchmarked format in our [current CI benchmark](https://jkomyno.github.io/uniku/docs/guides/performance/).
+Eleven ID strategies behind one consistent, type-safe API. Compare generation speed and bundle cost in our [current CI benchmark](https://jkomyno.github.io/uniku/docs/guides/performance/).
 
 > **uniku** */uˈniːku/*: Maltese for "unique"
 
@@ -21,7 +21,7 @@ const id = uuidv7()
 
 ## Why `uniku`?
 
-- **Fastest across the benchmark suite.** Every benchmarked strategy beats its dedicated npm alternative in the current isolated-process CI benchmark, from 1.2× for UUID v4 and ObjectID to 116× for ULID.
+- **Published performance measurements.** Isolated-process benchmarks compare every format with its dedicated npm alternative, including the formats where the reference implementation is faster.
 - **Eleven strategies, one type-safe API.** UUID v4/v5/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID each expose a callable generator with matching typed helpers.
 - **Portable by default.** Runs on Node.js, Bun, Deno, browsers, edge runtimes, and Cloudflare Workers using `globalThis.crypto`.
 - **Tree-shakeable entry points.** Import only the generator you use; the package root is intentionally not exported.
@@ -94,6 +94,7 @@ There are no barrel exports:
 ```ts
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv5 } from 'uniku/uuid/v5'
+import { uuidv7 } from 'uniku/uuid/v7'
 import { ulid } from 'uniku/ulid'
 import { typeid } from 'uniku/typeid'
 import { cuidv2 } from 'uniku/cuid/v2'

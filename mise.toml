@@ -6,4 +6,5 @@ node = "25.9.0"
 
 [vars]
 bun_test = "canary"
-node_compat = "20.19.0"
+node_compat = "22.12.0"
+node_lts = "24.22.3"

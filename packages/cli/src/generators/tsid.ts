@@ -13,45 +13,35 @@ export type TsidGenerateOptions = {
 export function generateTsid(options: TsidGenerateOptions): Effect.Effect<string[], CliError> {
   return Effect.try({
     try: () => {
-      // `tsid()` treats a *truthy* options object as a request for fully
-      // deterministic output (bypassing the persistent node/counter state),
-      // even if every field on it is `undefined`. So only build an options
-      // object when at least one of timestamp/node/nodeBits was actually
-      // requested - otherwise pass `undefined` to preserve the persistent,
-      // stateful default behavior every other no-flag CLI invocation gets.
-      const hasOptions = options.timestamp != null || options.node != null || options.nodeBits != null
-
       const ids: string[] = []
 
-      if (!hasOptions) {
+      if (options.timestamp === undefined) {
+        const configuration =
+          options.node !== undefined || options.nodeBits !== undefined
+            ? { node: options.node, nodeBits: options.nodeBits }
+            : undefined
         for (let i = 0; i < options.count; i++) {
-          // tsid() returns a bigint - convert immediately so no raw bigint
-          // ever reaches this CLI-facing `string[]` surface.
-          ids.push(tsid.toString(tsid()))
+          ids.push(tsid.toString(tsid(configuration)))
         }
         return ids
       }
 
-      // Any of timestamp/node/nodeBits bypasses the core generator's persistent
-      // counter (options bypass state entirely, per tsid()'s contract), so a
-      // naive per-call options object would have each id draw an independent
-      // random counter instead of an incrementing one - with a small counterBits
-      // (e.g. --node-bits 20 leaves only 2 counter bits), that makes duplicate
-      // ids within the batch near-certain. Step the counter across the loop
-      // instead, rolling over into the timestamp on overflow, mirroring the
-      // core generator's own clock-drift-ahead behavior (R7).
+      // A fixed timestamp bypasses the library's shared sequence. Keep one
+      // node for this batch and advance time when its explicit counter fills.
       const nodeBits = options.nodeBits ?? 10
-      const counterRange = 2 ** (22 - nodeBits)
-      const baseMsecs = options.timestamp ?? Date.now()
+      const counterBits = 22 - nodeBits
+      const counterRange = 2 ** counterBits
+      let node = options.node
 
       for (let i = 0; i < options.count; i++) {
-        const tsidOpts = {
-          msecs: baseMsecs + Math.floor(i / counterRange),
+        const value = tsid({
+          msecs: options.timestamp + Math.floor(i / counterRange),
           counter: i % counterRange,
-          ...(options.node != null ? { node: options.node } : {}),
-          ...(options.nodeBits != null ? { nodeBits: options.nodeBits } : {}),
-        }
-        ids.push(tsid.toString(tsid(tsidOpts)))
+          node,
+          nodeBits,
+        })
+        node ??= Number((value >> BigInt(counterBits)) & BigInt((1 << nodeBits) - 1))
+        ids.push(tsid.toString(value))
       }
       return ids
     },

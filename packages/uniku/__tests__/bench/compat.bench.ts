@@ -5,7 +5,7 @@ import { nanoid as npmNanoid } from 'nanoid'
 import { init as initNeXid, XID as npmNeXid } from 'nexid'
 import { TSID as npmTsid } from 'tsid-ts'
 import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-js'
-import { ulid as npmUlid } from 'ulid'
+import { isValid as npmIsValidUlid, ulid as npmUlid } from 'ulid'
 import {
   v4 as npmUuidV4,
   v5 as npmUuidV5,
@@ -49,8 +49,6 @@ function bench(name: string, task: () => void, options: typeof benchOptions): vo
   }
 }
 
-// ulid npm (v2.3.0) has no isValid(), use regex
-const ULID_REGEX = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 const nexid = await initNeXid()
 const V5_NAME = 'www.example.com'
 const V5_LONG_NAME = 'x'.repeat(256)
@@ -368,9 +366,9 @@ describe('Validation', () => {
       benchOptions,
     )
     bench(
-      'regex',
+      'npm',
       () => {
-        ULID_REGEX.test(testIds.unikuUlid)
+        npmIsValidUlid(testIds.unikuUlid)
       },
       benchOptions,
     )

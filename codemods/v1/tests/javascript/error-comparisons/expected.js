@@ -6,5 +6,5 @@ export const mixedAnd = ready && (error.code === 'VALUE_OUT_OF_RANGE' && error.s
 export const mixedOr = (error.code === 'INVALID_CHAR' && error.strategy === 'ksuid') || fallback
 export const negated = !((error.code === 'NODE_OUT_OF_RANGE' && error.strategy === 'tsid'))
 export const converging =
-  (error.code === 'TIMESTAMP_OUT_OF_RANGE' && error.strategy === 'uuid') || (error.code === 'TIMESTAMP_OUT_OF_RANGE' && error.strategy === 'ulid')
+  (error.code === 'TIMESTAMP_OUT_OF_RANGE' && (error.strategy === 'uuid' || error.strategy === 'typeid')) || (error.code === 'TIMESTAMP_OUT_OF_RANGE' && error.strategy === 'ulid')
 export const commented = (error.code /* keep */ === 'LENGTH_OUT_OF_RANGE' && error.strategy === 'nanoid') // outside

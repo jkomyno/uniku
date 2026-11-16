@@ -13,8 +13,8 @@ export const values = [
   nanoid({ alphabet: 'abcdef', length: size }),
   nanoid({ 'length': 8 }),
   nanoid(12),
-  xid({ msecs: secs * 1000 }),
-  xid({ msecs: (start + offset) * 1000 }),
-  xid({ msecs: (condition ? start : fallback) * 1000 }),
+  xid({ secs }),
+  xid({ secs: start + offset }),
+  xid({ secs: condition ? start : fallback }),
   xid({ "msecs": 2 * 1000 }),
 ]

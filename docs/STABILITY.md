@@ -46,8 +46,8 @@ version and are removed only in the next major version.
 
 ### v1 release candidate contract
 
-`uniku@0.6.0` was the final release for the deprecated `secs`, `seq`, and
-object-form Nanoid `size` aliases. `uniku@1.0.0-rc.1` removes them. The release
+`uniku@0.9.0` is the latest stable release with the deprecated `secs`, `seq`, and
+object-form Nanoid `size` aliases. The v1 release candidate removes them. The release
 candidate exposes only the canonical v1 spellings:
 
 - `uniku/cuid/v2` and its `cuidv2` export are the sole CUID v2 entry point and
@@ -66,8 +66,8 @@ The library is ESM-only and targets ES2023 plus the Web Crypto API.
 
 The v1 compatibility matrix covers:
 
-- Node.js `>=20.19.0`, tested at that exact floor and on the Mise-pinned latest
-  Node.js 25.x release;
+- Node.js `>=22.12.0`, tested at that exact floor, on Node.js 24 LTS, and on the
+  Mise-pinned Node.js 25.x release;
 - current stable Bun, with the latest canary exercised in CI;
 - the Mise-pinned latest stable Deno 2 release;
 - Cloudflare Workers;
@@ -135,12 +135,22 @@ starts.
 
 - UUID v7 and ULID preserve monotonic order when the wall clock stalls or moves
   backward.
-- ObjectID keeps its process-random field and always-incrementing counter.
-- XID keeps a random per-runtime identity and always-incrementing counter.
-- TSID keeps its node ID and advances virtual time if its per-millisecond
-  counter overflows.
-- Explicit timestamp, random, node, or counter options do not mutate
-  the default generator state.
+- ObjectID keeps its process-random field and a 24-bit counter that increments on
+  every call and wraps modulo 2^24, as MongoDB's ObjectID layout requires. The
+  counter keeps incrementing across seconds; it is not reset per second.
+- XID keeps a random per-runtime identity and a 24-bit counter with the same
+  increment-and-wrap behaviour.
+
+For both, a counter that completes a full 2^24 cycle and returns to a value emitted
+in the same second, alongside the same per-process identity, yields a duplicate ID.
+That is the formats' own design limit, not a state-management defect, and it
+requires 2^24 IDs from one process inside one second.
+- TSID keeps its node ID, clock, and counter when only `node`, `nodeBits`, or
+  `epoch` is configured, including an empty options object. Its stateful calls
+  share one sequence per isolate and advance virtual time on counter overflow.
+  An explicit `msecs` or `counter` bypasses that sequence.
+- UUID v7, ULID, and ObjectID bypass their default state when given explicit
+  options. XID retains its shared counter unless `counter` is supplied.
 
 Monotonicity is process-local. It does not coordinate independent machines or
 isolates.
@@ -188,7 +198,9 @@ underlying CSPRNG or provide cross-process uniqueness.
 ## Security posture
 
 Random generators use `globalThis.crypto`. CUID2 uses SHA3-512 from
-`@noble/hashes`; this dependency sets the Node.js minimum version.
+`@noble/hashes`. The supported Node.js floor is 22.12.0, matching the minimum
+Node.js 22 release supported by the test runtime. Development builds use the
+Mise-pinned Node.js version.
 
 UUID v5 uses SHA-1, as RFC 9562 requires, through a small inlined
 implementation with no runtime dependency. SHA-1 is adequate for identity but

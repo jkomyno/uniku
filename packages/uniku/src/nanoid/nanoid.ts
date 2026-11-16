@@ -4,6 +4,7 @@ import { InvalidInputError } from '../errors'
 export const URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
 
 const DEFAULT_SIZE = 21
+const MIN_SIZE = 1
 const MAX_SIZE = 2048
 const NANOID_REGEX = /^[A-Za-z0-9_-]+$/
 
@@ -22,7 +23,7 @@ function fillPool(bytes: number): void {
     poolBytes = new Uint8Array(size)
   }
   if (poolOffset + bytes > characterPool.length) {
-    crypto.getRandomValues(poolBytes)
+    globalThis.crypto.getRandomValues(poolBytes)
     for (let i = 0; i < poolBytes.length; i++) {
       poolBytes[i] = URL_ALPHABET.charCodeAt(poolBytes[i] & 63)
     }
@@ -51,7 +52,7 @@ export type NanoidOptions = {
    */
   alphabet?: string
   /**
-   * Length of generated ID. Default: 21. Maximum: 2048.
+   * Length of generated ID. Default: 21. Minimum: 1. Maximum: 2048.
    */
   length?: number
 }
@@ -65,7 +66,12 @@ export type Nanoid = {
   (options: NanoidOptions): string
   /**
    * Validate a nanoid string against the default URL-safe alphabet.
-   * Note: Does not validate IDs generated with custom alphabets.
+   *
+   * Nanoids carry no self-describing length or alphabet, so all this can check is
+   * that the value is a non-empty run of the default URL-safe characters. It cannot
+   * verify the generated length, and an ID built from a custom alphabet passes
+   * whenever that alphabet is a subset of the default one. Check `id.length`
+   * yourself when the boundary requires a specific size.
    */
   isValid(id: unknown): id is string
 }
@@ -106,14 +112,18 @@ function validateAlphabet(alphabet: string): void {
 }
 
 /**
- * Validate length parameter
+ * Validate length parameter.
+ *
+ * Zero is rejected rather than returning an empty string: `''` is never a usable
+ * identifier, and every other invalid length already throws.
  */
 function validateLength(size: number): void {
-  if (!Number.isInteger(size) || size < 0) {
-    throw new InvalidInputError('LENGTH_OUT_OF_RANGE', 'Length must be a non-negative integer', { strategy: 'nanoid' })
-  }
-  if (size > MAX_SIZE) {
-    throw new InvalidInputError('LENGTH_OUT_OF_RANGE', `Length must not exceed ${MAX_SIZE}`, { strategy: 'nanoid' })
+  if (!Number.isInteger(size) || size < MIN_SIZE || size > MAX_SIZE) {
+    throw new InvalidInputError(
+      'LENGTH_OUT_OF_RANGE',
+      `Length must be an integer between ${MIN_SIZE} and ${MAX_SIZE}`,
+      { strategy: 'nanoid' },
+    )
   }
 }
 
@@ -144,8 +154,6 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
   }
 
   validateLength(size)
-
-  if (size === 0) return ''
 
   if (alphabet === URL_ALPHABET && randomBytes === undefined) {
     return defaultAlphabetFromPool(size)
@@ -211,7 +219,11 @@ function nanoidFn(sizeOrOptions?: number | NanoidOptions): string {
 
 /**
  * Validate a nanoid string against the default URL-safe alphabet.
- * Note: Does not validate IDs generated with custom alphabets.
+ *
+ * Nanoids carry no self-describing length or alphabet, so this accepts any
+ * non-empty run of the default URL-safe characters. It cannot check the generated
+ * length, and an ID built from a custom alphabet passes whenever that alphabet is a
+ * subset of the default one.
  */
 function isValid(id: unknown): id is string {
   return typeof id === 'string' && id.length > 0 && NANOID_REGEX.test(id)
@@ -259,7 +271,7 @@ function isValid(id: unknown): id is string {
  * }
  * ```
  *
- * @throws {InvalidInputError} Length must be between 0 and 2048
+ * @throws {InvalidInputError} Length must be an integer between 1 and 2048
  * @throws {InvalidInputError} Alphabet must contain 2-256 unique printable ASCII characters
  * @throws {InvalidInputError} Insufficient random bytes for requested length
  */

@@ -51,6 +51,23 @@ jobs:
       - name: Lint
         run: pnpm lint:ci
 
+  codemod:
+    name: V1 Codemod
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node
+
+      - name: Test codemod and consumer migration
+        run: pnpm --filter @jkomyno/uniku-v1 test
+
+      - name: Validate workflow
+        run: pnpm --filter @jkomyno/uniku-v1 workflow:validate
+
   runtime:
     name: Runtime (${{ matrix.name }})
     runs-on: ubuntu-latest
@@ -61,6 +78,8 @@ jobs:
         include:
           - name: Node.js latest 25.x
             runtime: node-current
+          - name: Node.js 24 LTS
+            runtime: node-lts
           - name: Node.js minimum
             runtime: node-compat
           - name: Bun canary
@@ -83,6 +102,12 @@ jobs:
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: ${{ steps.toolchain.outputs.node-compat-version }}
+
+      - name: Setup Node.js LTS
+        if: matrix.runtime == 'node-lts'
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: ${{ steps.toolchain.outputs.node-lts-version }}
 
       - name: Setup Bun canary
         if: matrix.runtime == 'bun'
@@ -200,7 +225,7 @@ jobs:
     name: Preview Release
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: [check, runtime, coverage, e2e-cloudflare, build]
+    needs: [check, codemod, runtime, coverage, e2e-cloudflare, build]
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1

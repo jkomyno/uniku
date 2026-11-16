@@ -90,8 +90,14 @@ export type ErrorStrategy = 'uuid' | 'ulid' | 'ksuid' | 'objectid' | 'xid' | 'ts
 export interface ErrorCodeMigration {
   readonly sourceCode: string
   readonly targetCode: string
-  readonly strategy: ErrorStrategy
+  readonly strategies: readonly ErrorStrategy[]
 }
+
+export const REMOVED_ERROR_CODES: ReadonlySet<string> = new Set([
+  'ULID_RANDOM_OVERFLOW',
+  'RANDOM_OVERFLOW',
+  'CONFLICTING_OPTIONS',
+])
 
 const ERROR_CODE_GROUPS = [
   {
@@ -182,7 +188,6 @@ const ERROR_CODE_GROUPS = [
       'CUID2_RANDOM_BYTES_EMPTY',
     ],
   },
-  { targetCode: 'RANDOM_OVERFLOW', sourceCodes: ['ULID_RANDOM_OVERFLOW'] },
   {
     targetCode: 'COUNTER_OUT_OF_RANGE',
     sourceCodes: [
@@ -233,11 +238,17 @@ const strategyForLegacyCode = (sourceCode: string): ErrorStrategy => {
   }
 }
 
+const TYPEID_DELEGATED_CODES: ReadonlySet<string> = new Set([
+  'UUID_TIMESTAMP_OUT_OF_RANGE',
+  'UUID_SEQUENCE_OUT_OF_RANGE',
+  'UUID_RANDOM_BYTES_TOO_SHORT',
+])
+
 export const ERROR_CODE_MIGRATIONS: readonly ErrorCodeMigration[] = ERROR_CODE_GROUPS.flatMap((group) =>
   group.sourceCodes.map((sourceCode) => ({
     sourceCode,
     targetCode: group.targetCode,
-    strategy: strategyForLegacyCode(sourceCode),
+    strategies: TYPEID_DELEGATED_CODES.has(sourceCode) ? ['uuid', 'typeid'] : [strategyForLegacyCode(sourceCode)],
   })),
 )
 

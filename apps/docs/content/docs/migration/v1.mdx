@@ -6,6 +6,8 @@ icon: Milestone
 
 uniku v1 keeps its canonical identifier formats stable while finalizing its pre-v1 entry points and machine-readable error contract.
 
+`uniku@0.9.0` is the latest stable release with the deprecated aliases. This candidate includes its fixes and requires Node.js 22.12.0 or newer, matching the stable release.
+
 ## Move CUID v2 to the versioned entry point
 
 V1 removes the pre-v1 `uniku/cuid2` alias. Use the canonical versioned import:
@@ -31,6 +33,8 @@ KSUID, ObjectID, and XID now expose only the shared `msecs` timestamp option. Co
 ```
 
 The conversion is `msecs = secs * 1000`; these formats still store whole seconds, so equivalent deterministic inputs produce the same identifier data.
+
+For optional values, preserve `undefined`: use `msecs: secs === undefined ? undefined : secs * 1000`. Validate dynamic values as integer seconds before multiplying; otherwise `null` or fractional seconds could become accepted millisecond timestamps. The codemod converts integer literals automatically and reports other values for manual migration.
 
 ## Rename UUID v7 and TypeID counters
 
@@ -77,6 +81,8 @@ Pre-v1 error codes included the generator name. V1 uses strategy-agnostic codes 
 
 `uniku/errors` exports `ERROR_CODES`, the authoritative runtime catalog, and its derived `ErrorCode` type. The `_tag` classes and human-readable messages keep their existing roles.
 
+In older releases, TypeID delegated option validation to UUID v7. Matches on `UUID_TIMESTAMP_OUT_OF_RANGE`, `UUID_SEQUENCE_OUT_OF_RANGE`, or `UUID_RANDOM_BYTES_TOO_SHORT` therefore covered both generators. Preserve that behavior by accepting either `error.strategy === 'uuid'` or `error.strategy === 'typeid'` after renaming those codes.
+
 This table maps every machine-readable code emitted by `uniku@0.4.3` to its v1 replacement:
 
 | Pre-v1 code(s) | V1 code |
@@ -90,7 +96,6 @@ This table maps every machine-readable code emitted by `uniku@0.4.3` to its v1 r
 | `UUID_BYTES_INVALID_LENGTH`, `ULID_BYTES_INVALID_LENGTH`, `KSUID_BYTES_INVALID_LENGTH`, `KSUID_BYTES_TOO_SHORT`, `OBJECTID_BYTES_INVALID_LENGTH`, `OBJECTID_BYTES_TOO_SHORT`, `XID_BYTES_INVALID_LENGTH`, `TSID_BYTES_INVALID_LENGTH`, `TYPEID_UUID_BYTES_INVALID_LENGTH` | `BYTES_INVALID_LENGTH` |
 | `UUID_BUFFER_OUT_OF_BOUNDS`, `ULID_BUFFER_OUT_OF_BOUNDS`, `KSUID_BUFFER_OUT_OF_BOUNDS`, `OBJECTID_BUFFER_OUT_OF_BOUNDS`, `XID_BUFFER_OUT_OF_BOUNDS`, `TSID_BUFFER_OUT_OF_BOUNDS` | `BUFFER_OUT_OF_BOUNDS` |
 | `UUID_RANDOM_BYTES_TOO_SHORT`, `ULID_RANDOM_BYTES_TOO_SHORT`, `KSUID_RANDOM_BYTES_TOO_SHORT`, `OBJECTID_RANDOM_BYTES_TOO_SHORT`, `NANOID_RANDOM_BYTES_INSUFFICIENT`, `CUID2_RANDOM_BYTES_EMPTY` | `RANDOM_BYTES_TOO_SHORT` |
-| `ULID_RANDOM_OVERFLOW` | `RANDOM_OVERFLOW` |
 | `UUID_SEQUENCE_OUT_OF_RANGE`, `OBJECTID_COUNTER_OUT_OF_RANGE`, `XID_COUNTER_OUT_OF_RANGE`, `TSID_COUNTER_OUT_OF_RANGE` | `COUNTER_OUT_OF_RANGE` |
 | `TSID_NODE_OUT_OF_RANGE` | `NODE_OUT_OF_RANGE` |
 | `TSID_NODE_BITS_OUT_OF_RANGE` | `NODE_BITS_OUT_OF_RANGE` |
@@ -107,6 +112,20 @@ This table maps every machine-readable code emitted by `uniku@0.4.3` to its v1 r
 | `NANOID_SIZE_INVALID`, `NANOID_SIZE_TOO_LARGE`, `CUID2_LENGTH_OUT_OF_RANGE` | `LENGTH_OUT_OF_RANGE` |
 
 Several old codes intentionally converge on one v1 meaning. This only changes error handling; generated and persisted identifier data is unaffected.
+
+### Removed codes
+
+`ULID_RANDOM_OVERFLOW` has no v1 replacement. Exhausting ULID's 80-bit monotonic
+random portion no longer fails: the generator advances its timestamp by one
+millisecond and continues, which is what UUID v7 already did with its counter. The
+`RANDOM_OVERFLOW` code that briefly replaced it is gone for the same reason — there
+is no longer a failure to report. If you matched on either code, delete the branch.
+
+A ULID or UUID v7 whose 48-bit timestamp field is already at its maximum now
+throws `TIMESTAMP_OUT_OF_RANGE` instead, because borrowing the next millisecond
+would no longer fit.
+
+`CONFLICTING_OPTIONS` is also removed. Once `secs`, `seq`, and object-form Nanoid `size` are gone, none of the supported option pairs conflict. Remove branches that match this code.
 
 ## What remains stable
 

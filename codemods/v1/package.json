@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Deterministic source migration from uniku 0.6 to v1",
+  "description": "Deterministic source migration from uniku 0.x to v1",
   "license": "MIT",
   "scripts": {
     "test": "pnpm test:unit && pnpm test:fixtures",

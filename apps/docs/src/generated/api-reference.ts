@@ -39,7 +39,7 @@ export type GeneratorApi = {
 
 export const generatorApis: Record<GeneratorId, GeneratorApi> = {
   "uuid-v4": {
-    "description": "Generate a UUID v4 string or write the bytes into a buffer. UUID v4 is a purely random UUID with 122 bits of entropy. It's the most widely compatible UUID format, supported by virtually all databases and systems. Use when you need maximum compatibility and don't require time-ordering.",
+    "description": "Generate a UUID v4 string or write the bytes into a buffer. UUID v4 is a purely random UUID with 122 bits of entropy. It's the most widely compatible UUID format, supported by virtually all databases and systems. Use when you need maximum compatibility and don't require time-ordering. The no-argument form uses `crypto.randomUUID()` when the runtime provides it and falls back to the shared CSPRNG pool otherwise, so importing this entry point never requires a secure context.",
     "members": [
       {
         "example": {
@@ -81,7 +81,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "toBytes",
         "signatures": [
           {
-            "description": "Convert a UUID v4 string to its canonical 16-byte representation.",
+            "description": "Convert a UUID string to its canonical 16-byte representation. This is a byte codec, not a validator: it checks the 36-character shape — length, separators, and hex characters — and accepts any version, including the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored byte-compatible values. It does not check the version nibble or the variant; use `isValid()` for the version-specific guard.",
             "text": "toBytes(id: string): Uint8Array"
           }
         ]
@@ -182,7 +182,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "toBytes",
         "signatures": [
           {
-            "description": "Convert a UUID v5 string to its canonical 16-byte representation.",
+            "description": "Convert a UUID string to its canonical 16-byte representation. This is a byte codec, not a validator: it checks the 36-character shape — length, separators, and hex characters — and accepts any version, including the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored byte-compatible values. It does not check the version nibble or the variant; use `isValid()` for the version-specific guard.",
             "text": "toBytes(id: string): Uint8Array"
           }
         ]
@@ -349,7 +349,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "toBytes",
         "signatures": [
           {
-            "description": "Convert a UUID v7 string to its canonical 16-byte representation.",
+            "description": "Convert a UUID string to its canonical 16-byte representation. This is a byte codec, not a validator: it checks the 36-character shape — length, separators, and hex characters — and accepts any version, including the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored byte-compatible values. It does not check the version nibble or the variant; use `isValid()` for the version-specific guard.",
             "text": "toBytes(id: string): Uint8Array"
           }
         ]
@@ -771,7 +771,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "string"
             },
             {
-              "description": "Length of generated ID. Default: 21. Maximum: 2048.",
+              "description": "Length of generated ID. Default: 21. Minimum: 1. Maximum: 2048.",
               "name": "length",
               "optional": true,
               "type": "number"
@@ -802,7 +802,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "isValid",
         "signatures": [
           {
-            "description": "Validate a nanoid string against the default URL-safe alphabet. Note: Does not validate IDs generated with custom alphabets.",
+            "description": "Validate a nanoid string against the default URL-safe alphabet. Nanoids carry no self-describing length or alphabet, so all this can check is that the value is a non-empty run of the default URL-safe characters. It cannot verify the generated length, and an ID built from a custom alphabet passes whenever that alphabet is a subset of the default one. Check `id.length` yourself when the boundary requires a specific size.",
             "text": "isValid(id: unknown): id is string"
           }
         ]
@@ -1084,7 +1084,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Node ID (0 to 2^nodeBits - 1). Defaults to a lazily-initialized, persistent random value.",
+              "description": "Node ID (0 to 2^nodeBits - 1). Defaults to a persistent random value for stateful generation, or a fresh random value when an explicit timestamp or counter bypasses state.",
               "name": "node",
               "optional": true,
               "type": "number"
@@ -1096,7 +1096,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "number"
             },
             {
-              "description": "Per-millisecond counter (0 to 2^(22 - nodeBits) - 1). Defaults to a fresh random value on a new millisecond, or the previous value incremented by 1 within the same millisecond.",
+              "description": "Per-millisecond counter (0 to 2^(22 - nodeBits) - 1). Defaults to a fresh random value on a new millisecond, or the previous value incremented by 1 within the same millisecond. An explicit msecs bypasses sequencing and draws a fresh counter when this is omitted.",
               "name": "counter",
               "optional": true,
               "type": "number"
