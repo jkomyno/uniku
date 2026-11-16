@@ -1,0 +1,9 @@
+{
+  "mode": "pre",
+  "tag": "rc",
+  "initialVersions": {
+    "@uniku/cli": "0.9.1",
+    "uniku": "0.9.0"
+  },
+  "changesets": ["bright-rivers-release", "quiet-aliases-retire"]
+}

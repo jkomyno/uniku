@@ -1,0 +1,16 @@
+{
+  "uniku-v1-manual-migrations": [
+    {
+      "cardinality": {
+        "ruleId": "uniku-v1/counter-options"
+      },
+      "count": 2
+    },
+    {
+      "cardinality": {
+        "ruleId": "uniku-v1/cuid-entry-point"
+      },
+      "count": 1
+    }
+  ]
+}

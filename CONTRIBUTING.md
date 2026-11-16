@@ -122,7 +122,6 @@ packages/
     src/
       common/
         bytes.ts         # Byte manipulation (increment, timestamp writing)
-        random-pool.ts   # Thread-safe random byte pooling (for CUID2)
         random.ts        # Simple random pool for UUID/ULID/KSUID
       uuid/
         v4.ts            # UUID v4 implementation
@@ -133,8 +132,8 @@ packages/
       ulid/
         ulid.ts          # ULID implementation
         crockford.ts     # Crockford Base32 encoding
-      cuid2/
-        cuid2.ts         # CUID2 implementation (SHA3-512 based)
+      cuid/
+        v2.ts            # CUID v2 implementation (SHA3-512 based)
       nanoid/
         nanoid.ts        # Nanoid implementation
       ksuid/

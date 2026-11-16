@@ -16,7 +16,7 @@ Nanoid generates purely random identifiers with no embedded timestamp.
 - **Compact**: 21 characters vs 36 for UUID
 - **URL-safe**: Uses A-Za-z0-9_- alphabet by default
 - **Secure**: Uses cryptographically strong random APIs
-- **Customizable**: Supports custom alphabets and sizes
+- **Customizable**: Supports custom alphabets and lengths
 - **Edge-compatible**: Works with Web Crypto API (Cloudflare Workers)
 - **No modulo bias**: Bitmask rejection sampling ensures uniform distribution
 
@@ -55,7 +55,7 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-
 
 ### Default Configuration
 
-- **Size**: 21 characters (max: 2048)
+- **Length**: 21 characters (max: 2048)
 - **Alphabet**: 64 characters (A-Za-z0-9_-)
 - **Entropy**: 126 bits (21 * log2(64) = 21 * 6)
 
@@ -74,7 +74,7 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-
 type NanoidOptions = {
   random?: Uint8Array  // Custom random bytes for deterministic output
   alphabet?: string    // Custom alphabet (2-256 printable ASCII chars)
-  size?: number        // Length of generated ID (default: 21, max: 2048)
+  length?: number      // Length of generated ID (default: 21, max: 2048)
 }
 
 type Nanoid = {
@@ -99,13 +99,13 @@ Generate a 21-character URL-safe ID using the default alphabet.
 nanoid(size) -> string
 ```
 Generate an ID of specified length using the default alphabet.
-Throws RangeError if size < 0 or > 2048.
+Throws `InvalidInputError` if size < 0 or > 2048.
 
 ```
 nanoid(options) -> string
 ```
-Generate an ID with custom size and/or alphabet.
-- `options.size`: Length of ID (default: 21)
+Generate an ID with custom length and/or alphabet.
+- `options.length`: Length of ID (default: 21)
 - `options.alphabet`: Custom character set (default: URL_ALPHABET)
 - `options.random`: Deterministic random bytes for testing
 
@@ -183,7 +183,7 @@ function isValid(id: unknown): id is string {
 - Must be a non-negative integer
 - `nanoid(0)` returns empty string
 - Maximum: 2048 (prevents memory issues)
-- Negative, non-integer, or exceeding max throws `RangeError`
+- Negative, non-integer, or exceeding max throws `InvalidInputError`
 
 **Alphabet parameter:**
 - Minimum 2 characters
@@ -210,7 +210,7 @@ and add complexity without value.
 
 Pre-computing mask/step provides negligible performance gain (two arithmetic ops).
 Adding a factory would duplicate generation logic and increase cognitive load.
-Users should call `nanoid({ alphabet, size })` directly.
+Users should call `nanoid({ alphabet, length })` directly.
 
 **4. `isValid` validates default alphabet only**
 
@@ -242,14 +242,14 @@ validation checks.
 | Time-sortable    | No        | No        | Yes       | No        |
 | URL-safe         | Yes       | No        | Yes       | Yes       |
 | Custom alphabet  | Yes       | No        | No        | No        |
-| Custom size      | Yes       | No        | No        | Yes       |
+| Custom length    | Yes       | No        | No        | Yes       |
 | Entropy (default)| 126 bits  | 122 bits  | 80 bits   | ~144 bits |
 | RFC Standard     | No        | Yes       | No        | No        |
 
 When to choose Nanoid:
 - Need short, URL-safe IDs
 - Time-ordering not required
-- Want customizable alphabet/size
+- Want customizable alphabet/length
 - Simple, fast generation
 
 ## Performance
@@ -282,18 +282,18 @@ const id = nanoid({ random: new Uint8Array(21).fill(0) })
 
 ### Example 4: Custom Alphabet
 ```typescript
-const hexId = nanoid({ alphabet: '0123456789abcdef', size: 12 })
+const hexId = nanoid({ alphabet: '0123456789abcdef', length: 12 })
 // => "4f90d13a42bc" (12 hex characters)
 ```
 
 ### Example 5: Invalid Inputs
 | Input | Reason Invalid |
 |-------|----------------|
-| `nanoid(-1)` | Negative size throws RangeError |
-| `nanoid(3000)` | Exceeds MAX_SIZE (2048) throws RangeError |
-| `nanoid({ alphabet: 'a' })` | Alphabet < 2 chars throws Error |
-| `nanoid({ alphabet: 'aa' })` | Duplicate chars throws Error |
-| `nanoid({ alphabet: 'a\x00b' })` | Non-printable char throws Error |
+| `nanoid(-1)` | Negative size throws `InvalidInputError` |
+| `nanoid(3000)` | Exceeds MAX_SIZE (2048) throws `InvalidInputError` |
+| `nanoid({ alphabet: 'a' })` | Alphabet < 2 chars throws `InvalidInputError` |
+| `nanoid({ alphabet: 'aa' })` | Duplicate chars throw `InvalidInputError` |
+| `nanoid({ alphabet: 'a\x00b' })` | Non-printable chars throw `InvalidInputError` |
 
 ### Example 6: Validation
 ```typescript

@@ -1,5 +1,19 @@
 # uniku
 
+## 1.0.0-rc.2
+
+### Patch Changes
+
+- Include the `0.8.0` and `0.9.0` releases: configured TSID sequencing, Node.js 22.12.0 minimum support, insecure-context UUID v4 generation, stricter Nanoid and byte-codec validation, monotonic timestamp overflow handling, and UUID v7 timestamp version checks. Preserve the v1 entry-point and option-alias removals.
+- Update the v1 codemod and migration guide for the current error-code catalog.
+
+## 1.0.0-rc.1
+
+### Patch Changes
+
+- Include the `0.7.0` changes: `uniku/uuid/v5` and TypeID conversions that accept a UUID of any version.
+- Remove the deprecated `secs`, `seq`, and Nanoid object-form `size` aliases after their final migration release in `0.6.0`. Use `msecs`, `counter`, and `length` instead. `CONFLICTING_OPTIONS` is also removed from the v1 error-code catalog because no supported option pair conflicts after these aliases are gone.
+
 ## 0.9.0
 
 ### Minor Changes
@@ -124,6 +138,12 @@
 
 - a7ace05: Add `uniku/uuid/v5`, a name-based UUID (RFC 9562 section 5.5) that derives the same ID from the same name and namespace in every process and runtime. It is synchronous and dependency-free, follows the `uuid` package's `(name, namespace, buf?, offset?)` argument order, and adds `uuidv5.namespace()` to parse a namespace once, plus the `DNS`, `URL`, `OID`, and `X500` namespace constants.
 - 379c872: `typeid.fromUuid()`, `typeid.fromBytes()`, `typeid.toUuid()`, `typeid.toBytes()`, `typeid.prefix()`, `typeid.suffix()`, and `typeid.isValid()` now accept a TypeID or UUID of any version, as the TypeID specification recommends, so `typeid.fromUuid('tool', uuidv5(name, namespace))` gives a deterministic TypeID. `typeid()` still generates UUID v7. `typeid.timestamp()` is now the only function that throws `UUID_NOT_V7`, for a TypeID that does not wrap a UUID v7. `typeid.fromUuid()` with a string that is not a UUID now throws a `ParseError` (`INVALID_LENGTH`, `INVALID_FORMAT`, or `INVALID_CHAR`) instead of `UUID_NOT_V7`.
+
+## 1.0.0-rc.0
+
+### Major Changes
+
+- Finalize the v1 public API: use only `uniku/cuid/v2` with `cuidv2`, replace second-based `secs` options with millisecond-based `msecs`, replace UUID v7 and TypeID `seq` with `counter`, and use `length` for Nanoid's object-form option. Existing identifier data remains valid; see the v1 migration guide for mechanical before-and-after examples.
 
 ## 0.6.0
 

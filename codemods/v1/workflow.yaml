@@ -1,0 +1,51 @@
+version: "1"
+nodes:
+  - id: migrate-javascript
+    name: Migrate JavaScript and JSX consumers
+    type: automatic
+    steps:
+      - name: Transform JavaScript and JSX
+        js-ast-grep:
+          js_file: scripts/transform.ts
+          language: javascript
+          semantic_analysis: file
+          include:
+            - "**/*.js"
+            - "**/*.jsx"
+            - "**/*.mjs"
+            - "**/*.cjs"
+          exclude: &generated-and-vendor
+            - "**/.git/**"
+            - "**/.hg/**"
+            - "**/.svn/**"
+            - "**/build/**"
+            - "**/coverage/**"
+            - "**/dist/**"
+            - "**/generated/**"
+            - "**/node_modules/**"
+  - id: migrate-typescript
+    name: Migrate TypeScript consumers
+    type: automatic
+    steps:
+      - name: Transform TypeScript
+        js-ast-grep:
+          js_file: scripts/transform.ts
+          language: typescript
+          semantic_analysis: file
+          include:
+            - "**/*.ts"
+            - "**/*.mts"
+            - "**/*.cts"
+          exclude: *generated-and-vendor
+  - id: migrate-tsx
+    name: Migrate TSX consumers
+    type: automatic
+    steps:
+      - name: Transform TSX
+        js-ast-grep:
+          js_file: scripts/transform.ts
+          language: tsx
+          semantic_analysis: file
+          include:
+            - "**/*.tsx"
+          exclude: *generated-and-vendor

@@ -1,0 +1,10 @@
+{
+  "uniku-v1-manual-migrations": [
+    {
+      "cardinality": {
+        "ruleId": "uniku-v1/error-codes"
+      },
+      "count": 12
+    }
+  ]
+}

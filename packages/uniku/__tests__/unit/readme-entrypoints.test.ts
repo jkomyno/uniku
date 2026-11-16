@@ -9,10 +9,9 @@ const PACKAGE_README = 'packages/uniku/README.md'
 
 /**
  * The README's import block documents the callable generators only. `errors` and
- * `generators` are metadata entry points documented in their own table, and
- * `./cuid2` is the deprecated alias of `./cuid/v2`.
+ * `generators` are metadata entry points documented in their own table.
  */
-const UNLISTED_SUBPATHS = new Set(['./cuid2', './errors', './generators'])
+const UNLISTED_SUBPATHS = new Set(['./errors', './generators'])
 
 const DOCUMENTED_GENERATORS = ENTRYPOINTS.filter(({ subpath }) => !UNLISTED_SUBPATHS.has(subpath)).map(
   ({ name }) => name,

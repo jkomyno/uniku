@@ -25,11 +25,6 @@ const EXPECTED_ERROR_METADATA = [
     strategies: ['uuid', 'ulid', 'typeid', 'ksuid', 'objectid', 'tsid', 'xid'],
   },
   {
-    code: 'CONFLICTING_OPTIONS',
-    classes: ['InvalidInputError'],
-    strategies: ['uuid', 'typeid', 'nanoid', 'ksuid', 'objectid', 'xid'],
-  },
-  {
     code: 'COUNTER_OUT_OF_RANGE',
     classes: ['InvalidInputError'],
     strategies: ['uuid', 'typeid', 'objectid', 'tsid', 'xid'],

@@ -11,7 +11,6 @@ import type { IdGenerator } from './generators'
 // `isolatedDeclarations`; every member is already a string literal.
 export const ERROR_CODES = [
   'TIMESTAMP_OUT_OF_RANGE',
-  'CONFLICTING_OPTIONS',
   'COUNTER_OUT_OF_RANGE',
   'NODE_OUT_OF_RANGE',
   'NODE_BITS_OUT_OF_RANGE',
