@@ -140,8 +140,21 @@ describe('nanoid', () => {
   })
 
   describe('edge cases', () => {
-    it('handles size 0', () => {
-      expect(nanoid(0)).toBe('')
+    it('rejects size 0 instead of returning an empty id', () => {
+      expect(() => nanoid(0)).toThrow(
+        expect.objectContaining({ _tag: 'InvalidInputError', code: 'LENGTH_OUT_OF_RANGE', strategy: 'nanoid' }),
+      )
+      expect(() => nanoid({ length: 0 })).toThrow(expect.objectContaining({ code: 'LENGTH_OUT_OF_RANGE' }))
+    })
+
+    it('reports the supported length range', () => {
+      expect(() => nanoid(2049)).toThrow(
+        expect.objectContaining({
+          code: 'LENGTH_OUT_OF_RANGE',
+          message: 'Length must be an integer between 1 and 2048',
+        }),
+      )
+      expect(nanoid(2048)).toHaveLength(2048)
     })
 
     it('handles size 1', () => {

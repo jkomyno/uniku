@@ -783,7 +783,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "string"
             },
             {
-              "description": "Length of generated ID. Default: 21. Maximum: 2048.",
+              "description": "Length of generated ID. Default: 21. Minimum: 1. Maximum: 2048.",
               "name": "length",
               "optional": true,
               "type": "number"
@@ -820,7 +820,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "isValid",
         "signatures": [
           {
-            "description": "Validate a nanoid string against the default URL-safe alphabet. Note: Does not validate IDs generated with custom alphabets.",
+            "description": "Validate a nanoid string against the default URL-safe alphabet. Nanoids carry no self-describing length or alphabet, so all this can check is that the value is a non-empty run of the default URL-safe characters. It cannot verify the generated length, and an ID built from a custom alphabet passes whenever that alphabet is a subset of the default one. Check `id.length` yourself when the boundary requires a specific size.",
             "text": "isValid(id: unknown): id is string"
           }
         ]

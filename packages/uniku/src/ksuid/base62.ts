@@ -38,10 +38,10 @@ for (let i = 0; i < BASE62_ALPHABET.length; i += 1) {
  * V8 has highly optimized BigInt operations for this size.
  */
 export function encodeBase62(bytes: Uint8Array): string {
-  if (bytes.length < KSUID_BYTES) {
+  if (bytes.length !== KSUID_BYTES) {
     throw new BufferError(
       'BYTES_INVALID_LENGTH',
-      `KSUID bytes must be at least ${KSUID_BYTES} bytes, got ${bytes.length}`,
+      `KSUID bytes must be exactly ${KSUID_BYTES} bytes, got ${bytes.length}`,
       { strategy: 'ksuid' },
     )
   }

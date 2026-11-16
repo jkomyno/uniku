@@ -191,6 +191,14 @@ describe('ksuid', () => {
     it('round-trips the maximum valid KSUID', () => {
       expect(ksuid.fromBytes(ksuid.toBytes(ksuid.MAX))).toBe(ksuid.MAX)
     })
+
+    it('rejects byte arrays that are not exactly 20 bytes', () => {
+      for (const length of [0, 19, 21, 32]) {
+        expect(() => ksuid.fromBytes(new Uint8Array(length))).toThrow(
+          expect.objectContaining({ _tag: 'BufferError', code: 'BYTES_INVALID_LENGTH' }),
+        )
+      }
+    })
   })
 
   describe('timestamp edge cases', () => {

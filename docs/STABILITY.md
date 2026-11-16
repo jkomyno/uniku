@@ -134,8 +134,16 @@ starts.
 
 - UUID v7 and ULID preserve monotonic order when the wall clock stalls or moves
   backward.
-- ObjectID keeps its process-random field and always-incrementing counter.
-- XID keeps a random per-runtime identity and always-incrementing counter.
+- ObjectID keeps its process-random field and a 24-bit counter that increments on
+  every call and wraps modulo 2^24, as MongoDB's ObjectID layout requires. The
+  counter keeps incrementing across seconds; it is not reset per second.
+- XID keeps a random per-runtime identity and a 24-bit counter with the same
+  increment-and-wrap behaviour.
+
+For both, a counter that completes a full 2^24 cycle and returns to a value emitted
+in the same second, alongside the same per-process identity, yields a duplicate ID.
+That is the formats' own design limit, not a state-management defect, and it
+requires 2^24 IDs from one process inside one second.
 - TSID keeps its node ID, clock, and counter when only `node`, `nodeBits`, or
   `epoch` is configured, including an empty options object. Its stateful calls
   share one sequence per isolate and advance virtual time on counter overflow.
