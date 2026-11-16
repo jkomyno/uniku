@@ -21,8 +21,11 @@ import {
   type BenchGroup,
   type Benchmark,
   type BenchResults,
+  benchmarkDispersion,
   collectBenchGroups,
+  combineDispersion,
   formatOps,
+  isRatioWithinDispersion,
   loadBenchResults,
 } from './bench-results'
 
@@ -71,6 +74,12 @@ type ComparisonResult = {
   comparison: string
   hasRmeWarning: boolean
   maxRme: number
+  /**
+   * Relative dispersion of the ratio, in percent, derived from the multi-run figures
+   * each row carries. `undefined` in a single-run snapshot, where the table cannot
+   * say anything about run-to-run spread.
+   */
+  spread: number | undefined
 }
 
 function formatComparison(benchmarks: Benchmark[]): ComparisonResult {
@@ -87,6 +96,7 @@ function formatComparison(benchmarks: Benchmark[]): ComparisonResult {
       comparison: 'N/A',
       hasRmeWarning: false,
       maxRme: 0,
+      spread: undefined,
     }
   }
 
@@ -95,8 +105,17 @@ function formatComparison(benchmarks: Benchmark[]): ComparisonResult {
   const maxRme = Math.max(uniku.rme ?? 0, competitor.rme ?? 0)
   const hasRmeWarning = maxRme > RME_WARNING_THRESHOLD
 
+  // A ratio can only be reported to the precision its operands support. When both
+  // sides carry multi-run dispersion, a deviation from 1x that is smaller than the
+  // combined dispersion is not evidence of a difference.
+  const combinedSpread = combineDispersion(benchmarkDispersion(uniku), benchmarkDispersion(competitor))
+  const spread = combinedSpread > 0 ? combinedSpread : undefined
+  const withinSpread = spread !== undefined && isRatioWithinDispersion(ratio, spread)
+
   let comparison: string
-  if (ratio >= 1 - PARITY_THRESHOLD && ratio <= 1 + PARITY_THRESHOLD) {
+  if (withinSpread) {
+    comparison = '~parity (within spread)'
+  } else if (ratio >= 1 - PARITY_THRESHOLD && ratio <= 1 + PARITY_THRESHOLD) {
     comparison = '~parity'
   } else if (ratio > 1) {
     const factor = ratio.toFixed(1).replace(/\.0$/, '')
@@ -113,7 +132,12 @@ function formatComparison(benchmarks: Benchmark[]): ComparisonResult {
     comparison,
     hasRmeWarning,
     maxRme,
+    spread,
   }
+}
+
+function formatSpread(spread: number | undefined): string {
+  return spread === undefined ? '—' : `±${spread.toFixed(0)}%`
 }
 
 const generation: Map<string, ComparisonResult> = new Map()
@@ -153,6 +177,7 @@ type TableRow = {
   comparison: string
   hasRmeWarning: boolean
   maxRme: number
+  spread: string
 }
 
 type InternalTableRow = {
@@ -166,11 +191,13 @@ type InternalTableRow = {
 function buildMarkdownTable(title: string, rows: TableRow[]): string {
   const lines: string[] = []
   lines.push(`### ${title}\n`)
-  lines.push('| ID | uniku | npm/regex | Comparison |')
-  lines.push('|-----|-------|-----------|------------|')
+  lines.push('| ID | uniku | npm/regex | Comparison | Spread |')
+  lines.push('|-----|-------|-----------|------------|--------|')
   for (const row of rows) {
     const warning = row.hasRmeWarning ? ` ⚠️ ±${row.maxRme.toFixed(1)}%` : ''
-    lines.push(`| ${row.name} | ${row.unikuOps} ops/s | ${row.competitorOps} ops/s | ${row.comparison}${warning} |`)
+    lines.push(
+      `| ${row.name} | ${row.unikuOps} ops/s | ${row.competitorOps} ops/s | ${row.comparison}${warning} | ${row.spread} |`,
+    )
   }
   return lines.join('\n')
 }
@@ -223,6 +250,7 @@ const toTableRows = (sorted: [string, ComparisonResult][]): TableRow[] =>
     comparison: result.comparison,
     hasRmeWarning: result.hasRmeWarning,
     maxRme: result.maxRme,
+    spread: formatSpread(result.spread),
   }))
 
 const generationRows = toTableRows(generationSorted)
@@ -278,6 +306,7 @@ if (isCI) {
           uniku: `${row.unikuOps} ops/s`,
           'npm/regex': `${row.competitorOps} ops/s`,
           Comparison: formatComparisonAnsi(row.comparison, row.hasRmeWarning, row.maxRme),
+          Spread: row.spread,
         })),
         { colors: true },
       ),

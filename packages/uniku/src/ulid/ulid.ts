@@ -143,12 +143,20 @@ function ulidFn<TBuf extends Uint8Array = Uint8Array>(options?: UlidOptions, buf
       // Same millisecond or clock rollback: preserve last timestamp and increment random portion.
       time = state.msecs
       if (!incrementBytesInPlace(state.lastRandom)) {
-        state.lastRandom.fill(0xff)
-        throw new InvalidInputError(
-          'RANDOM_OVERFLOW',
-          'ULID random component overflowed while preserving monotonic order',
-          { strategy: 'ulid' },
-        )
+        // The whole 80-bit random portion wrapped to zero. Advance virtual time by one
+        // millisecond and start the new bucket from zero, mirroring how uuidv7 handles its
+        // counter overflow, instead of failing the generator until the wall clock catches up.
+        if (time >= MAX_MSECS) {
+          // There is no later millisecond left in the 48-bit timestamp field. Keep the counter
+          // saturated so every further call fails closed, rather than emitting a timestamp that
+          // does not fit and that `isValid()` would reject.
+          state.lastRandom.fill(0xff)
+          throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'ULID timestamp range is exhausted', {
+            strategy: 'ulid',
+          })
+        }
+        time += 1
+        state.msecs = time
       }
       random = state.lastRandom
     }

@@ -243,5 +243,13 @@ describe('objectid', () => {
       expect(bytes.every((b) => b === 0xff)).toBe(true)
       expect(objectid.fromBytes(bytes)).toBe(objectid.MAX)
     })
+
+    it('rejects byte arrays that are not exactly 12 bytes', () => {
+      for (const length of [0, 11, 13, 16]) {
+        expect(() => objectid.fromBytes(new Uint8Array(length))).toThrow(
+          expect.objectContaining({ _tag: 'BufferError', code: 'BYTES_INVALID_LENGTH' }),
+        )
+      }
+    })
   })
 })

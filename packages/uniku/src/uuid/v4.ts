@@ -28,7 +28,16 @@ export type UuidV4 = {
   <TBuf extends Uint8Array = Uint8Array>(options: UuidV4Options | undefined, buf: TBuf, offset?: number): TBuf
   /** Generate a UUID v4 string with optional deterministic random bytes. */
   (options?: UuidV4Options, buf?: undefined, offset?: number): string
-  /** Convert a UUID v4 string to its canonical 16-byte representation. */
+  /**
+   * Convert a UUID string to its canonical 16-byte representation.
+   *
+   * This is a byte codec, not a validator: it checks the 36-character shape —
+   * length, separators, and hex characters — and accepts any version, including
+   * the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the
+   * RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored
+   * byte-compatible values. It does not check the version nibble or the variant;
+   * use `isValid()` for the version-specific guard.
+   */
   toBytes(id: string): Uint8Array
   /** Convert 16 canonical UUID bytes to a UUID v4 string. */
   fromBytes(bytes: Uint8Array): string

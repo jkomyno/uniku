@@ -81,7 +81,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "toBytes",
         "signatures": [
           {
-            "description": "Convert a UUID v4 string to its canonical 16-byte representation.",
+            "description": "Convert a UUID string to its canonical 16-byte representation. This is a byte codec, not a validator: it checks the 36-character shape — length, separators, and hex characters — and accepts any version, including the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored byte-compatible values. It does not check the version nibble or the variant; use `isValid()` for the version-specific guard.",
             "text": "toBytes(id: string): Uint8Array"
           }
         ]
@@ -182,7 +182,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "toBytes",
         "signatures": [
           {
-            "description": "Convert a UUID v5 string to its canonical 16-byte representation.",
+            "description": "Convert a UUID string to its canonical 16-byte representation. This is a byte codec, not a validator: it checks the 36-character shape — length, separators, and hex characters — and accepts any version, including the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored byte-compatible values. It does not check the version nibble or the variant; use `isValid()` for the version-specific guard.",
             "text": "toBytes(id: string): Uint8Array"
           }
         ]
@@ -355,7 +355,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "toBytes",
         "signatures": [
           {
-            "description": "Convert a UUID v7 string to its canonical 16-byte representation.",
+            "description": "Convert a UUID string to its canonical 16-byte representation. This is a byte codec, not a validator: it checks the 36-character shape — length, separators, and hex characters — and accepts any version, including the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored byte-compatible values. It does not check the version nibble or the variant; use `isValid()` for the version-specific guard.",
             "text": "toBytes(id: string): Uint8Array"
           }
         ]
@@ -783,7 +783,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
               "type": "string"
             },
             {
-              "description": "Length of generated ID. Default: 21. Maximum: 2048.",
+              "description": "Length of generated ID. Default: 21. Minimum: 1. Maximum: 2048.",
               "name": "length",
               "optional": true,
               "type": "number"
@@ -820,7 +820,7 @@ export const generatorApis: Record<GeneratorId, GeneratorApi> = {
         "name": "isValid",
         "signatures": [
           {
-            "description": "Validate a nanoid string against the default URL-safe alphabet. Note: Does not validate IDs generated with custom alphabets.",
+            "description": "Validate a nanoid string against the default URL-safe alphabet. Nanoids carry no self-describing length or alphabet, so all this can check is that the value is a non-empty run of the default URL-safe characters. It cannot verify the generated length, and an ID built from a custom alphabet passes whenever that alphabet is a subset of the default one. Check `id.length` yourself when the boundary requires a specific size.",
             "text": "isValid(id: unknown): id is string"
           }
         ]
