@@ -1,0 +1,1 @@
+import{O as e}from"./dist-DSOlCK-6.js";export{e as isSpecialLang};
