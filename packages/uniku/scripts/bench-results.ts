@@ -232,6 +232,49 @@ export function formatOps(hz: number): string {
   return hz.toFixed(0)
 }
 
+/**
+ * Relative dispersion of a benchmark's throughput, in percent.
+ *
+ * Prefers the multi-run figures over the single-run `rme`: a single run's RME only
+ * describes noise inside that run, while repetitions and historical actions also
+ * capture host and JIT variance. Returns `0` when a snapshot carries no multi-run
+ * information, which is what a plain `vitest bench` run produces.
+ */
+export function benchmarkDispersion(benchmark: Benchmark): number {
+  return Math.max(benchmark.crossActionRme ?? 0, benchmark.withinActionRme ?? 0)
+}
+
+/**
+ * Combine two independent relative dispersions, both in percent, into the relative
+ * dispersion of their ratio.
+ *
+ * A ratio's uncertainty is the quadrature sum of its operands' relative
+ * uncertainties, so a 1.3x ratio built from two 15% measurements is not a 1.3x
+ * claim at all — it is indistinguishable from parity.
+ */
+export function combineDispersion(left: number, right: number): number {
+  return Math.sqrt(left ** 2 + right ** 2)
+}
+
+/**
+ * Whether a throughput ratio is indistinguishable from parity, given the relative
+ * dispersion of the ratio in percent.
+ *
+ * The band is multiplicative, because a relative dispersion scales with the value it
+ * describes. A symmetric absolute band around 1 gets this wrong in both directions:
+ * it would call `0.75x` parity but its reciprocal `1.33x` faster, and at 100% spread
+ * it would call even `0.001x` parity. `1 / (1 + s)` and `1 + s` are reciprocal
+ * bounds, so the verdict is the same for a ratio and its inverse.
+ */
+export function isRatioWithinDispersion(ratio: number, dispersion: number): boolean {
+  if (!(dispersion > 0)) {
+    return false
+  }
+
+  const relative = dispersion / 100
+  return ratio >= 1 / (1 + relative) && ratio <= 1 + relative
+}
+
 export function compareBenchResults(
   baselineResults: BenchResults,
   currentResults: BenchResults,

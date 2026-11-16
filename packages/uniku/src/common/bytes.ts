@@ -6,7 +6,12 @@
  * Increment a byte array by 1 in-place, propagating carry from LSB to MSB.
  * Mutates the input array directly - no allocation.
  *
- * Used by ULID and KSUID for monotonic ordering within the same time unit.
+ * Used by ULID to keep its 80-bit random portion monotonically increasing within
+ * one millisecond. KSUID stores a random payload with no monotonic sequencing, so
+ * it never calls this.
+ *
+ * On overflow the buffer is left at all zeros, so the caller can start a new
+ * counter bucket from a clean state.
  *
  * @returns true if increment succeeded, false if all bytes overflowed to 0
  */

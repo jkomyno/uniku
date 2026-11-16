@@ -1,7 +1,7 @@
 import { rng } from '../common/random'
 import { isIntegerInRange, isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
-import { formatUuid, formatUuidUnchecked, parseUuid } from './common/uuid'
+import { formatUuid, formatUuidUnchecked, isNilOrMaxBytes, isUuidVersion7, parseUuid } from './common/uuid'
 
 export type UuidV7Options = {
   /**
@@ -34,7 +34,16 @@ export type UuidV7 = {
   <TBuf extends Uint8Array = Uint8Array>(options: UuidV7Options | undefined, buf: TBuf, offset?: number): TBuf
   /** Generate a UUID v7 string with optional timestamp, counter, or random bytes. */
   (options?: UuidV7Options, buf?: undefined, offset?: number): string
-  /** Convert a UUID v7 string to its canonical 16-byte representation. */
+  /**
+   * Convert a UUID string to its canonical 16-byte representation.
+   *
+   * This is a byte codec, not a validator: it checks the 36-character shape —
+   * length, separators, and hex characters — and accepts any version, including
+   * the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the
+   * RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored
+   * byte-compatible values. It does not check the version nibble or the variant;
+   * use `isValid()` for the version-specific guard.
+   */
   toBytes(id: string): Uint8Array
   /** Convert 16 canonical UUID bytes to a UUID v7 string. */
   fromBytes(bytes: Uint8Array): string
@@ -173,6 +182,15 @@ function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?:
   } else {
     state.seq = (state.seq + 1) | 0
     if (state.seq < 0) {
+      // The 31-bit sequence wrapped. Borrow the next millisecond instead of emitting a
+      // duplicate, but never past the 48-bit timestamp field: saturation makes every further
+      // call fail closed rather than write a timestamp that silently wraps to zero.
+      if (state.msecs >= MAX_MSECS) {
+        state.seq = 0x7fffffff
+        throw new InvalidInputError('TIMESTAMP_OUT_OF_RANGE', 'UUID v7 timestamp range is exhausted', {
+          strategy: 'uuid',
+        })
+      }
       state.seq = 0
       state.msecs++
     }
@@ -187,7 +205,16 @@ function v7<TBuf extends Uint8Array = Uint8Array>(options?: UuidV7Options, buf?:
 }
 
 function timestamp(id: string): number {
+  // `toBytes()` is a version-agnostic codec, so the version guard lives here: the first six
+  // bytes of a UUID v4 or v5 are random, and reading them as a date would look plausible.
+  // `typeid.timestamp()` applies the same rule through `isUuidVersion7`.
   const bytes = parseUuid(id)
+  if (!isUuidVersion7(bytes) && !isNilOrMaxBytes(bytes)) {
+    throw new InvalidInputError('UUID_NOT_V7', 'A UUID v7 timestamp requires a version 7 UUID', {
+      strategy: 'uuid',
+    })
+  }
+
   let msecs = 0
   for (let i = 0; i < 6; i += 1) {
     msecs = msecs * 256 + bytes[i]

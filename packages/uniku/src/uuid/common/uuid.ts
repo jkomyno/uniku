@@ -139,6 +139,27 @@ export function parseUuid(value: string): Uint8Array {
   return parseUuidFor(value, 'uuid')
 }
 
+/** Whether the 16 canonical bytes carry the RFC 9562 version 7 and `10xx` variant bits. */
+export function isUuidVersion7(bytes: Uint8Array): boolean {
+  return bytes[6] >> 4 === 7 && (bytes[8] & 0xc0) === 0x80
+}
+
+/**
+ * Whether the 16 canonical bytes are the NIL (all `0x00`) or MAX (all `0xff`) sentinel.
+ *
+ * RFC 9562 defines both without a version or variant, so version-specific helpers must
+ * accept them as well as values of their own version.
+ */
+export function isNilOrMaxBytes(bytes: Uint8Array): boolean {
+  for (let i = 1; i < bytes.length; i += 1) {
+    if (bytes[i] !== bytes[0]) {
+      return false
+    }
+  }
+
+  return bytes[0] === 0x00 || bytes[0] === 0xff
+}
+
 /** Parse a UUID string of any version, attributing errors to `strategy`. */
 export function parseUuidFor(value: string, strategy: IdGenerator): Uint8Array {
   if (value.length !== UUID_STRING_LENGTH) {

@@ -25,7 +25,7 @@ const ENCODE_TABLE: string[] = Array.from(
 // Pre-computed decode table covering every UTF-16 code unit charCodeAt can
 // return, so lookups never go out of bounds and a single `=== 255` check
 // rejects invalid input (including non-ASCII) without a per-character range
-// check. Costs 128 KiB once at module load; valid inputs only touch the first
+// check. Costs 64 KiB once at module load; valid inputs only touch the first
 // 128 bytes, so cache behavior is unaffected.
 // Note: unlike Base62, hex decoding is case-insensitive - 'a' and 'A' both decode to 10.
 const DECODING = new Uint8Array(65536)
@@ -43,10 +43,10 @@ for (let i = 0; i < 6; i += 1) {
  * Encode 12 ObjectID bytes to a 24-character lowercase hex string.
  */
 export function encodeObjectIdHex(bytes: Uint8Array): string {
-  if (bytes.length < OBJECTID_BYTES) {
+  if (bytes.length !== OBJECTID_BYTES) {
     throw new BufferError(
       'BYTES_INVALID_LENGTH',
-      `ObjectID bytes must be at least ${OBJECTID_BYTES} bytes, got ${bytes.length}`,
+      `ObjectID bytes must be exactly ${OBJECTID_BYTES} bytes, got ${bytes.length}`,
       { strategy: 'objectid' },
     )
   }

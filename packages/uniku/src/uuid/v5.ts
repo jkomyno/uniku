@@ -35,7 +35,16 @@ export type UuidV5 = {
   <TBuf extends Uint8Array = Uint8Array>(name: UuidV5Name, namespace: UuidV5Namespace, buf: TBuf, offset?: number): TBuf
   /** Validate and parse a namespace once, and return a function that derives IDs within it. */
   namespace(namespace: UuidV5Namespace): UuidV5Deriver
-  /** Convert a UUID v5 string to its canonical 16-byte representation. */
+  /**
+   * Convert a UUID string to its canonical 16-byte representation.
+   *
+   * This is a byte codec, not a validator: it checks the 36-character shape —
+   * length, separators, and hex characters — and accepts any version, including
+   * the NIL/MAX sentinels. That is what lets it parse arbitrary namespaces (the
+   * RFC 9562 v5 namespaces are themselves version 1 UUIDs) and stored
+   * byte-compatible values. It does not check the version nibble or the variant;
+   * use `isValid()` for the version-specific guard.
+   */
   toBytes(id: string): Uint8Array
   /** Convert 16 canonical UUID bytes to a UUID v5 string. */
   fromBytes(bytes: Uint8Array): string
