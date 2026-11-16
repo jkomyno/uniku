@@ -1,0 +1,1 @@
+import{O as e}from"./dist-BLoCMG-d.js";export{e as isSpecialLang};
