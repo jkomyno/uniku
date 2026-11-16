@@ -1,3 +1,4 @@
+import { afterEach } from 'vitest'
 import { uuidv4 } from '@/src/uuid/v4'
 import { expectValidTypeGuard } from '../helpers/assertions'
 import { expectDistinctRandomSamples } from '../helpers/randomness'
@@ -93,6 +94,56 @@ describe('uuidv4', () => {
       const maybeId: unknown = uuidv4()
       expectValidTypeGuard<string>(maybeId, uuidv4.isValid)
       expect(maybeId.length).toBe(36)
+    })
+  })
+
+  // `Crypto.randomUUID` is secure-context-only, so an insecure browser origin exposes `crypto`
+  // without it. The entry point must still import and generate there.
+  describe('without crypto.randomUUID (insecure origin)', () => {
+    const V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      vi.resetModules()
+    })
+
+    async function importWithoutRandomUUID() {
+      const realCrypto = globalThis.crypto
+      vi.stubGlobal('crypto', { getRandomValues: realCrypto.getRandomValues.bind(realCrypto) })
+      vi.resetModules()
+      return import('@/src/uuid/v4')
+    }
+
+    it('imports and generates a v4 string', async () => {
+      const { uuidv4: insecureUuidv4 } = await importWithoutRandomUUID()
+
+      const id = insecureUuidv4()
+
+      expect(id).toMatch(V4_PATTERN)
+      expect(insecureUuidv4.isValid(id)).toBe(true)
+    })
+
+    it('keeps the version and variant bits correct', async () => {
+      const { uuidv4: insecureUuidv4 } = await importWithoutRandomUUID()
+
+      const bytes = insecureUuidv4.toBytes(insecureUuidv4())
+
+      expect(bytes[6] >> 4).toBe(4)
+      expect((bytes[8] & 0xc0) === 0x80).toBe(true)
+    })
+
+    it('generates distinct ids instead of reusing the fallback buffer', async () => {
+      const { uuidv4: insecureUuidv4 } = await importWithoutRandomUUID()
+
+      const ids = new Set(Array.from({ length: 1_000 }, () => insecureUuidv4()))
+
+      expect(ids.size).toBe(1_000)
+    })
+
+    it('still exposes the byte helpers', async () => {
+      const { uuidv4: insecureUuidv4 } = await importWithoutRandomUUID()
+
+      expect(insecureUuidv4.fromBytes(insecureUuidv4.toBytes(insecureUuidv4.NIL))).toBe(insecureUuidv4.NIL)
     })
   })
 })

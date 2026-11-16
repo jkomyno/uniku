@@ -3,7 +3,14 @@ import { isWritableRange } from '../common/validation'
 import { BufferError, InvalidInputError } from '../errors'
 import { formatUuid, formatUuidUnchecked, parseUuid } from './common/uuid'
 
-const randomUUID = /*@__PURE__*/ globalThis.crypto.randomUUID.bind(globalThis.crypto)
+// `Crypto.randomUUID` is available only in secure contexts; `Crypto.getRandomValues` is not.
+// An insecure browser origin (plain `http://` on a LAN address, for example) therefore exposes
+// `crypto` with `randomUUID` missing. Binding it eagerly would throw during module evaluation and
+// take the whole entry point down, including the helpers that never touch randomness.
+const randomUUID: (() => string) | undefined =
+  typeof globalThis.crypto.randomUUID === 'function'
+    ? /*@__PURE__*/ globalThis.crypto.randomUUID.bind(globalThis.crypto)
+    : undefined
 const UUID_BYTES = 16
 const reusableBuf = new Uint8Array(UUID_BYTES)
 
@@ -56,7 +63,13 @@ function v4(options?: UuidV4Options, buf?: undefined, offset?: number): string
 function v4<TBuf extends Uint8Array = Uint8Array>(options: UuidV4Options | undefined, buf: TBuf, offset?: number): TBuf
 function v4<TBuf extends Uint8Array = Uint8Array>(options?: UuidV4Options, buf?: TBuf, offset?: number): string | TBuf {
   if (!buf && !options) {
-    return randomUUID()
+    if (randomUUID) {
+      return randomUUID()
+    }
+
+    // Insecure context: fall back to the shared CSPRNG pool and the local formatter.
+    writeV4BytesUnchecked(rng(), reusableBuf, 0)
+    return formatUuidUnchecked(reusableBuf)
   }
 
   return _v4(options, buf, offset)
@@ -98,6 +111,10 @@ function isValid(id: unknown): id is string {
  * UUID v4 is a purely random UUID with 122 bits of entropy. It's the most
  * widely compatible UUID format, supported by virtually all databases and systems.
  * Use when you need maximum compatibility and don't require time-ordering.
+ *
+ * The no-argument form uses `crypto.randomUUID()` when the runtime provides it and
+ * falls back to the shared CSPRNG pool otherwise, so importing this entry point never
+ * requires a secure context.
  *
  * @example
  * ```ts
