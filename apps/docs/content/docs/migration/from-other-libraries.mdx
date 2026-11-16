@@ -27,7 +27,7 @@ The rest of `uuid`'s API maps onto uniku's per-generator methods, scoped to the 
 
 | `uuid` | uniku |
 | --- | --- |
-| `parse(id)` | `uuidv4.toBytes(id)` / `uuidv5.toBytes(id)` / `uuidv7.toBytes(id)` |
+| `parse(id)` | `uuidv4.toBytes(id)` / `uuidv5.toBytes(id)` / `uuidv7.toBytes(id)` accept any UUID version, plus `NIL` and `MAX`. Unlike `parse()`, they validate only the length, the separators, and the hex characters — not the version nibble or the RFC variant |
 | `stringify(bytes)` | `uuidv4.fromBytes(bytes)` / `uuidv5.fromBytes(bytes)` / `uuidv7.fromBytes(bytes)` |
 | `validate(id)` | `uuidv4.isValid(id)` / `uuidv5.isValid(id)` / `uuidv7.isValid(id)` |
 | `version(id)` | Implied by which `isValid` matches: each accepts only its own version. |
