@@ -94,6 +94,7 @@ There are no barrel exports:
 ```ts
 import { uuidv4 } from 'uniku/uuid/v4'
 import { uuidv5 } from 'uniku/uuid/v5'
+import { uuidv7 } from 'uniku/uuid/v7'
 import { ulid } from 'uniku/ulid'
 import { typeid } from 'uniku/typeid'
 import { cuidv2 } from 'uniku/cuid/v2'
