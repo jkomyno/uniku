@@ -319,26 +319,37 @@ describe('ulid', () => {
       expect(randomParts.size).toBe(ids.length)
     })
 
-    it('throws when the monotonic random portion overflows', async () => {
+    it('advances virtual time when the monotonic random portion overflows', async () => {
       mockRandomFillWith(0xff)
-      const { InvalidInputError, ulid: freshUlid } = await importFreshUlidModule()
+      const { ulid: freshUlid } = await importFreshUlidModule()
       const ms = 1_702_387_456_789
       vi.spyOn(Date, 'now').mockReturnValue(ms)
 
-      freshUlid()
+      const first = freshUlid()
+      const second = freshUlid()
 
-      let error: unknown
-      try {
-        freshUlid()
-      } catch (caught) {
-        error = caught
-      }
+      // The 80-bit random portion is all ones, so the next value carries into the
+      // timestamp instead of throwing or repeating.
+      expect(freshUlid.timestamp(first)).toBe(ms)
+      expect(freshUlid.timestamp(second)).toBe(ms + 1)
+      expect(first < second).toBe(true)
+      expect(freshUlid.isValid(first)).toBe(true)
+      expect(freshUlid.isValid(second)).toBe(true)
+    })
 
-      expect(error).toBeInstanceOf(InvalidInputError)
-      expect(error).toMatchObject({
-        code: 'RANDOM_OVERFLOW',
-        message: 'ULID random component overflowed while preserving monotonic order',
-      })
+    it('fails closed instead of wrapping the timestamp past 48 bits', async () => {
+      mockRandomFillWith(0xff)
+      const { ulid: freshUlid } = await importFreshUlidModule()
+      const maxMsecs = 0xffffffffffff
+      vi.spyOn(Date, 'now').mockReturnValue(maxMsecs)
+
+      const first = freshUlid()
+      expect(freshUlid.timestamp(first)).toBe(maxMsecs)
+
+      // The 48-bit timestamp field is saturated, so there is no later millisecond to borrow.
+      // Every further call must fail rather than emit an ID that isValid() rejects.
+      expect(() => freshUlid()).toThrow(expect.objectContaining({ code: 'TIMESTAMP_OUT_OF_RANGE', strategy: 'ulid' }))
+      expect(() => freshUlid()).toThrow(expect.objectContaining({ code: 'TIMESTAMP_OUT_OF_RANGE' }))
     })
   })
 })
