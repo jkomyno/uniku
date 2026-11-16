@@ -1,5 +1,113 @@
 # uniku
 
+## 0.9.0
+
+### Minor Changes
+
+- 1e0b85f: fix: correct stale comments and contracts that contradicted the code
+
+  - `nanoid(0)` and `nanoid({ length: 0 })` returned an empty string while the JSDoc
+    advertised `@throws Length must be between 0 and 2048` and the CLI documented a
+    `1-256` range. Length is now validated as an integer in `1..2048` with a single
+    `LENGTH_OUT_OF_RANGE` message.
+  - `nanoid.isValid()` cannot check a generated length, because a nanoid carries none.
+    Its JSDoc and reference page now say so instead of leaving the gap implicit.
+  - `nanoid` now reads `globalThis.crypto` like every other module, instead of the bare
+    `crypto` global.
+  - `encodeBase62` and `encodeObjectIdHex` accepted inputs longer than the canonical
+    length and silently encoded only the leading bytes. They now require the exact
+    length, matching the public `fromBytes()` wrappers.
+  - `docs/STABILITY.md` described the ObjectID and XID counters as "always-incrementing".
+    Both are 24-bit counters that wrap to zero after 2^24 values in the same second.
+  - Corrected the `incrementBytesInPlace` comment, which credited KSUID with a call
+    KSUID never makes, and the `objectid/hex.ts` decoding-table comment, which reported
+    128 KiB for a 64 KiB allocation.
+
+- 1e0b85f: fix(ulid): advance virtual time when the monotonic random portion overflows
+
+  ULID handled exhaustion of its 80-bit monotonic random portion by filling the
+  remaining random bytes with `0xff` and throwing `RANDOM_OVERFLOW`, which left the
+  generator failing for every later call in that millisecond. UUID v7 handled the
+  same situation by advancing its timestamp by one millisecond.
+
+  There is now one policy: both generators advance virtual time by one millisecond
+  and continue from a zeroed counter, so subsequent calls stay unique and
+  monotonic instead of throwing.
+
+  Neither generator guards that advance against the end of the 48-bit timestamp
+  field, which was a latent bug in both: at the maximum millisecond, uuidv7 wrote a
+  timestamp that silently wrapped to zero, and ULID emitted a string its own
+  `isValid()` rejects (or, through the buffer path, also wrapped the timestamp).
+  Both now saturate and throw `TIMESTAMP_OUT_OF_RANGE` instead of emitting an ID
+  whose timestamp field overflowed.
+
+  `RANDOM_OVERFLOW` was unreachable in practice (1 in 2^80 per millisecond) and is
+  removed from `ERROR_CODES`. This is a pre-1.0 breaking change to the error
+  catalog: `ERROR_CODES` no longer contains it, and the
+  `ULID_RANDOM_OVERFLOW` → `RANDOM_OVERFLOW` row is gone from the v1 migration
+  guide.
+
+- 1e0b85f: fix(uuid): make `uuidv7.timestamp()` reject values that are not UUID v7
+
+  `uuidv7.timestamp()` parsed its argument with the version-agnostic byte codec, so
+  passing a UUID v4 or v5 returned the first six random bytes as a plausible-looking
+  creation time. It now requires the RFC 9562 version 7 and `10xx` variant bits, and
+  throws `InvalidInputError` with code `UUID_NOT_V7` otherwise, matching
+  `typeid.timestamp()`. The `NIL` and `MAX` sentinels keep working, since RFC 9562
+  defines them without a version.
+
+  `UUID_NOT_V7` now reports both `uuid` and `typeid` as strategies.
+
+  The shared `isUuidVersion7` and `isNilOrMaxBytes` predicates live in
+  `uuid/common/uuid.ts` so the UUID and TypeID readers cannot drift apart again.
+
+  `toBytes()` is unchanged and still accepts any 128-bit UUID form, the way
+  `uuid.parse()` does: it is a byte codec, not a version guard. Its JSDoc now says so
+  explicitly, because `isValid()` is version-specific.
+
+### Patch Changes
+
+- 128402c: fix(uuid): let `uniku/uuid/v4` load in insecure browser contexts
+
+  `Crypto.randomUUID` is available only in secure contexts, while
+  `Crypto.getRandomValues` is not. The module captured
+  `globalThis.crypto.randomUUID.bind(...)` at module scope, so importing
+  `uniku/uuid/v4` over plain `http://` on a non-localhost origin threw
+  `TypeError: Cannot read properties of undefined (reading 'bind')` during module
+  evaluation. That also took down `toBytes`, `fromBytes`, and `isValid`, which do
+  not touch randomness at all.
+
+  The no-argument generator now uses `crypto.randomUUID()` when the runtime
+  provides it and otherwise falls back to the shared CSPRNG pool plus the local
+  formatter, so the entry point works on any origin.
+
+- 1e0b85f: docs(bench): report benchmark dispersion and stop overstating ratios
+
+  The performance guide published ratios to two significant figures without any
+  measure of uncertainty, which implied a precision the harness does not have. Two
+  runs of the same command on one machine move the small-ratio rows by up to 22%,
+  and a different machine moves the ULID row from 163x to about 85x.
+
+  - `bench-summary` now prints a `Spread` column computed from each row's
+    `withinActionRme`/`crossActionRme`, and labels a row `parity (within spread)`
+    when its deviation from 1x is smaller than the ratio's combined dispersion.
+    Snapshots without multi-run data show `—` instead of a fabricated number.
+  - `bench-results.ts` gains `benchmarkDispersion`, `combineDispersion`, and
+    `isRatioWithinDispersion`. Dispersion prefers multi-run figures over a single
+    run's RME and combines in quadrature; the parity band is multiplicative
+    (`1 / (1 + s)` to `1 + s`), because a relative dispersion scales with the value it
+    describes. A symmetric absolute band would call `0.75x` parity while calling its
+    reciprocal `1.33x` faster, and at 100% spread it would call even `0.001x` parity.
+  - The performance guide reports ranges rounded to about one significant figure and
+    states what each row does and does not compare. In particular the UUID v4 row
+    compares the same native primitive behind two different wrappers — uniku's cached
+    bound function against `uuid@14.0.3` re-reading `crypto.randomUUID` on every call
+    — so it measures wrapper overhead, not generation speed, and it is the row that
+    moved most between runs. The ULID row is qualified on both sides: the reference
+    re-detects its PRNG and draws 16 single bytes per call, while uniku draws once per
+    millisecond and increments the existing tail. Provenance of the range endpoints is
+    spelled out, including which ones are not published artefacts.
+
 ## 0.8.0
 
 ### Minor Changes

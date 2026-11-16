@@ -1,5 +1,16 @@
 # @uniku/cli
 
+## 0.9.1
+
+### Patch Changes
+
+- Updated dependencies [1e0b85f]
+- Updated dependencies [128402c]
+- Updated dependencies [1e0b85f]
+- Updated dependencies [1e0b85f]
+- Updated dependencies [1e0b85f]
+  - uniku@0.9.0
+
 ## 0.9.0
 
 ### Minor Changes
