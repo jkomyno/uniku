@@ -85,8 +85,22 @@ correctness matrix, not by these measurements.
 
 The [compatibility benchmark](https://github.com/jkomyno/uniku/blob/main/packages/uniku/__tests__/bench/compat.bench.ts)
 runs each implementation in a fresh process, so neither side inherits the other's
-warmed JIT state or shared buffers. CI balances both launch orders across four
-repetitions and reports the per-row median.
+warmed JIT state or shared buffers. CI runs it in two ways.
+
+The competitor run compares uniku with the reference packages. It runs on every
+push to `main` that touches the measured code, once a week, and on demand. It
+balances both launch orders across four repetitions, reports the per-row median
+in the job summary, and adds that median to the rolling baseline on the
+`gh-benchmarks` branch.
+
+The pull request run compares the change with its merge base. It builds both
+checkouts on the same runner and runs only uniku's rows, alternating which
+checkout goes first across four repetitions per side. The comment on the pull
+request compares the per-row medians of both sides. Measuring both sides on one
+runner removes the host-to-host variance that a comparison against a stored
+baseline would carry. The same comment lists the gzipped size of every entry
+point in both checkouts. Bundle sizes are deterministic, so any change there
+comes from the pull request. It also reports cold starts for the head build.
 
 Both sides import built packages through plain Node imports, so uniku is measured
 as it ships. Each sample times a batch of calls sized to last about 50 µs and
@@ -96,12 +110,12 @@ measure the timer and the harness.
 
 `bench-results.ts` carries the statistics:
 
-- dispersion uses the median absolute deviation scaled by 1.4826 rather than a
-  standard deviation, so one noisy runner does not dominate;
-- `withinActionRme` describes spread across repetitions in one CI action and
-  `crossActionRme` describes spread across historical actions;
-- a regression must exceed `max(configured threshold, 2 × combined dispersion)`
-  before it is reported, and reference-side rows never gate a change;
+- Dispersion uses the median absolute deviation scaled by 1.4826 rather than a
+  standard deviation, so one noisy runner does not dominate.
+- `withinActionRme` describes spread across repetitions in one CI action, and
+  `crossActionRme` describes spread across historical actions.
+- A regression must exceed `max(configured threshold, 2 × combined dispersion)`
+  before it is reported, and reference-side rows never gate a change.
 - `bench-summary` prints the combined dispersion for the ratio as a `Spread`
   column, and labels a row `parity (within spread)` when its deviation from 1× is
   smaller than that spread.
@@ -157,9 +171,27 @@ pnpm bundle:summary
 pnpm --filter uniku bench:cold-start
 ```
 
-`bench:compat` runs uniku and the reference packages in separate processes;
+`bench:compat` runs uniku and the reference packages in separate processes, and
 `bench:summary` reads those results and prints a comparison table. CI repeats the
 compatibility run four times with balanced launch orders, which is what populates
 the `Spread` column. `bundle:summary` builds each entry point and reports its
 minified, gzipped size. `bench:cold-start` measures fresh-process startup
 separately from warmed generation throughput.
+
+To compare a branch with its merge base the way pull request CI does, build both
+checkouts and run the A/B script from the branch:
+
+```sh
+git worktree add --detach ../uniku-base "$(git merge-base HEAD origin/main)"
+(cd ../uniku-base && pnpm install --frozen-lockfile --filter uniku && pnpm --filter uniku build)
+pnpm --filter uniku build
+cd packages/uniku
+bun scripts/bench-ab.ts ../../../uniku-base/packages/uniku /tmp/uniku-bench-ab
+bun scripts/bench-compare.ts /tmp/uniku-bench-ab/base.json /tmp/uniku-bench-ab/head.json
+bun scripts/bundle-summary.ts --root ../../../uniku-base/packages/uniku --json /tmp/uniku-bench-ab/bundle-base.json
+bun scripts/bundle-summary.ts --baseline /tmp/uniku-bench-ab/bundle-base.json
+```
+
+`bench-ab.ts` runs four repetitions per side, which takes several minutes. Set
+`UNIKU_BENCH_AB_REPETITIONS` to run fewer. Remove the worktree with
+`git worktree remove ../uniku-base` when you are done.

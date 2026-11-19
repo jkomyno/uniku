@@ -182,11 +182,15 @@ The compatibility benchmark runs uniku and each reference implementation in
 fresh processes, with four repetitions split evenly between both launch
 orders. Each sample times a calibrated batch of calls against the built entry
 points. Its result is the per-row median, and the `gh-benchmarks` baseline
-retains a rolling history of action-level medians. Comparison uses each
-runner's RME, robust within-action repetition dispersion, and robust
-across-action baseline dispersion. Node cold starts are measured
-separately from built entry points as both process-to-exit and import-plus-first
-generation time; they are not mixed with warmed throughput measurements.
+retains a rolling history of action-level medians. This competitor run happens
+on `main`, weekly, and on demand. Pull requests instead compare uniku's rows
+against the merge base on the same runner, with four alternating repetitions per
+side, and diff the bundle size of every entry point against the merge base.
+Comparison uses each runner's RME and robust within-action repetition
+dispersion, plus robust across-action dispersion for the rolling baseline. Node
+cold starts are measured separately from built entry points as both
+process-to-exit and import-plus-first generation time. They are not mixed with
+warmed throughput measurements.
 
 Collision tests distinguish independent uniform domains from stateful formats.
 For an IID domain, the test compares the observed duplicate-record ratio with
