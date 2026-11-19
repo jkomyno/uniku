@@ -27,9 +27,6 @@ import {
 import { describe, test } from 'vitest'
 import { BENCH_RUN_OPTIONS, batched } from './harness.ts'
 
-// The suite imports the built package through its `uniku/*` exports, so run
-// `pnpm build` first. It measures the code that ships.
-
 const benchmarkImplementation = process.env.UNIKU_BENCH_IMPLEMENTATION ?? 'all'
 if (!['all', 'uniku', 'reference'].includes(benchmarkImplementation)) {
   throw new Error('UNIKU_BENCH_IMPLEMENTATION must be all, uniku, or reference')
@@ -37,7 +34,6 @@ if (!['all', 'uniku', 'reference'].includes(benchmarkImplementation)) {
 
 type Task = () => unknown
 
-/** uniku and the reference it is compared against: an npm package, or a regex where no package exists. */
 type RowTasks = { readonly uniku: Task } & ({ readonly npm: Task } | { readonly regex: Task })
 
 function isSelected(implementation: string): boolean {
@@ -45,10 +41,6 @@ function isSelected(implementation: string): boolean {
   return (implementation === 'uniku') === (benchmarkImplementation === 'uniku')
 }
 
-/**
- * Register one comparison row. CI runs uniku and the reference in separate
- * processes (see scripts/bench-compat.ts), so each process times one side.
- */
 function row(name: string, tasks: RowTasks): void {
   test(name, async ({ bench }) => {
     const [first, ...rest] = Object.entries(tasks)

@@ -1,9 +1,5 @@
 import type { BenchRunOptions } from 'vitest'
 
-/**
- * Run options for every benchmark row. CI repeats the compatibility suite four
- * times in balanced launch orders, so this per-row budget stays short.
- */
 export const BENCH_RUN_OPTIONS: BenchRunOptions = {
   iterations: 100,
   time: 1500,

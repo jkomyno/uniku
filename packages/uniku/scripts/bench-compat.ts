@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path'
 import { type Benchmark, type BenchResults, benchResultsFromVitestReport, loadVitestJsonReport } from './bench-results'
 
 /** The project Vitest clones from `benchmarks` in vitest.config.ts to run benchmark files. */
-export const BENCHMARK_PROJECT = 'benchmarks (bench)'
+const BENCHMARK_PROJECT = 'benchmarks (bench)'
 
 export const BENCHMARK_ORDERS = ['uniku-first', 'reference-first'] as const
 export type BenchmarkOrder = (typeof BENCHMARK_ORDERS)[number]
