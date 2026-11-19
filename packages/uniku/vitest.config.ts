@@ -37,10 +37,18 @@ export default defineConfig({
           include: ['__tests__/integration/**/*.test.ts'],
         },
       },
+      {
+        test: {
+          ...baseTestConfig,
+          name: 'benchmarks',
+          include: [],
+          benchmark: { include: ['__tests__/bench/**/*.bench.ts'] },
+          // Plain Node imports. The Vite module runner reads every import through a
+          // getter, and Vitest's Node loader transforms files outside node_modules,
+          // including the built uniku entry points. Both add cost to every call.
+          experimental: { viteModuleRunner: false, nodeLoader: false },
+        },
+      },
     ],
-    benchmark: {
-      include: ['__tests__/bench/**/*.bench.ts'],
-      outputJson: 'bench-results.json',
-    },
   },
 })

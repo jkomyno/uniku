@@ -18,12 +18,12 @@
       "outputs": []
     },
     "bench": {
-      "dependsOn": ["^build"],
-      "inputs": ["src/**", "__tests__/bench/**"],
+      "dependsOn": ["build"],
+      "inputs": ["src/**", "__tests__/bench/**", "scripts/bench-report.ts", "scripts/bench-results.ts"],
       "outputs": ["bench-results.json"]
     },
     "bench:compat": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "inputs": ["src/**", "__tests__/bench/**", "scripts/bench-compat.ts", "scripts/bench-results.ts"],
       "outputs": ["bench-results.json"]
     },
