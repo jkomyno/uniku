@@ -101,7 +101,7 @@ function decodeSuffixValue(suffix: string, index: number): number {
   return value
 }
 
-function assertValidSuffixShape(suffix: string): void {
+function assertValidSuffixBounds(suffix: string): void {
   if (suffix.length !== TYPEID_SUFFIX_LENGTH) {
     throw new ParseError('INVALID_LENGTH', `TypeID suffix must be 26 characters, got ${suffix.length}`, {
       strategy: 'typeid',
@@ -153,7 +153,7 @@ function encodeBytesToSuffix(bytes: Uint8Array): string {
 }
 
 function decodeSuffixToBytes(suffix: string): Uint8Array {
-  assertValidSuffixShape(suffix)
+  assertValidSuffixBounds(suffix)
 
   const values = new Array<number>(TYPEID_SUFFIX_LENGTH)
   for (let i = 0; i < TYPEID_SUFFIX_LENGTH; i += 1) {

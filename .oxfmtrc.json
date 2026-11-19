@@ -1,0 +1,54 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "useTabs": false,
+  "tabWidth": 2,
+  "printWidth": 120,
+  "singleQuote": true,
+  "jsxSingleQuote": false,
+  "quoteProps": "as-needed",
+  "trailingComma": "all",
+  "semi": false,
+  "arrowParens": "always",
+  "bracketSameLine": false,
+  "bracketSpacing": true,
+  "ignorePatterns": [
+    "**/node_modules",
+    "**/build",
+    "**/coverage",
+    "**/dist",
+    "apps/docs/.source",
+    "apps/docs/src/generated",
+    "apps/docs/src/routeTree.gen.ts",
+    "**/.turbo",
+    "public",
+    "repos",
+    "plans",
+    "**/.claude",
+    "**/*.md",
+    "**/*.mdx",
+    "**/*.yaml",
+    "**/*.yml",
+    "**/*.css",
+    "**/*.html",
+    "tools/oxlint/anti-slop",
+    "tools/oxlint/no-slop",
+    ".agents",
+    ".impeccable",
+    ".context",
+    "pnpm-lock.yaml",
+    "**/CHANGELOG.md"
+  ],
+  "sortImports": {
+    "newlinesBetween": false,
+    "partitionByNewline": true
+  },
+  "sortPackageJson": false,
+  "overrides": [
+    {
+      "files": ["**/wrangler.jsonc"],
+      "options": {
+        "trailingComma": "none"
+      }
+    }
+  ]
+}

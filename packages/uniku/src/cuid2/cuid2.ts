@@ -47,7 +47,12 @@ const textEncoder = new TextEncoder()
  * Counter is initialized lazily on first call to prevent unnecessary crypto operations.
  * Fingerprint is also generated lazily on first call.
  */
-const state: { counter: number | undefined; fingerprint: string | undefined } = {
+type Cuid2State = {
+  counter: number | undefined
+  fingerprint: string | undefined
+}
+
+const state: Cuid2State = {
   counter: undefined,
   fingerprint: undefined,
 }

@@ -113,19 +113,18 @@ describe('tsid', () => {
   })
 
   describe('counter overflow within a simulated single millisecond', () => {
-    it.each([
-      { node: 1 },
-      { node: 1, nodeBits: 20 },
-      { node: 1, epoch: 1_600_000_000_000 },
-    ])('keeps configured generation unique through counter overflow: %j', async (options) => {
-      const { tsid: freshTsid } = await importFreshTsidModule()
-      vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
+    it.each([{ node: 1 }, { node: 1, nodeBits: 20 }, { node: 1, epoch: 1_600_000_000_000 }])(
+      'keeps configured generation unique through counter overflow: %j',
+      async (options) => {
+        const { tsid: freshTsid } = await importFreshTsidModule()
+        vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
 
-      const ids = Array.from({ length: 5_000 }, () => freshTsid(options))
+        const ids = Array.from({ length: 5_000 }, () => freshTsid(options))
 
-      expect(new Set(ids).size).toBe(ids.length)
-      expect(ids.every((id, index) => index === 0 || id > ids[index - 1])).toBe(true)
-    })
+        expect(new Set(ids).size).toBe(ids.length)
+        expect(ids.every((id, index) => index === 0 || id > ids[index - 1])).toBe(true)
+      },
+    )
 
     it('shares the sequence between empty options and no-option calls', async () => {
       const { tsid: freshTsid } = await importFreshTsidModule()

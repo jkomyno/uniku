@@ -8,14 +8,12 @@ class UserIds extends Context.Service<
     readonly next: () => Effect.Effect<string>
   }
 >()('examples/UserIds') {
-  static readonly layer = Layer.effect(
+  static readonly layer = Layer.succeed(
     UserIds,
-    Effect.gen(function* () {
-      const next = Effect.fn('UserIds.next')(function* () {
+    UserIds.of({
+      next: Effect.fn('UserIds.next')(function* () {
         return yield* Effect.sync(() => typeid('user'))
-      })
-
-      return UserIds.of({ next })
+      }),
     }),
   )
 }

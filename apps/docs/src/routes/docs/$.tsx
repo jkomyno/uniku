@@ -1,22 +1,16 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { staticFunctionMiddleware } from '@tanstack/start-static-server-functions'
-import { Suspense } from 'react'
-import { baseAwareStaticClientMiddleware } from '@/lib/static-server-fn'
-import { useMDXComponents } from '@/components/mdx'
-import { baseOptions } from '@/lib/layout'
-import { source } from '@/lib/source'
-import { gitConfig } from '@/lib/shared'
 import browserCollections from 'collections/browser'
 import { useFumadocsLoader } from 'fumadocs-core/source/client'
 import { DocsLayout } from 'fumadocs-ui/layouts/docs'
-import {
-  DocsBody,
-  DocsDescription,
-  DocsPage,
-  DocsTitle,
-  ViewOptionsPopover,
-} from 'fumadocs-ui/layouts/docs/page'
+import { DocsBody, DocsDescription, DocsPage, DocsTitle, ViewOptionsPopover } from 'fumadocs-ui/layouts/docs/page'
+import { Suspense } from 'react'
+import { useMDXComponents } from '@/components/mdx'
+import { baseOptions } from '@/lib/layout'
+import { gitConfig } from '@/lib/shared'
+import { source } from '@/lib/source'
+import { baseAwareStaticClientMiddleware } from '@/lib/static-server-fn'
 
 export const Route = createFileRoute('/docs/$')({
   component: Page,

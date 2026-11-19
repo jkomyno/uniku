@@ -75,6 +75,7 @@ export function isOwnedBenchmark(key: string): boolean {
 export const DEFAULT_NOISE_MULTIPLIER = 2
 
 export function loadBenchResults(path: string): BenchResults {
+  // SAFETY: bench result files are written only by this package's benchmark scripts, in the BenchResults format.
   return JSON.parse(readFileSync(path, 'utf-8')) as BenchResults
 }
 
@@ -275,6 +276,21 @@ export function isRatioWithinDispersion(ratio: number, dispersion: number): bool
   return ratio >= 1 / (1 + relative) && ratio <= 1 + relative
 }
 
+export type BenchComparison = {
+  rows: ComparisonRow[]
+  hasRegression: boolean
+  regressions: string[]
+}
+
+const STATUS_ORDER = {
+  regression: 0,
+  improvement: 1,
+  neutral: 2,
+  reference: 3,
+  new: 4,
+  removed: 5,
+} satisfies Record<ComparisonStatus, number>
+
 export function compareBenchResults(
   baselineResults: BenchResults,
   currentResults: BenchResults,
@@ -284,11 +300,7 @@ export function compareBenchResults(
     /** Multiplier on combined RME for the significance band. Defaults to {@link DEFAULT_NOISE_MULTIPLIER}. */
     noiseMultiplier?: number
   },
-): {
-  rows: ComparisonRow[]
-  hasRegression: boolean
-  regressions: string[]
-} {
+): BenchComparison {
   const baseline = collectBenchmarks(baselineResults)
   const current = collectBenchmarks(currentResults)
   const noiseMultiplier = options.noiseMultiplier ?? DEFAULT_NOISE_MULTIPLIER
@@ -362,15 +374,7 @@ export function compareBenchResults(
   }
 
   rows.sort((a, b) => {
-    const statusOrder: Record<ComparisonStatus, number> = {
-      regression: 0,
-      improvement: 1,
-      neutral: 2,
-      reference: 3,
-      new: 4,
-      removed: 5,
-    }
-    const orderDiff = statusOrder[a.status] - statusOrder[b.status]
+    const orderDiff = STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
     if (orderDiff !== 0) return orderDiff
     return Math.abs(b.change) - Math.abs(a.change)
   })

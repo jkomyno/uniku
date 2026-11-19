@@ -78,7 +78,7 @@ pnpm bench:summary
 
 ### Linting
 
-We use [Biome](https://biomejs.dev/) for linting and formatting:
+We use [oxlint](https://oxc.rs/docs/guide/usage/linter) for linting and [oxfmt](https://oxc.rs/docs/guide/usage/formatter) for formatting. The lint config also runs the vendored anti-slop rules under `tools/oxlint/`:
 
 ```bash
 # Check for issues

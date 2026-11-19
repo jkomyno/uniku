@@ -22,9 +22,9 @@
     "examples:check": "pnpm --filter @uniku/examples check",
     "clean": "turbo run clean",
     "install:binary": "turbo run install:binary",
-    "lint:ci": "biome ci",
-    "lint": "biome check --fix --unsafe",
-    "lint:fix": "biome check --fix --unsafe",
+    "lint:ci": "oxlint --disable-nested-config --deny-warnings && oxfmt --check",
+    "lint": "oxfmt && oxlint --disable-nested-config --fix",
+    "lint:fix": "oxfmt && oxlint --disable-nested-config --fix",
     "test": "pnpm -r --if-present test",
     "test:ci:node-matrix": "bash scripts/ci-node-matrix-tests.sh",
     "test:unit": "turbo run test:unit",
@@ -41,13 +41,15 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.4",
-    "@biomejs/biome": "^2.5.2",
     "@changesets/cli": "^2.31.0",
+    "@oxlint/plugins": "^1.94.0",
     "@types/node": "26.1.0",
     "@vitest/coverage-v8": "^5.1.0",
     "husky": "^9.1.7",
     "is-ci": "^4.1.0",
     "lint-staged": "^17.0.8",
+    "oxfmt": "^0.79.0",
+    "oxlint": "^1.94.0",
     "publint": "^0.3.21",
     "rimraf": "^6.1.3",
     "tsdown": "^0.22.3",
@@ -57,7 +59,11 @@
     "vitest": "catalog:"
   },
   "lint-staged": {
-    "*.{js,ts,cjs,mjs,md,json,jsonc}": "biome check --fix --unsafe --no-errors-on-unmatched"
+    "*.{js,mjs,cjs,ts,tsx}": [
+      "oxlint --disable-nested-config --fix",
+      "oxfmt --no-error-on-unmatched-pattern"
+    ],
+    "*.{json,jsonc}": "oxfmt --no-error-on-unmatched-pattern"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"

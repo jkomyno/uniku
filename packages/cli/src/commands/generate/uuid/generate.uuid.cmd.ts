@@ -10,7 +10,7 @@ const version = Flag.ChoiceWithValue('uuid-version', [
 ] as const).pipe(
   Flag.withAlias('v'),
   Flag.withDescription('UUID version: 4, 5, 7'),
-  Flag.withDefault(UUID_VERSION_DEFAULT as 4 | 5 | 7),
+  Flag.withDefault(UUID_VERSION_DEFAULT),
 )
 
 const name = Flag.String('name').pipe(

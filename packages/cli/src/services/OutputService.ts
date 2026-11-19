@@ -1,7 +1,7 @@
 import * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
 import * as Layer from 'effect/Layer'
-import { type CliFailure, errorToJson } from '@/src/domain/errors'
+import { type CliErrorJson, type CliFailure, errorToJson } from '@/src/domain/errors'
 import type { InspectResult, ValidationResult } from '@/src/domain/types'
 
 export type OutputOptions = {
@@ -9,12 +9,23 @@ export type OutputOptions = {
 }
 
 /**
+ * Every value a command writes in `--json` mode.
+ */
+export type JsonOutput =
+  | string
+  | ReadonlyArray<string>
+  | ValidationResult
+  | ReadonlyArray<ValidationResult>
+  | InspectResult
+  | CliErrorJson
+
+/**
  * A command's primary output: a JSON-serializable value plus a human-readable
  * text rendering. Text is a list of records, each written on its own line
  * (a record may itself span multiple lines, e.g. inspect output).
  */
 export interface Render {
-  readonly json: () => unknown
+  readonly json: () => JsonOutput
   readonly text: () => ReadonlyArray<string>
 }
 

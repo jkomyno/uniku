@@ -12,7 +12,7 @@ export type NanoidGenerateOptions = {
 
 function resolveAlphabet(input?: string): string | undefined {
   if (!input) return undefined
-  return NANOID_ALPHABET_PRESETS[input] ?? input
+  return NANOID_ALPHABET_PRESETS.get(input) ?? input
 }
 
 export function generateNanoid(options: NanoidGenerateOptions): Effect.Effect<string[], CliError> {

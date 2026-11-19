@@ -1,7 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import { RootProvider } from 'fumadocs-ui/provider/tanstack'
-import appCss from '@/styles/app.css?url'
 import DocsSearch from '@/components/search'
+import appCss from '@/styles/app.css?url'
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -12,7 +12,7 @@ export const Route = createRootRoute({
       { content: 'width=device-width, initial-scale=1', name: 'viewport' },
       {
         content:
-          "Eleven type-safe ID strategies behind one consistent API, with independent entry points and published performance measurements.",
+          'Eleven type-safe ID strategies behind one consistent API, with independent entry points and published performance measurements.',
         name: 'description',
       },
       { title: 'uniku: eleven type-safe ID strategies' },

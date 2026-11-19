@@ -6,7 +6,7 @@
     "composite": false,
     "emitDeclarationOnly": false,
     "paths": {
-      "@/src/*": ["./src/*"],
-    },
-  },
+      "@/src/*": ["./src/*"]
+    }
+  }
 }

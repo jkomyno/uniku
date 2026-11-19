@@ -6,6 +6,7 @@ import * as Context from 'effect/Context'
 import * as Effect from 'effect/Effect'
 import * as Layer from 'effect/Layer'
 import * as Option from 'effect/Option'
+import * as Schema from 'effect/Schema'
 import { hasOptionToken } from '@/src/runtime/args'
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -52,8 +53,8 @@ export const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 const FETCH_TIMEOUT_MS = 5_000
 
 function cacheUserSegment(): string | null {
-  const getuid = (process as { getuid?: () => number }).getuid
-  if (typeof getuid === 'function') {
+  const getuid = process.getuid
+  if (getuid) {
     return `uid-${getuid()}`
   }
 
@@ -192,19 +193,18 @@ export function shouldNotifyUpdate(
 
 // ── Cache helpers (plain Node.js — maximally resilient) ──────────────
 
+const decodeUpdateCache = Schema.decodeUnknownOption(
+  Schema.fromJsonString(
+    Schema.Struct({
+      latestVersion: Schema.optionalKey(Schema.String),
+      checkedAt: Schema.Finite,
+    }),
+  ),
+)
+
 function readCache(cacheFile: string): UpdateCache | null {
   try {
-    const content = readFileSync(cacheFile, 'utf-8')
-    const parsed = JSON.parse(content) as unknown
-
-    if (typeof parsed !== 'object' || parsed === null) return null
-    const cache = parsed as { checkedAt?: unknown; latestVersion?: unknown }
-    if (typeof cache.checkedAt !== 'number' || !Number.isFinite(cache.checkedAt)) return null
-    if (cache.latestVersion !== undefined && typeof cache.latestVersion !== 'string') return null
-
-    return cache.latestVersion === undefined
-      ? { checkedAt: cache.checkedAt }
-      : { latestVersion: cache.latestVersion, checkedAt: cache.checkedAt }
+    return Option.getOrNull(decodeUpdateCache(readFileSync(cacheFile, 'utf-8')))
   } catch {
     return null
   }
@@ -224,6 +224,8 @@ function writeCache(cache: UpdateCache, cacheFile: string): void {
 
 // ── Registry fetch ───────────────────────────────────────────────────
 
+const decodeRegistryLatest = Schema.decodeUnknownOption(Schema.Struct({ version: Schema.NonEmptyString }))
+
 function fetchLatestVersion(currentVersion: string): Effect.Effect<string | null> {
   return Effect.tryPromise({
     try: (signal) =>
@@ -235,9 +237,9 @@ function fetchLatestVersion(currentVersion: string): Effect.Effect<string | null
         signal: AbortSignal.any([signal, AbortSignal.timeout(FETCH_TIMEOUT_MS)]),
       }).then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data = (await res.json()) as { version?: string }
-        if (!data.version) throw new Error('Missing version field')
-        return data.version
+        const latest = decodeRegistryLatest(await res.json())
+        if (Option.isNone(latest)) throw new Error('Missing version field')
+        return latest.value.version
       }),
     catch: () => new Error('fetch failed'),
   }).pipe(Effect.catch(() => Effect.succeed(null)))
@@ -249,7 +251,8 @@ declare const __STANDALONE_BINARY__: boolean | undefined
 
 function isStandaloneBinary(): boolean {
   try {
-    return typeof __STANDALONE_BINARY__ !== 'undefined' && __STANDALONE_BINARY__ === true
+    // Builds without the define leave the identifier undeclared, so reading it throws and the catch returns false.
+    return __STANDALONE_BINARY__ === true
   } catch {
     return false
   }
