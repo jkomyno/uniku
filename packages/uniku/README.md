@@ -116,7 +116,7 @@ import { tsid } from 'uniku/tsid'
 | MongoDB `_id` compatibility | ObjectID | Matches MongoDB's 12-byte ObjectID format |
 | Go rs/xid compatibility | XID | Matches rs/xid's text and binary representation |
 | Native `BIGINT` storage | TSID | A sortable 64-bit integer rather than a UUID-shaped string |
-| Broad standards compatibility | UUID v4 | The conventional random UUID format |
+| Broad standards compatibility | UUID v4 | The conventional random UUID format. Random values fragment primary key indexes |
 | An ID derived from something you already have | UUID v5 | The same name and namespace always give the same UUID |
 
 The [choosing guide](https://jkomyno.github.io/uniku/docs/guides/choosing-an-id/) covers ordering, timestamp leakage, storage boundaries, and format-specific trade-offs.

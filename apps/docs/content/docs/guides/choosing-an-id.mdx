@@ -15,7 +15,7 @@ Different identifiers optimize for different constraints. Start with the boundar
 | MongoDB `_id` compatibility | ObjectID | Matches MongoDB's 12-byte ObjectID format. |
 | Go rs/xid compatibility | XID | Matches rs/xid's compact 12-byte text and binary format. |
 | Native `BIGINT` storage | TSID | A sortable 64-bit integer, not a UUID-shaped string. |
-| Broad standards compatibility | UUID v4 | The conventional random UUID format. |
+| Broad standards compatibility | UUID v4 | The conventional random UUID format. Random values fragment primary key indexes. |
 | An ID derived from something you already have | UUID v5 | The same name and namespace always give the same UUID, with no state to keep. |
 
 ## A good default
@@ -27,6 +27,34 @@ import { uuidv7 } from 'uniku/uuid/v7'
 
 const orderId = uuidv7()
 ```
+
+## Storing IDs in a database
+
+A time-ordered ID keeps inserts at the end of an index only if the database compares the stored value in generation order. The stored width decides how large every index on the table gets.
+
+PostgreSQL has a native `uuid` type for UUID v7 and UUID v4 values. It stores the 128-bit value and compares it byte by byte, so UUID v7 rows sort by creation time. For ULID and other binary formats, the [Drizzle example](/docs/guides/integrations#drizzle-orm-v1-with-binary-ulids) stores `toBytes()` output in a `bytea` column.
+
+MySQL has no UUID column type. Store UUID v7 and ULID values in a `BINARY(16)` column. Convert with `toBytes()` before you write and with `fromBytes()` after you read:
+
+```ts
+import { uuidv7 } from 'uniku/uuid/v7'
+
+const id = uuidv7()
+const bytes = uuidv7.toBytes(id) // 16 bytes for a BINARY(16) column
+uuidv7.fromBytes(bytes) === id // true
+```
+
+Avoid `CHAR(36)` primary keys in MySQL. InnoDB stores each table's rows in a [clustered index](https://dev.mysql.com/doc/refman/8.4/en/innodb-index-types.html) ordered by the primary key, and every secondary index record repeats the primary key columns. A key of 36 bytes or more makes each of those indexes larger than a 16-byte key does.
+
+### Skip the swap flag for UUID v7
+
+MySQL's [`UUID_TO_BIN(id, 1)`](https://dev.mysql.com/doc/refman/8.4/en/miscellaneous-functions.html#function_uuid-to-bin) swaps the first and third groups of hex digits before it stores the value. The swap exists for UUID v1, whose fastest-changing timestamp bits come first. UUID v7 already starts with its millisecond timestamp. The swap puts the third group, `7xxx`, in front. That group holds the version digit and 12 bits of a counter that uniku seeds with random bytes every millisecond, so the stored values stop following creation time.
+
+Use `UUID_TO_BIN(id)` without the flag, or bind `uuidv7.toBytes(id)` directly. Both store the same 16 bytes. A table that already uses the flag must also read with `BIN_TO_UUID(col, 1)`, because the flags have to match in both directions.
+
+### Random UUID v4 primary keys
+
+UUID v4 is a poor fit for an InnoDB primary key. Each insert lands at a random position in the clustered index, so InnoDB splits pages across the whole index instead of appending to the last one. The [MySQL manual](https://dev.mysql.com/doc/refman/8.4/en/innodb-physical-structure.html) says pages filled in sequential order end up about 15/16 full, and pages filled in random order end up between 1/2 and 15/16 full. Use UUID v7 when the key must be a UUID. Use [TSID](/docs/reference/tsid) when a `BIGINT` column works, since it takes 8 bytes.
 
 ## An ID derived from something you already have
 
