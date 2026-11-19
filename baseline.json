@@ -9,16 +9,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 9334880.937935574,
-              "rme": 0.3171239325679034,
-              "crossActionRme": 0
+              "hz": 8467991.864942621,
+              "rme": 0.3156517530369308,
+              "crossActionRme": 29.74836926902266
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 7191349.434529005,
-              "rme": 0.2602273794046609,
-              "crossActionRme": 0
+              "hz": 6461785.548434484,
+              "rme": 0.2738154726032868,
+              "crossActionRme": 32.808838400094395
             }
           ]
         },
@@ -28,16 +28,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 1694256.7702410936,
-              "rme": 0.19811543823097383,
-              "crossActionRme": 0
+              "hz": 1473051.2862887103,
+              "rme": 0.17458733210623498,
+              "crossActionRme": 43.63732186235026
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 348187.42336578615,
-              "rme": 5.508238339656929,
-              "crossActionRme": 0
+              "hz": 312073.29395791586,
+              "rme": 5.236602015221868,
+              "crossActionRme": 33.627966962134415
             }
           ]
         },
@@ -47,16 +47,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 476734.0518828515,
-              "rme": 0.5275047633848452,
-              "crossActionRme": 0
+              "hz": 439216.078970058,
+              "rme": 0.4689050072236135,
+              "crossActionRme": 24.82225324515667
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 205044.95912815758,
-              "rme": 7.468356953867126,
-              "crossActionRme": 0
+              "hz": 187437.4907943392,
+              "rme": 6.940364354040293,
+              "crossActionRme": 27.297352084972953
             }
           ]
         },
@@ -66,16 +66,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 3496999.286731463,
-              "rme": 0.4531056659339756,
-              "crossActionRme": 0
+              "hz": 3185358.5147116985,
+              "rme": 0.4050819070376117,
+              "crossActionRme": 28.42994497060906
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 487090.3005597805,
-              "rme": 1.1454336911995493,
-              "crossActionRme": 0
+              "hz": 454165.7038140644,
+              "rme": 1.118866621610237,
+              "crossActionRme": 21.066199667106332
             }
           ]
         },
@@ -85,16 +85,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 5623797.367688522,
-              "rme": 0.2193540599903989,
-              "crossActionRme": 0
+              "hz": 4940746.810179338,
+              "rme": 0.20870315653368637,
+              "crossActionRme": 40.173559972235466
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 30730.42054546471,
-              "rme": 5.770028322086426,
-              "crossActionRme": 0
+              "hz": 28761.121153358392,
+              "rme": 5.571336570605245,
+              "crossActionRme": 19.89692681245135
             }
           ]
         },
@@ -104,16 +104,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 2553681.077128527,
-              "rme": 0.4036724499814176,
-              "crossActionRme": 0
+              "hz": 2302886.9550469154,
+              "rme": 0.35466119715787314,
+              "crossActionRme": 31.646435557042768
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 615261.4425186014,
-              "rme": 0.6212980822888007,
-              "crossActionRme": 0
+              "hz": 547635.1532374041,
+              "rme": 0.6072229903707866,
+              "crossActionRme": 35.884285797826365
             }
           ]
         },
@@ -123,16 +123,16 @@
             {
               "name": "uniku",
               "rank": 2,
-              "hz": 11651713.26031432,
-              "rme": 0.4069891345901072,
-              "crossActionRme": 0
+              "hz": 10874590.596022174,
+              "rme": 0.3629056869909085,
+              "crossActionRme": 20.766185372550332
             },
             {
               "name": "npm",
               "rank": 1,
-              "hz": 29847591.851706363,
-              "rme": 0.6313489297829404,
-              "crossActionRme": 0
+              "hz": 27022395.084008746,
+              "rme": 0.7092770709029625,
+              "crossActionRme": 30.38120033750735
             }
           ]
         },
@@ -142,16 +142,16 @@
             {
               "name": "uniku",
               "rank": 2,
-              "hz": 18587043.738464464,
-              "rme": 0.41094887900559607,
-              "crossActionRme": 0
+              "hz": 16748201.257494645,
+              "rme": 0.3753730484177209,
+              "crossActionRme": 31.904829228685777
             },
             {
               "name": "npm",
               "rank": 1,
-              "hz": 42100542.38016115,
-              "rme": 0.5842610952536267,
-              "crossActionRme": 0
+              "hz": 37916502.808208495,
+              "rme": 0.5560997594043597,
+              "crossActionRme": 32.06620588791959
             }
           ]
         },
@@ -161,16 +161,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 44954.0292507305,
-              "rme": 0.4440446917808172,
-              "crossActionRme": 0
+              "hz": 40734.9911374091,
+              "rme": 0.36624686163204506,
+              "crossActionRme": 30.09718582236072
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 6557.042794376101,
-              "rme": 3.288852470145757,
-              "crossActionRme": 0
+              "hz": 6083.477916831844,
+              "rme": 2.930069041588773,
+              "crossActionRme": 22.620782095532082
             }
           ]
         },
@@ -180,16 +180,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 385996.52462035464,
-              "rme": 0.28468227038724203,
-              "crossActionRme": 0
+              "hz": 353297.25694751384,
+              "rme": 0.2579944792455915,
+              "crossActionRme": 26.895388872932497
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 220947.83318946528,
-              "rme": 3.174539424333412,
-              "crossActionRme": 0
+              "hz": 203590.33056049907,
+              "rme": 2.9474583745165472,
+              "crossActionRme": 24.77480011975021
             }
           ]
         },
@@ -199,16 +199,16 @@
             {
               "name": "uniku",
               "rank": 2,
-              "hz": 7532492.592657252,
-              "rme": 0.23030246571110713,
-              "crossActionRme": 0
+              "hz": 6841152.806732599,
+              "rme": 0.2097971977275594,
+              "crossActionRme": 29.36583314704248
             },
             {
               "name": "npm",
               "rank": 1,
-              "hz": 8199332.873489691,
-              "rme": 0.2175940435019309,
-              "crossActionRme": 0
+              "hz": 7327189.874590739,
+              "rme": 0.19030590098603187,
+              "crossActionRme": 34.58838784452855
             }
           ]
         },
@@ -218,16 +218,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 8564966.440266225,
-              "rme": 0.19879726766591643,
-              "crossActionRme": 0
+              "hz": 7832476.266472972,
+              "rme": 0.1781610480222548,
+              "crossActionRme": 27.175827843569312
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 4252802.348937374,
-              "rme": 0.24352776400097748,
-              "crossActionRme": 0
+              "hz": 3567965.720928327,
+              "rme": 0.21581511240079268,
+              "crossActionRme": 55.77587268599636
             }
           ]
         },
@@ -237,16 +237,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 14082828.985452278,
-              "rme": 0.1781433146625408,
-              "crossActionRme": 0
+              "hz": 12795282.02200688,
+              "rme": 0.15298074868157394,
+              "crossActionRme": 29.241071548505772
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 7980434.511362324,
-              "rme": 0.20898460521965587,
-              "crossActionRme": 0
+              "hz": 7042381.490107071,
+              "rme": 0.17911075813638883,
+              "crossActionRme": 38.706856850666156
             }
           ]
         },
@@ -256,16 +256,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 14435130.53671366,
-              "rme": 0.09271403340583262,
-              "crossActionRme": 0
+              "hz": 13282510.264961148,
+              "rme": 0.10144074704888156,
+              "crossActionRme": 25.216578571297156
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 6149555.316898294,
-              "rme": 0.06351805501799421,
-              "crossActionRme": 0
+              "hz": 5453985.6063277945,
+              "rme": 0.08800033670557171,
+              "crossActionRme": 37.060113200938474
             }
           ]
         },
@@ -275,16 +275,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 15022495.089128964,
-              "rme": 0.0891880738404692,
-              "crossActionRme": 0
+              "hz": 13921964.287529564,
+              "rme": 0.08707897489033371,
+              "crossActionRme": 22.9710979585624
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 6201374.335695794,
-              "rme": 0.07614637097403203,
-              "crossActionRme": 0
+              "hz": 5466079.31927729,
+              "rme": 0.08478716718711074,
+              "crossActionRme": 39.090008070226304
             }
           ]
         },
@@ -294,16 +294,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 15065721.830613796,
-              "rme": 0.10291653112937663,
-              "crossActionRme": 0
+              "hz": 13797483.646484356,
+              "rme": 0.10301255706246322,
+              "crossActionRme": 26.71043764743323
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 6177359.99591186,
-              "rme": 0.07539798752863351,
-              "crossActionRme": 0
+              "hz": 5507966.2507933155,
+              "rme": 0.0925745267245342,
+              "crossActionRme": 35.31591367475844
             }
           ]
         },
@@ -313,16 +313,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 16682355.39092416,
-              "rme": 0.10102590082877935,
-              "crossActionRme": 0
+              "hz": 15263008.672279727,
+              "rme": 0.10012438746074286,
+              "crossActionRme": 27.022679740808524
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 4198486.304837193,
-              "rme": 0.1754966014700427,
-              "crossActionRme": 0
+              "hz": 3623150.995862088,
+              "rme": 0.1750893957088325,
+              "crossActionRme": 46.14393865778483
             }
           ]
         },
@@ -332,16 +332,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 5897885.077145787,
-              "rme": 0.24176569334143466,
-              "crossActionRme": 0
+              "hz": 5171247.215896281,
+              "rme": 0.2144705285290262,
+              "crossActionRme": 40.83220094298899
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 1018794.504027247,
-              "rme": 1.7569563535126205,
-              "crossActionRme": 0
+              "hz": 1008156.1523949166,
+              "rme": 1.586218806089029,
+              "crossActionRme": 3.0663844466499226
             }
           ]
         },
@@ -351,16 +351,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 29954039.095088884,
-              "rme": 0.0864364582875585,
-              "crossActionRme": 0
+              "hz": 26902068.1060877,
+              "rme": 0.10901982912888722,
+              "crossActionRme": 32.966648712957806
             },
             {
               "name": "regex",
               "rank": 2,
-              "hz": 29058376.591723517,
-              "rme": 0.09897511910477363,
-              "crossActionRme": 0
+              "hz": 25949217.56152619,
+              "rme": 0.118614895212348,
+              "crossActionRme": 34.81759235241814
             }
           ]
         },
@@ -370,16 +370,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 27400870.606851347,
-              "rme": 0.09849175339344063,
-              "crossActionRme": 0
+              "hz": 24829333.095382344,
+              "rme": 0.08544831897651359,
+              "crossActionRme": 30.095937493453885
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 26589413.468940884,
-              "rme": 0.20245614618166385,
-              "crossActionRme": 0
+              "hz": 24145491.23179196,
+              "rme": 0.2012817068589803,
+              "crossActionRme": 29.412463739363957
             }
           ]
         },
@@ -389,16 +389,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 11623910.212254541,
-              "rme": 0.06345372127428764,
-              "crossActionRme": 0
+              "hz": 10158925.458811682,
+              "rme": 0.21482174109610197,
+              "crossActionRme": 41.904956900712925
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 780126.1668134776,
-              "rme": 0.24995003294068746,
-              "crossActionRme": 0
+              "hz": 671515.1259737322,
+              "rme": 0.21155942563415264,
+              "crossActionRme": 47.00004168549418
             }
           ]
         },
@@ -408,16 +408,16 @@
             {
               "name": "uniku",
               "rank": 2,
-              "hz": 16294926.450612038,
-              "rme": 0.08540726437714703,
-              "crossActionRme": 0
+              "hz": 14823054.163886966,
+              "rme": 0.10752158300266684,
+              "crossActionRme": 28.85443001972866
             },
             {
               "name": "npm",
               "rank": 1,
-              "hz": 19268237.70034401,
-              "rme": 0.0750810449555985,
-              "crossActionRme": 0
+              "hz": 16810765.789201017,
+              "rme": 0.09015083250740617,
+              "crossActionRme": 42.47966979166499
             }
           ]
         },
@@ -427,16 +427,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 5915866.465364056,
-              "rme": 0.24053838737842465,
-              "crossActionRme": 0
+              "hz": 5214764.3774529295,
+              "rme": 0.20898851287728126,
+              "crossActionRme": 39.06849102639019
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 1826605.998667794,
-              "rme": 0.2544093173796072,
-              "crossActionRme": 0
+              "hz": 1571984.6282530886,
+              "rme": 0.21213101056934985,
+              "crossActionRme": 47.06809522844055
             }
           ]
         },
@@ -446,16 +446,16 @@
             {
               "name": "uniku",
               "rank": 1,
-              "hz": 18194909.145844117,
-              "rme": 0.07863098848071462,
-              "crossActionRme": 0
+              "hz": 16449505.94423977,
+              "rme": 0.10656902367862094,
+              "crossActionRme": 30.833510739605817
             },
             {
               "name": "npm",
               "rank": 2,
-              "hz": 4659965.5163838025,
-              "rme": 0.24813418978537838,
-              "crossActionRme": 0
+              "hz": 4063122.4041108885,
+              "rme": 0.23694736544079825,
+              "crossActionRme": 42.68549750868097
             }
           ]
         }
@@ -921,6 +921,471 @@
                   "hz": 4659965.5163838025,
                   "rme": 0.24813418978537838,
                   "withinActionRme": 1.6367915746486896
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "files": [
+        {
+          "filepath": "/home/runner/work/uniku/uniku/packages/uniku/__tests__/bench/compat.bench.ts",
+          "groups": [
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > UUID v4",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 7601102.791949668,
+                  "rme": 0.31417957350595827,
+                  "withinActionRme": 5.007106687101397
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 5732221.662339963,
+                  "rme": 0.28740356580191273,
+                  "withinActionRme": 7.810126816541881
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > UUID v5",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 1251845.8023363268,
+                  "rme": 0.15105922598149613,
+                  "withinActionRme": 4.200505243184318
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 275959.1645500456,
+                  "rme": 4.964965690786807,
+                  "withinActionRme": 1.0017672054679883
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > UUID v5 (256-char name)",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 401698.10605726443,
+                  "rme": 0.41030525106238186,
+                  "withinActionRme": 2.4930388982266156
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 169830.0224605208,
+                  "rme": 6.41237175421346,
+                  "withinActionRme": 3.5236953211391917
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > UUID v7",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 2873717.7426919336,
+                  "rme": 0.3570581481412478,
+                  "withinActionRme": 4.054913436389791
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 421241.1070683482,
+                  "rme": 1.0922995520209247,
+                  "withinActionRme": 1.0035085824718672
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > ULID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 4257696.252670154,
+                  "rme": 0.19805225307697386,
+                  "withinActionRme": 0.1540059691542158
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 26791.82176125207,
+                  "rme": 5.372644819124066,
+                  "withinActionRme": 6.3735704940013775
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > TypeID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 2052092.8329653041,
+                  "rme": 0.3056499443343287,
+                  "withinActionRme": 2.0820791634306453
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 480008.8639562066,
+                  "rme": 0.5931478984527726,
+                  "withinActionRme": 0.9776782776580996
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > NanoID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 2,
+                  "hz": 10097467.931730026,
+                  "rme": 0.31882223939170984,
+                  "withinActionRme": 1.153130763566897
+                },
+                {
+                  "name": "npm",
+                  "rank": 1,
+                  "hz": 24197198.31631113,
+                  "rme": 0.7872052120229847,
+                  "withinActionRme": 4.848347434901333
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > NanoID (10)",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 2,
+                  "hz": 14909358.776524827,
+                  "rme": 0.33979721782984573,
+                  "withinActionRme": 0.38713075621896215
+                },
+                {
+                  "name": "npm",
+                  "rank": 1,
+                  "hz": 33732463.23625583,
+                  "rme": 0.5279384235550928,
+                  "withinActionRme": 2.3583259241154066
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > CUID2",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 36515.95302408771,
+                  "rme": 0.28844903148327294,
+                  "withinActionRme": 2.2258661373826745
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 5609.913039287587,
+                  "rme": 2.571285613031789,
+                  "withinActionRme": 1.5327347027515767
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > KSUID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 320597.98927467305,
+                  "rme": 0.2313066881039409,
+                  "withinActionRme": 0.9068196463635637
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 186232.82793153287,
+                  "rme": 2.7203773246996823,
+                  "withinActionRme": 1.2653796770621673
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > ObjectID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 2,
+                  "hz": 6149813.020807944,
+                  "rme": 0.18929192974401166,
+                  "withinActionRme": 1.055145376982092
+                },
+                {
+                  "name": "npm",
+                  "rank": 1,
+                  "hz": 6455046.875691786,
+                  "rme": 0.16301775847013283,
+                  "withinActionRme": 6.319555055225202
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > TSID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 7099986.0926797185,
+                  "rme": 0.15752482837859316,
+                  "withinActionRme": 3.245017032534856
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 2883129.0929192808,
+                  "rme": 0.18810246080060788,
+                  "withinActionRme": 1.98735576028783
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Generation > XID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 11507735.058561482,
+                  "rme": 0.12781818270060707,
+                  "withinActionRme": 1.1693430995462193
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 6104328.468851818,
+                  "rme": 0.14923691105312178,
+                  "withinActionRme": 7.807855721900728
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > UUID v4",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 12129889.993208636,
+                  "rme": 0.1101674606919305,
+                  "withinActionRme": 1.6705920369993206
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 4758415.895757295,
+                  "rme": 0.11248261839314921,
+                  "withinActionRme": 6.226325243135672
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > UUID v5",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 12821433.485930163,
+                  "rme": 0.08496987594019823,
+                  "withinActionRme": 0.7083483979008454
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 4730784.302858787,
+                  "rme": 0.09342796340018947,
+                  "withinActionRme": 13.15850111343434
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > UUID v7",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 12529245.462354917,
+                  "rme": 0.10310858299554981,
+                  "withinActionRme": 2.464648626410473
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 4838572.505674772,
+                  "rme": 0.1097510659204349,
+                  "withinActionRme": 6.765372295389067
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > ULID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 13843661.953635294,
+                  "rme": 0.09922287409270636,
+                  "withinActionRme": 1.2422170475567589
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 3047815.686886983,
+                  "rme": 0.1746821899476223,
+                  "withinActionRme": 2.615066088494401
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > TypeID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 4444609.354646776,
+                  "rme": 0.18717536371661775,
+                  "withinActionRme": 4.348244011678481
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 997517.8007625864,
+                  "rme": 1.4154812586654377,
+                  "withinActionRme": 6.511430619491655
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > NanoID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 23850097.11708651,
+                  "rme": 0.13160319997021594,
+                  "withinActionRme": 1.3790339592924834
+                },
+                {
+                  "name": "regex",
+                  "rank": 2,
+                  "hz": 22840058.531328864,
+                  "rme": 0.13825467131992236,
+                  "withinActionRme": 1.9113353365271442
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > CUID2",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 22257795.58391334,
+                  "rme": 0.07240488455958653,
+                  "withinActionRme": 0.12103348252999963
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 21701568.994643033,
+                  "rme": 0.20010726753629676,
+                  "withinActionRme": 0.7685975604305806
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > KSUID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 8693940.705368824,
+                  "rme": 0.36618976091791633,
+                  "withinActionRme": 5.261468761542584
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 562904.0851339868,
+                  "rme": 0.17316881832761782,
+                  "withinActionRme": 4.128680099610837
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > ObjectID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 2,
+                  "hz": 13351181.877161894,
+                  "rme": 0.12963590162818667,
+                  "withinActionRme": 0.7485927970252427
+                },
+                {
+                  "name": "npm",
+                  "rank": 1,
+                  "hz": 14353293.878058026,
+                  "rme": 0.10522062005921384,
+                  "withinActionRme": 1.1656082009894906
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > TSID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 4513662.289541803,
+                  "rme": 0.17743863837613788,
+                  "withinActionRme": 0.705510028576238
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 1317363.257838383,
+                  "rme": 0.1698527037590925,
+                  "withinActionRme": 1.6057830087607114
+                }
+              ]
+            },
+            {
+              "fullName": "__tests__/bench/compat.bench.ts > Validation > XID",
+              "benchmarks": [
+                {
+                  "name": "uniku",
+                  "rank": 1,
+                  "hz": 14704102.742635421,
+                  "rme": 0.13450705887652725,
+                  "withinActionRme": 1.062558817407036
+                },
+                {
+                  "name": "npm",
+                  "rank": 2,
+                  "hz": 3466279.2918379745,
+                  "rme": 0.2257605410962181,
+                  "withinActionRme": 7.6175115270426055
                 }
               ]
             }
