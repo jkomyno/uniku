@@ -3,33 +3,64 @@ name: Benchmarks
 on:
   push:
     branches: [main]
-    paths: &benchmark_paths
+    paths:
       - "packages/uniku/src/**"
       - "packages/uniku/__tests__/bench/**"
-      - "packages/uniku/scripts/**"
+      - "packages/uniku/scripts/bench-*"
+      - "packages/uniku/scripts/bundle-*"
+      - "packages/uniku/scripts/cold-start-*"
+      - "packages/uniku/scripts/entrypoints.*"
+      - "packages/uniku/package.json"
+      - "packages/uniku/tsdown.config.ts"
+      - "packages/uniku/vitest.config.ts"
+      - "tsdown.config.base.ts"
+      - "vitest.config.base.ts"
+      # The competitor table also measures the reference packages' versions.
+      - "pnpm-lock.yaml"
       - ".github/workflows/bench.yaml"
   pull_request:
-    paths: *benchmark_paths
+    paths:
+      - "packages/uniku/src/**"
+      - "packages/uniku/__tests__/bench/**"
+      - "packages/uniku/scripts/bench-*"
+      - "packages/uniku/scripts/bundle-*"
+      - "packages/uniku/scripts/cold-start-*"
+      - "packages/uniku/scripts/entrypoints.*"
+      - "packages/uniku/package.json"
+      - "packages/uniku/tsdown.config.ts"
+      - "packages/uniku/vitest.config.ts"
+      - "tsdown.config.base.ts"
+      - "vitest.config.base.ts"
+      - ".github/workflows/bench.yaml"
+  schedule:
+    # Weekly competitor run, so reference package releases show up without a uniku change.
+    - cron: "23 5 * * 1"
   workflow_dispatch:
 
+# PR runs and competitor runs never share a group. A new PR push cancels the
+# previous A/B run; competitor runs queue so a baseline update is not cut off.
 concurrency:
-  group: bench-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: bench-${{ github.event_name == 'pull_request' && 'ab' || 'competitors' }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
-  benchmark:
-    name: Run Benchmarks
-    if: github.event_name != 'push'
+  ab:
+    name: Benchmark vs Merge Base
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_BRANCH_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
-      - name: Checkout
+      - name: Checkout PR head
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
-          fetch-depth: 0 # Need full history for branch operations
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0 # The merge base needs full history
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
@@ -37,47 +68,38 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      - name: Build
-        run: pnpm build
-
-      - name: Run benchmarks
+      - name: Check out merge base
         run: |
-          mkdir -p "$RUNNER_TEMP/bench-runs"
-          orders=(uniku-first reference-first uniku-first reference-first)
-          for iteration in "${!orders[@]}"; do
-            UNIKU_BENCH_ORDER="${orders[$iteration]}" pnpm bench:compat
-            run_number=$((iteration + 1))
-            cp bench-results.json "$RUNNER_TEMP/bench-runs/$run_number.json"
-          done
-          bun scripts/bench-aggregate.ts bench-results.json "$RUNNER_TEMP"/bench-runs/*.json
+          merge_base="$(git merge-base "$HEAD_SHA" "$BASE_BRANCH_SHA")"
+          base_dir="$RUNNER_TEMP/bench-base"
+          git worktree add --detach "$base_dir" "$merge_base"
+          {
+            echo "MERGE_BASE=$merge_base"
+            echo "BASE_DIR=$base_dir"
+          } >> "$GITHUB_ENV"
+
+      # Only the root tooling and uniku's own dependencies; the pnpm store is already warm.
+      - name: Install merge base dependencies
+        run: pnpm install --frozen-lockfile --filter uniku
+        working-directory: ${{ env.BASE_DIR }}
+
+      - name: Build head
+        run: pnpm --filter uniku build
+
+      - name: Build merge base
+        run: pnpm --filter uniku build
+        working-directory: ${{ env.BASE_DIR }}
+
+      - name: Run A/B benchmarks
+        run: bun scripts/bench-ab.ts "$BASE_DIR/packages/uniku" "$RUNNER_TEMP/bench-ab"
         working-directory: packages/uniku
 
-      - name: Measure cold starts
-        run: |
-          set -o pipefail
-          pnpm bench:cold-start | tee "$RUNNER_TEMP/cold-start.md"
-        working-directory: packages/uniku
-
-      # Fetch baseline from gh-benchmarks branch
-      - name: Fetch baseline
-        id: baseline
-        run: |
-          git fetch origin gh-benchmarks:gh-benchmarks 2>/dev/null || true
-          if git show gh-benchmarks:baseline.json > packages/uniku/baseline.json 2>/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "No baseline found - first run or new benchmarks"
-          fi
-
-      # Compare benchmarks (PR only)
       - name: Compare benchmarks
-        if: github.event_name == 'pull_request' && steps.baseline.outputs.exists == 'true'
         id: compare
         working-directory: packages/uniku
         run: |
           set +e
-          OUTPUT=$(CI=true bun scripts/bench-compare.ts baseline.json bench-results.json 2>&1)
+          OUTPUT=$(CI=true bun scripts/bench-compare.ts "$RUNNER_TEMP/bench-ab/base.json" "$RUNNER_TEMP/bench-ab/head.json" 2>&1)
           EXIT_CODE=$?
           set -e
 
@@ -92,43 +114,42 @@ jobs:
             exit "$EXIT_CODE"
           fi
 
-      - name: Generate benchmark summary
+      - name: Compare bundle sizes
+        working-directory: packages/uniku
         run: |
           set -o pipefail
-          bun scripts/bench-summary.ts | tee "$RUNNER_TEMP/bench-summary.md"
-        working-directory: packages/uniku
+          bun scripts/bundle-summary.ts --root "$BASE_DIR/packages/uniku" --json "$RUNNER_TEMP/bundle-base.json"
+          CI=true bun scripts/bundle-summary.ts --baseline "$RUNNER_TEMP/bundle-base.json" | tee "$RUNNER_TEMP/bundle-summary.md"
 
-      - name: Generate bundle summary
+      - name: Measure cold starts
+        working-directory: packages/uniku
         run: |
           set -o pipefail
-          bun scripts/bundle-summary.ts | tee "$RUNNER_TEMP/bundle-summary.md"
-        working-directory: packages/uniku
+          pnpm bench:cold-start | tee "$RUNNER_TEMP/cold-start.md"
 
       - name: Create PR comment artifact
-        if: github.event_name == 'pull_request'
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           comment="$RUNNER_TEMP/benchmark-pr-comment.md"
           {
             echo "<!-- benchmark-results -->"
-            cat "$RUNNER_TEMP/bench-summary.md"
+            echo "## Benchmark vs Merge Base"
             echo
-            cat "$RUNNER_TEMP/cold-start.md"
+            echo "Head \`${HEAD_SHA:0:7}\` against merge base \`${MERGE_BASE:0:7}\` on the same runner. Each side ran uniku's rows of compat.bench.ts four times in alternating order, and the table compares per-row medians. Cold starts are measured on the head build only."
             echo
-            if [ "${{ steps.baseline.outputs.exists }}" = "true" ]; then
-              echo "### Comparison vs Main"
-              cat "$RUNNER_TEMP/bench-comparison.md"
-            else
-              echo "> No baseline available for comparison. Baseline will be created when this PR merges."
-            fi
+            cat "$RUNNER_TEMP/bench-comparison.md"
             echo
             cat "$RUNNER_TEMP/bundle-summary.md"
             echo
-            echo "<sub>Generated by workflow run [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})</sub>"
+            cat "$RUNNER_TEMP/cold-start.md"
+            echo
+            echo "<sub>Generated by workflow run [$RUN_ID]($RUN_URL)</sub>"
           } > "$comment"
           cat "$comment" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload PR comment artifact
-        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: benchmark-pr-comment
@@ -142,9 +163,9 @@ jobs:
         run: |
           echo "::warning::Performance regression detected; see PR comment for details."
 
-  update-baseline:
-    name: Update Benchmark Baseline
-    if: github.event_name == 'push'
+  competitors:
+    name: Competitor Benchmarks
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -162,7 +183,7 @@ jobs:
         uses: ./.github/actions/setup-bun
 
       - name: Build
-        run: pnpm build
+        run: pnpm --filter uniku build
 
       - name: Run benchmarks
         run: |
@@ -176,7 +197,14 @@ jobs:
           bun scripts/bench-aggregate.ts bench-results.json "$RUNNER_TEMP"/bench-runs/*.json
         working-directory: packages/uniku
 
+      - name: Publish benchmark summary
+        run: |
+          set -o pipefail
+          CI=true bun scripts/bench-summary.ts | tee -a "$GITHUB_STEP_SUMMARY"
+        working-directory: packages/uniku
+
       - name: Update baseline
+        if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
