@@ -1,0 +1,1 @@
+import{O as e}from"./dist-DN_loaUo.js";export{e as isSpecialLang};
