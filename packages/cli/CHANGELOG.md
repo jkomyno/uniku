@@ -1,5 +1,11 @@
 # @uniku/cli
 
+## 0.9.2
+
+### Patch Changes
+
+- a7eff75: Treat `--alphabet` values such as `constructor` or `toString` as literal alphabets instead of resolving them through the preset object's prototype, and reject registry responses whose `version` field is not a non-empty string during the update check.
+
 ## 0.9.1
 
 ### Patch Changes
