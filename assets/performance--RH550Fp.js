@@ -83,6 +83,12 @@ runs each implementation in a fresh process, so neither side inherits the other'
 warmed JIT state or shared buffers. CI balances both launch orders across four
 repetitions and reports the per-row median.
 
+Both sides import built packages through plain Node imports, so uniku is measured
+as it ships. Each sample times a batch of calls sized to last about 50 µs and
+records the mean time per call. The fastest rows take tens of nanoseconds per
+call, close to the timer's resolution, so timing one call at a time would mostly
+measure the timer and the harness.
+
 \`bench-results.ts\` carries the statistics:
 
 * dispersion uses the median absolute deviation scaled by 1.4826 rather than a
@@ -139,6 +145,7 @@ has no runtime dependency.
 Run the benchmark and bundle-size tooling from the repository root:
 
 \`\`\`sh
+pnpm build
 pnpm --filter uniku bench:compat
 pnpm bench:summary
 pnpm bundle:summary
@@ -184,7 +191,11 @@ hot paths are unrolled for it. Bun, Deno, and browser engines are covered by the
 correctness matrix, not by these measurements.`},{heading:`methodology`,content:`The compatibility benchmark
 runs each implementation in a fresh process, so neither side inherits the other's
 warmed JIT state or shared buffers. CI balances both launch orders across four
-repetitions and reports the per-row median.`},{heading:`methodology`,content:"`bench-results.ts` carries the statistics:"},{heading:`methodology`,content:`dispersion uses the median absolute deviation scaled by 1.4826 rather than a
+repetitions and reports the per-row median.`},{heading:`methodology`,content:`Both sides import built packages through plain Node imports, so uniku is measured
+as it ships. Each sample times a batch of calls sized to last about 50 µs and
+records the mean time per call. The fastest rows take tens of nanoseconds per
+call, close to the timer's resolution, so timing one call at a time would mostly
+measure the timer and the harness.`},{heading:`methodology`,content:"`bench-results.ts` carries the statistics:"},{heading:`methodology`,content:`dispersion uses the median absolute deviation scaled by 1.4826 rather than a
 standard deviation, so one noisy runner does not dominate;`},{heading:`methodology`,content:"`withinActionRme` describes spread across repetitions in one CI action and\n`crossActionRme` describes spread across historical actions;"},{heading:`methodology`,content:"a regression must exceed `max(configured threshold, 2 × combined dispersion)`\nbefore it is reported, and reference-side rows never gate a change;"},{heading:`methodology`,content:"`bench-summary` prints the combined dispersion for the ratio as a `Spread`\ncolumn, and labels a row `parity (within spread)` when its deviation from 1× is\nsmaller than that spread."},{heading:`methodology`,content:`Shared-runner benchmarks stay directional. They report possible regressions
 instead of blocking a release, and the deterministic build, type, test,
 packed-package, runtime, and bundle checks are the actual gates.`},{heading:`methodology`,content:`Recorded results live in the CI run,
@@ -247,6 +258,11 @@ correctness matrix, not by these measurements.`]}),`
 runs each implementation in a fresh process, so neither side inherits the other's
 warmed JIT state or shared buffers. CI balances both launch orders across four
 repetitions and reports the per-row median.`]}),`
+`,(0,n.jsx)(t.p,{children:`Both sides import built packages through plain Node imports, so uniku is measured
+as it ships. Each sample times a batch of calls sized to last about 50 µs and
+records the mean time per call. The fastest rows take tens of nanoseconds per
+call, close to the timer's resolution, so timing one call at a time would mostly
+measure the timer and the harness.`}),`
 `,(0,n.jsxs)(t.p,{children:[(0,n.jsx)(t.code,{children:`bench-results.ts`}),` carries the statistics:`]}),`
 `,(0,n.jsxs)(t.ul,{children:[`
 `,(0,n.jsx)(t.li,{children:`dispersion uses the median absolute deviation scaled by 1.4826 rather than a
@@ -278,7 +294,8 @@ UUID v5 entry point inlines its SHA-1, so its size includes the whole hash and i
 has no runtime dependency.`]}),`
 `,(0,n.jsx)(t.h2,{id:`reproduce-these-numbers`,children:`Reproduce these numbers`}),`
 `,(0,n.jsx)(t.p,{children:`Run the benchmark and bundle-size tooling from the repository root:`}),`
-`,(0,n.jsx)(n.Fragment,{children:(0,n.jsx)(t.pre,{className:`shiki shiki-themes github-light github-dark`,style:{"--shiki-light":`#24292e`,"--shiki-dark":`#e1e4e8`,"--shiki-light-bg":`#fff`,"--shiki-dark-bg":`#24292e`},tabIndex:`0`,icon:`<svg viewBox="0 0 24 24"><path d="m 4,4 a 1,1 0 0 0 -0.7070312,0.2929687 1,1 0 0 0 0,1.4140625 L 8.5859375,11 3.2929688,16.292969 a 1,1 0 0 0 0,1.414062 1,1 0 0 0 1.4140624,0 l 5.9999998,-6 a 1.0001,1.0001 0 0 0 0,-1.414062 L 4.7070312,4.2929687 A 1,1 0 0 0 4,4 Z m 8,14 a 1,1 0 0 0 -1,1 1,1 0 0 0 1,1 h 8 a 1,1 0 0 0 1,-1 1,1 0 0 0 -1,-1 z" fill="currentColor" /></svg>`,children:(0,n.jsxs)(t.code,{children:[(0,n.jsxs)(t.span,{className:`line`,children:[(0,n.jsx)(t.span,{style:{"--shiki-light":`#6F42C1`,"--shiki-dark":`#B392F0`},children:`pnpm`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#005CC5`,"--shiki-dark":`#79B8FF`},children:` --filter`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` uniku`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` bench:compat`})]}),`
+`,(0,n.jsx)(n.Fragment,{children:(0,n.jsx)(t.pre,{className:`shiki shiki-themes github-light github-dark`,style:{"--shiki-light":`#24292e`,"--shiki-dark":`#e1e4e8`,"--shiki-light-bg":`#fff`,"--shiki-dark-bg":`#24292e`},tabIndex:`0`,icon:`<svg viewBox="0 0 24 24"><path d="m 4,4 a 1,1 0 0 0 -0.7070312,0.2929687 1,1 0 0 0 0,1.4140625 L 8.5859375,11 3.2929688,16.292969 a 1,1 0 0 0 0,1.414062 1,1 0 0 0 1.4140624,0 l 5.9999998,-6 a 1.0001,1.0001 0 0 0 0,-1.414062 L 4.7070312,4.2929687 A 1,1 0 0 0 4,4 Z m 8,14 a 1,1 0 0 0 -1,1 1,1 0 0 0 1,1 h 8 a 1,1 0 0 0 1,-1 1,1 0 0 0 -1,-1 z" fill="currentColor" /></svg>`,children:(0,n.jsxs)(t.code,{children:[(0,n.jsxs)(t.span,{className:`line`,children:[(0,n.jsx)(t.span,{style:{"--shiki-light":`#6F42C1`,"--shiki-dark":`#B392F0`},children:`pnpm`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` build`})]}),`
+`,(0,n.jsxs)(t.span,{className:`line`,children:[(0,n.jsx)(t.span,{style:{"--shiki-light":`#6F42C1`,"--shiki-dark":`#B392F0`},children:`pnpm`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#005CC5`,"--shiki-dark":`#79B8FF`},children:` --filter`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` uniku`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` bench:compat`})]}),`
 `,(0,n.jsxs)(t.span,{className:`line`,children:[(0,n.jsx)(t.span,{style:{"--shiki-light":`#6F42C1`,"--shiki-dark":`#B392F0`},children:`pnpm`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` bench:summary`})]}),`
 `,(0,n.jsxs)(t.span,{className:`line`,children:[(0,n.jsx)(t.span,{style:{"--shiki-light":`#6F42C1`,"--shiki-dark":`#B392F0`},children:`pnpm`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` bundle:summary`})]}),`
 `,(0,n.jsxs)(t.span,{className:`line`,children:[(0,n.jsx)(t.span,{style:{"--shiki-light":`#6F42C1`,"--shiki-dark":`#B392F0`},children:`pnpm`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#005CC5`,"--shiki-dark":`#79B8FF`},children:` --filter`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` uniku`}),(0,n.jsx)(t.span,{style:{"--shiki-light":`#032F62`,"--shiki-dark":`#9ECBFF`},children:` bench:cold-start`})]})]})})}),`
