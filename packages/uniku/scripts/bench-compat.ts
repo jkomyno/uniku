@@ -12,6 +12,52 @@ export const BENCHMARK_ORDERS = ['uniku-first', 'reference-first'] as const
 export type BenchmarkOrder = (typeof BENCHMARK_ORDERS)[number]
 export type BenchmarkImplementation = 'uniku' | 'reference'
 
+interface CompatBenchProcess {
+  /** The package directory whose bench file and build the process measures. */
+  packageRoot: string
+  implementation: BenchmarkImplementation
+  /** Where Vitest writes its JSON report. */
+  reportPath: string
+}
+
+/**
+ * Run one side of compat.bench.ts in a fresh Vitest process and convert its
+ * report. Each package root measures its own bench file against its own build.
+ */
+export async function runCompatBenchProcess({
+  packageRoot,
+  implementation,
+  reportPath,
+}: CompatBenchProcess): Promise<BenchResults> {
+  const child = Bun.spawn(
+    [
+      'pnpm',
+      'exec',
+      'vitest',
+      'bench',
+      './__tests__/bench/compat.bench.ts',
+      '--run',
+      '--project',
+      BENCHMARK_PROJECT,
+      '--reporter=default',
+      '--reporter=json',
+      `--outputFile.json=${reportPath}`,
+    ],
+    {
+      cwd: packageRoot,
+      env: { ...Bun.env, UNIKU_BENCH_IMPLEMENTATION: implementation },
+      stdout: 'inherit',
+      stderr: 'inherit',
+    },
+  )
+
+  const exitCode = await child.exited
+  if (exitCode !== 0) {
+    throw new Error(`${implementation} benchmark process in ${packageRoot} exited with code ${exitCode}`)
+  }
+  return benchResultsFromVitestReport(loadVitestJsonReport(reportPath))
+}
+
 export function implementationsForOrder(order: BenchmarkOrder): BenchmarkImplementation[] {
   return order === 'uniku-first' ? ['uniku', 'reference'] : ['reference', 'uniku']
 }
@@ -73,34 +119,8 @@ async function run(): Promise<void> {
   try {
     const results: BenchResults[] = []
     for (const implementation of implementationsForOrder(order)) {
-      const isolatedOutput = join(temporaryDirectory, `${implementation}.json`)
-      const process = Bun.spawn(
-        [
-          'pnpm',
-          'exec',
-          'vitest',
-          'bench',
-          './__tests__/bench/compat.bench.ts',
-          '--run',
-          '--project',
-          BENCHMARK_PROJECT,
-          '--reporter=default',
-          '--reporter=json',
-          `--outputFile.json=${isolatedOutput}`,
-        ],
-        {
-          cwd: packageRoot,
-          env: { ...Bun.env, UNIKU_BENCH_IMPLEMENTATION: implementation },
-          stdout: 'inherit',
-          stderr: 'inherit',
-        },
-      )
-
-      const exitCode = await process.exited
-      if (exitCode !== 0) {
-        throw new Error(`${implementation} benchmark process exited with code ${exitCode}`)
-      }
-      results.push(benchResultsFromVitestReport(loadVitestJsonReport(isolatedOutput)))
+      const reportPath = join(temporaryDirectory, `${implementation}.json`)
+      results.push(await runCompatBenchProcess({ packageRoot, implementation, reportPath }))
     }
 
     writeFileSync(outputPath, `${JSON.stringify(mergeImplementationResults(results), null, 2)}\n`)
