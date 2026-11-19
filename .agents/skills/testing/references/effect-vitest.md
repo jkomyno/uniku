@@ -4,7 +4,7 @@ Open this when writing `@effect/vitest` tests, checking v4 test APIs, or asserti
 
 The `packages/cli` tests run on Effect 4.1 with `@effect/vitest` pinned to the same exact version as `effect`. Two hard constraints:
 
-- `packages/cli` must use the default workspace catalog Vitest (v5): `@effect/vitest` 4.1 declares `vitest >=5`. Only `packages/uniku` and the Cloudflare e2e use the `vitest4` catalog.
+- `packages/cli` must use the default workspace catalog Vitest (v5): `@effect/vitest` 4.1 declares `vitest >=5`. Only the Cloudflare e2e uses the `vitest4` catalog.
 - CLI test layers deep-import `@effect/platform-bun/BunServices`: the package barrel re-exports modules written for the Bun runtime, and Vitest runs under Node.
 
 Verify the v4 surface from `repos/effect` before writing tests:

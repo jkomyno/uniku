@@ -62,7 +62,7 @@ cited source wins when an excerpt disagrees with it.
 - **Deep-import `@effect/platform-bun`**: the barrel re-exports modules written for the
   Bun runtime (`BunRedis`, `BunHttpPlatform`), while the published bin and Vitest run under
   Node. Import `@effect/platform-bun/BunRuntime` and `@effect/platform-bun/BunServices`.
-- **Only the Cloudflare e2e and `packages/uniku` stay on Vitest 4** (the `vitest4`
+- **Only the Cloudflare e2e stays on Vitest 4** (the `vitest4`
   catalog in `pnpm-workspace.yaml`). `packages/cli` must use the default catalog, because
   `@effect/vitest` 4.1 declares `vitest >=5`.
 - **`-V` is rewritten to `--version`** in `src/runtime/args.ts`, because the built-in
