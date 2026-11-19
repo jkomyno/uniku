@@ -121,6 +121,19 @@ describe('benchmark results helpers', () => {
     expect(result.rows[0]).toMatchObject({ change: -0.3, status: 'regression', owned: true })
   })
 
+  it('reports rows present on only one side as new or removed without gating', () => {
+    const result = compareBenchResults(withSingleBench(1_000, 1), withCompatBench('uniku', 1_000, 1), {
+      regressionThreshold: 0.1,
+      improvementThreshold: 0.1,
+    })
+
+    expect(result.hasRegression).toBe(false)
+    expect(result.rows.map(({ key, status }) => ({ key, status }))).toEqual([
+      { key: '__tests__/bench/compat.bench.ts > Generation > UUID v7 > uniku', status: 'new' },
+      { key: '__tests__/bench/id.bench.ts > ID Generation > uuidv4', status: 'removed' },
+    ])
+  })
+
   it('aggregates repeated benchmark runs by their median throughput and RME', () => {
     const result = aggregateBenchResults([withSingleBench(100, 1), withSingleBench(300, 3), withSingleBench(200, 2)])
 

@@ -79,6 +79,11 @@ pnpm bench:compat
 pnpm bench:summary
 ```
 
+Pull request CI does not run the npm comparison. It compares uniku's own rows
+with the merge base on one runner and diffs bundle sizes against it. The
+[performance guide](https://jkomyno.github.io/uniku/docs/guides/performance/#reproduce-these-numbers)
+lists the commands to run the same comparison locally.
+
 ### Linting
 
 We use [oxlint](https://oxc.rs/docs/guide/usage/linter) for linting and [oxfmt](https://oxc.rs/docs/guide/usage/formatter) for formatting. The lint config also runs the vendored anti-slop rules under `tools/oxlint/`:

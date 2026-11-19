@@ -10,6 +10,13 @@
  *   bun scripts/bundle-summary.ts            # Use tsdown (default)
  *   bun scripts/bundle-summary.ts --bundler tsdown
  *   bun scripts/bundle-summary.ts --bundler bun
+ *   bun scripts/bundle-summary.ts --root ../base/packages/uniku --json base.json
+ *   bun scripts/bundle-summary.ts --baseline base.json
+ *
+ * Options:
+ *   --root <dir>       Measure the source and entry points of another uniku checkout
+ *   --json <file>      Write the sizes as JSON instead of printing a table
+ *   --baseline <file>  Print each entry point's change against sizes written by --json
  *
  * Output:
  *   - In CI (CI=true): Markdown table for GitHub PR comments
@@ -18,9 +25,20 @@
  * @module
  */
 
+import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { build as tsdownBuild } from 'tsdown'
-import { ENTRYPOINTS, type EntryPoint } from './entrypoints.mjs'
+import {
+  type BundleSize,
+  type BundleSizeDiff,
+  diffBundleSizes,
+  formatBundleDelta,
+  formatBytes,
+  hasBundleSizeChange,
+  loadBundleSizes,
+} from './bundle-sizes'
+import type { EntryPoint } from './entrypoints.mjs'
 
 /**
  * Temporarily silence console output during an async operation.
@@ -44,29 +62,34 @@ async function withSilentConsole<T>(fn: () => Promise<T>): Promise<T> {
 
 const isCI = Bun.env.CI === 'true'
 
-// Parse --bundler flag
 const args = Bun.argv.slice(2)
-const bundlerIndex = args.indexOf('--bundler')
-const bundler = bundlerIndex !== -1 ? args[bundlerIndex + 1] : 'tsdown'
+
+function optionValue(name: string): string | undefined {
+  const index = args.indexOf(name)
+  return index === -1 ? undefined : args[index + 1]
+}
+
+const bundler = optionValue('--bundler') ?? 'tsdown'
+const packageRoot = resolve(optionValue('--root') ?? resolve(import.meta.dir, '..'))
+const jsonPath = optionValue('--json')
+const baselinePath = optionValue('--baseline')
 
 if (!['tsdown', 'bun'].includes(bundler)) {
   console.error('Error: --bundler must be "tsdown" or "bun"')
   process.exit(1)
 }
 
-interface BundleSize {
-  name: string
-  minifiedBytes: number
-  gzipBytes: number
-  hasExternal: boolean
-}
+// Read the manifest of the measured checkout, so a checkout that adds or removes
+// an entry point is measured with its own list.
+const { ENTRYPOINTS }: { ENTRYPOINTS: readonly EntryPoint[] } = await import(
+  pathToFileURL(resolve(packageRoot, 'scripts/entrypoints.mjs')).href
+)
 
 /**
  * Calculate bundle size using Bun.build() with metafile
  */
 async function calculateWithBun(entry: EntryPoint): Promise<BundleSize> {
-  const entryPath = resolve(import.meta.dir, '..', entry.src)
-
+  const entryPath = resolve(packageRoot, entry.src)
   const result = await Bun.build({
     entrypoints: [entryPath],
     minify: true,
@@ -98,12 +121,13 @@ async function calculateWithBun(entry: EntryPoint): Promise<BundleSize> {
  * Calculate bundle size using tsdown programmatic API
  */
 async function calculateWithTsdown(entry: EntryPoint): Promise<BundleSize> {
-  const entryPath = resolve(import.meta.dir, '..', entry.src)
-  const tmpDir = resolve(import.meta.dir, '../.tmp-bundle-analysis')
+  const entryPath = resolve(packageRoot, entry.src)
+  const tmpDir = resolve(packageRoot, '.tmp-bundle-analysis')
 
   // Use tsdown programmatic API with silenced console
   const bundles = await withSilentConsole(() =>
     tsdownBuild({
+      cwd: packageRoot,
       entry: [entryPath],
       outDir: tmpDir,
       minify: true,
@@ -147,17 +171,6 @@ async function calculateWithTsdown(entry: EntryPoint): Promise<BundleSize> {
   }
 }
 
-/**
- * Format bytes into a human-readable string.
- */
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `~${bytes} B`
-  }
-  const kb = bytes / 1024
-  return `~${kb.toFixed(1)} KB`
-}
-
 // Main execution
 const calculateSize = bundler === 'bun' ? calculateWithBun : calculateWithTsdown
 
@@ -176,35 +189,87 @@ if (sizes.length === 0) {
   process.exit(1)
 }
 
-// Check if any entrypoint has external dependencies
-const hasAnyExternal = sizes.some((s) => s.hasExternal)
+if (jsonPath) {
+  writeFileSync(jsonPath, `${JSON.stringify(sizes, null, 2)}\n`)
+  process.exit(0)
+}
 
-// Output
-if (isCI) {
-  // Markdown output for CI
-  console.log('## Bundle Impact\n')
-  console.log('| Import | Minified + gzipped |')
-  console.log('|--------|-------------------:|')
-  for (const size of sizes) {
-    const sizeStr = formatBytes(size.gzipBytes) + (size.hasExternal ? '*' : '')
-    console.log(`| \`${size.name}\` | ${sizeStr} |`)
-  }
-  if (hasAnyExternal) {
-    console.log('\n*Excludes external dependencies (e.g., @noble/hashes)')
-  }
+const externalNote = 'Excludes external dependencies (e.g., @noble/hashes)'
+
+if (baselinePath) {
+  printBaselineComparison(diffBundleSizes(loadBundleSizes(baselinePath), sizes))
 } else {
-  // Terminal output with Bun.inspect.table()
-  console.log('\x1b[1;36m## Bundle Impact\x1b[0m\n')
-  console.log(
-    Bun.inspect.table(
-      sizes.map((s) => ({
-        Import: s.name,
-        'Minified + gzipped': `\x1b[32m${formatBytes(s.gzipBytes)}${s.hasExternal ? '*' : ''}\x1b[0m`,
-      })),
-      { colors: true },
-    ),
-  )
-  if (hasAnyExternal) {
-    console.log('\n\x1b[33m*Excludes external dependencies (e.g., @noble/hashes)\x1b[0m')
+  printSizes(sizes)
+}
+
+function printSizes(entries: BundleSize[]): void {
+  const hasAnyExternal = entries.some((s) => s.hasExternal)
+
+  if (isCI) {
+    console.log('## Bundle Impact\n')
+    console.log('| Import | Minified + gzipped |')
+    console.log('|--------|-------------------:|')
+    for (const size of entries) {
+      const sizeStr = formatBytes(size.gzipBytes) + (size.hasExternal ? '*' : '')
+      console.log(`| \`${size.name}\` | ${sizeStr} |`)
+    }
+    if (hasAnyExternal) {
+      console.log(`\n*${externalNote}`)
+    }
+  } else {
+    console.log('\x1b[1;36m## Bundle Impact\x1b[0m\n')
+    console.log(
+      Bun.inspect.table(
+        entries.map((s) => ({
+          Import: s.name,
+          'Minified + gzipped': `\x1b[32m${formatBytes(s.gzipBytes)}${s.hasExternal ? '*' : ''}\x1b[0m`,
+        })),
+        { colors: true },
+      ),
+    )
+    if (hasAnyExternal) {
+      console.log(`\n\x1b[33m*${externalNote}\x1b[0m`)
+    }
+  }
+}
+
+function printBaselineComparison(rows: BundleSizeDiff[]): void {
+  const hasAnyExternal = rows.some((row) => row.hasExternal)
+  const changed = rows.filter(hasBundleSizeChange).length
+  const verdict =
+    changed === 0 ? 'No entry point changed size.' : `${changed} of ${rows.length} entry points changed size.`
+  const formatSize = (bytes: number | undefined) => (bytes === undefined ? 'N/A' : formatBytes(bytes))
+
+  if (isCI) {
+    console.log('## Bundle Impact\n')
+    console.log(`Minified + gzipped. ${verdict}\n`)
+    console.log('| Import | Base | Head | Change |')
+    console.log('|--------|-----:|-----:|-------:|')
+    for (const row of rows) {
+      const name = `\`${row.name}\`${row.hasExternal ? '*' : ''}`
+      const delta = formatBundleDelta(row)
+      const change = hasBundleSizeChange(row) ? `**${delta}**` : delta
+      console.log(`| ${name} | ${formatSize(row.baseBytes)} | ${formatSize(row.headBytes)} | ${change} |`)
+    }
+    if (hasAnyExternal) {
+      console.log(`\n*${externalNote}`)
+    }
+  } else {
+    console.log('\x1b[1;36m## Bundle Impact\x1b[0m\n')
+    console.log(`${verdict}\n`)
+    console.log(
+      Bun.inspect.table(
+        rows.map((row) => ({
+          Import: `${row.name}${row.hasExternal ? '*' : ''}`,
+          Base: formatSize(row.baseBytes),
+          Head: formatSize(row.headBytes),
+          Change: formatBundleDelta(row),
+        })),
+        { colors: true },
+      ),
+    )
+    if (hasAnyExternal) {
+      console.log(`\n\x1b[33m*${externalNote}\x1b[0m`)
+    }
   }
 }
