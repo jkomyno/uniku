@@ -38,13 +38,12 @@ export function fromUnikuError(err: UniqueIdError): CliError {
 /**
  * Converts a CLI failure to a JSON-serializable object for stderr output.
  */
-export function errorToJson(err: CliFailure): { error: string; code: string; hint?: string } {
-  const obj: { error: string; code: string; hint?: string } = {
-    error: err.message,
-    code: err.code,
-  }
-  if (err.hint) {
-    obj.hint = err.hint
-  }
-  return obj
+export type CliErrorJson = {
+  readonly error: string
+  readonly code: string
+  readonly hint?: string
+}
+
+export function errorToJson(err: CliFailure): CliErrorJson {
+  return err.hint ? { error: err.message, code: err.code, hint: err.hint } : { error: err.message, code: err.code }
 }

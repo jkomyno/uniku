@@ -19,7 +19,7 @@ function loadOptionalBenchResults(path: string) {
   try {
     return loadBenchResults(path)
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       return undefined
     }
     throw error

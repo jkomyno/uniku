@@ -56,7 +56,7 @@ export const baseAwareStaticClientMiddleware = createMiddleware({ type: 'functio
       result: response.result,
       context: {
         ...((ctx.context ?? {}) as Record<string, unknown>),
-        ...(response.context ?? {}),
+        ...response.context,
       },
     } as never
   }

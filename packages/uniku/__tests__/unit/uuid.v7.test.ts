@@ -11,6 +11,7 @@ async function importFreshUuidV7Module() {
 
 async function importFreshUuidV7ModuleWithRandom(random: Uint8Array) {
   vi.resetModules()
+  // oxlint-disable-next-line anti-slop/no-module-mocking -- the default uuidv7() path seeds its counter from the module-level rng(), which has no injection point
   vi.doMock('@/src/common/random', () => ({
     rng: () => random,
   }))

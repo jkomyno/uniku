@@ -314,13 +314,7 @@ describe('Validation', () => {
       },
       benchOptions,
     )
-    bench(
-      'npm',
-      () => {
-        uuidValidate(testIds.unikuV4) && uuidVersion(testIds.unikuV4) === 4
-      },
-      benchOptions,
-    )
+    bench('npm', () => uuidValidate(testIds.unikuV4) && uuidVersion(testIds.unikuV4) === 4, benchOptions)
   })
 
   describe('UUID v5', () => {
@@ -331,13 +325,7 @@ describe('Validation', () => {
       },
       benchOptions,
     )
-    bench(
-      'npm',
-      () => {
-        uuidValidate(testIds.unikuV5) && uuidVersion(testIds.unikuV5) === 5
-      },
-      benchOptions,
-    )
+    bench('npm', () => uuidValidate(testIds.unikuV5) && uuidVersion(testIds.unikuV5) === 5, benchOptions)
   })
 
   describe('UUID v7', () => {
@@ -348,13 +336,7 @@ describe('Validation', () => {
       },
       benchOptions,
     )
-    bench(
-      'npm',
-      () => {
-        uuidValidate(testIds.unikuV7) && uuidVersion(testIds.unikuV7) === 7
-      },
-      benchOptions,
-    )
+    bench('npm', () => uuidValidate(testIds.unikuV7) && uuidVersion(testIds.unikuV7) === 7, benchOptions)
   })
 
   describe('ULID', () => {

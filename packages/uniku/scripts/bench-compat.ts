@@ -57,8 +57,9 @@ function rankBenchmarks(benchmarks: Benchmark[]): Benchmark[] {
 }
 
 async function run(): Promise<void> {
-  const order = process.env.UNIKU_BENCH_ORDER ?? 'uniku-first'
-  if (!BENCHMARK_ORDERS.includes(order as BenchmarkOrder)) {
+  const requestedOrder = process.env.UNIKU_BENCH_ORDER ?? 'uniku-first'
+  const order = BENCHMARK_ORDERS.find((candidate) => candidate === requestedOrder)
+  if (!order) {
     throw new Error(`UNIKU_BENCH_ORDER must be one of: ${BENCHMARK_ORDERS.join(', ')}`)
   }
 
@@ -68,7 +69,7 @@ async function run(): Promise<void> {
 
   try {
     const results: BenchResults[] = []
-    for (const implementation of implementationsForOrder(order as BenchmarkOrder)) {
+    for (const implementation of implementationsForOrder(order)) {
       const isolatedOutput = join(temporaryDirectory, `${implementation}.json`)
       const process = Bun.spawn(
         [
@@ -95,6 +96,7 @@ async function run(): Promise<void> {
       if (exitCode !== 0) {
         throw new Error(`${implementation} benchmark process exited with code ${exitCode}`)
       }
+      // SAFETY: the child benchmark process above wrote this file in the BenchResults format.
       results.push(JSON.parse(readFileSync(isolatedOutput, 'utf8')) as BenchResults)
     }
 

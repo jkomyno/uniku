@@ -1,5 +1,5 @@
-import * as Console from 'effect/Console'
 import type { CliError as CliFrameworkError } from 'effect/cli'
+import * as Console from 'effect/Console'
 import * as Effect from 'effect/Effect'
 import * as Match from 'effect/Match'
 import type { CliFailure } from '@/src/domain/errors'

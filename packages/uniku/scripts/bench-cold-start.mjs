@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
 import { performance } from 'node:perf_hooks'
+import { fileURLToPath } from 'node:url'
 
 import { COLD_START_ENTRYPOINTS } from './cold-start-entrypoints.mjs'
 

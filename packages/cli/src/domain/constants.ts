@@ -22,11 +22,11 @@ export const CUID_LENGTH_MIN = 2
 export const CUID_LENGTH_MAX = 32
 
 /** Nanoid alphabet presets. */
-export const NANOID_ALPHABET_PRESETS: Record<string, string> = {
-  hex: '0123456789abcdef',
-  numeric: '0123456789',
-  alpha: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-}
+export const NANOID_ALPHABET_PRESETS: ReadonlyMap<string, string> = new Map([
+  ['hex', '0123456789abcdef'],
+  ['numeric', '0123456789'],
+  ['alpha', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'],
+])
 
 /** Environment variable for default generate type. */
 export const ENV_DEFAULT_TYPE = 'UNIKU_DEFAULT_TYPE'

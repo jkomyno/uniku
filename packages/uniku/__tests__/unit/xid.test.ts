@@ -163,15 +163,13 @@ describe('xid', () => {
     })
   })
 
-  it.each([
-    'c6e52g2mrqcjl44hf179',
-    '9M4E2MR0UI3E8A215N4G',
-    'x'.repeat(20),
-    '0'.repeat(19),
-  ])('rejects malformed input %s', (id) => {
-    expect(xid.isValid(id)).toBe(false)
-    expect(() => xid.toBytes(id)).toThrow(ParseError)
-  })
+  it.each(['c6e52g2mrqcjl44hf179', '9M4E2MR0UI3E8A215N4G', 'x'.repeat(20), '0'.repeat(19)])(
+    'rejects malformed input %s',
+    (id) => {
+      expect(xid.isValid(id)).toBe(false)
+      expect(() => xid.toBytes(id)).toThrow(ParseError)
+    },
+  )
 
   it('is a type guard and has canonical NIL and MAX constants', () => {
     const maybeId: unknown = xid()

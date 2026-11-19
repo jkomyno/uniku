@@ -12,10 +12,7 @@ const packageRoot = dirname(scriptDir)
 // objectid, tsid, and generators — is covered here; nothing can be published
 // without a matching packed-exports assertion.
 const expectedExports = Object.fromEntries(
-  ENTRYPOINTS.map((entry) => [
-    entry.subpath,
-    { types: entry.dts, import: entry.mjs, default: entry.mjs },
-  ]),
+  ENTRYPOINTS.map((entry) => [entry.subpath, { types: entry.dts, import: entry.mjs, default: entry.mjs }]),
 )
 
 const runtimeSpecifiers = Object.keys(expectedExports).map((subpath) => `uniku${subpath.slice(1)}`)
@@ -52,7 +49,9 @@ const containsSourceCondition = (value) => {
   }
 
   if (value && typeof value === 'object') {
-    return Object.entries(value).some(([key, nestedValue]) => key === '@jkomyno/source' || containsSourceCondition(nestedValue))
+    return Object.entries(value).some(
+      ([key, nestedValue]) => key === '@jkomyno/source' || containsSourceCondition(nestedValue),
+    )
   }
 
   return false
@@ -78,7 +77,9 @@ const assertPackedExports = (packedPackageJson) => {
 
     for (const [condition, expectedTarget] of Object.entries(expected)) {
       if (actual[condition] !== expectedTarget) {
-        fail(`Packed exports.${subpath}.${condition} should be ${expectedTarget}, got ${JSON.stringify(actual[condition])}.`)
+        fail(
+          `Packed exports.${subpath}.${condition} should be ${expectedTarget}, got ${JSON.stringify(actual[condition])}.`,
+        )
       }
     }
   }
@@ -149,7 +150,9 @@ const assertEntryIsolation = (packageDir) => {
 
         const reached = subpathByFile.get(target)
         if (reached && !allowed.has(reached)) {
-          fail(`uniku${entry.subpath.slice(1)} must not import uniku${reached.slice(1)} (via ${relative(packageDir, file)}).`)
+          fail(
+            `uniku${entry.subpath.slice(1)} must not import uniku${reached.slice(1)} (via ${relative(packageDir, file)}).`,
+          )
         }
         pending.push(target)
       }

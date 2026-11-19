@@ -48,11 +48,7 @@ function compare(
   })
 }
 
-function isMissingFileError(error: unknown): boolean {
-  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
-}
-
-function formatChangeParts(row: ComparisonRow): { percent: string; rme: string } {
+function formatChangeParts(row: ComparisonRow) {
   return {
     percent: (row.change * 100).toFixed(1),
     rme: row.combinedRme > 0 ? ` (+/-${(row.combinedRme * 100).toFixed(1)}% RME)` : '',
@@ -120,8 +116,8 @@ let regressions: string[]
 try {
   ;({ rows, hasRegression, regressions } = compare(baselinePath, currentPath))
 } catch (error) {
-  if (isMissingFileError(error)) {
-    if ((error as NodeJS.ErrnoException).path === baselinePath) {
+  if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+    if ('path' in error && error.path === baselinePath) {
       if (isCI) {
         console.log('No baseline found. First run will establish baseline.')
       } else {

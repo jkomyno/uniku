@@ -1,6 +1,6 @@
 import { create } from '@orama/orama'
-import { oramaStaticClient } from 'fumadocs-core/search/client/orama-static'
 import { useDocsSearch } from 'fumadocs-core/search/client'
+import { oramaStaticClient } from 'fumadocs-core/search/client/orama-static'
 import {
   SearchDialog,
   SearchDialogClose,

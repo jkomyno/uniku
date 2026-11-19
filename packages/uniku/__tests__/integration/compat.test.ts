@@ -345,13 +345,13 @@ describe('Cross-Validation: XID', () => {
     }
   })
 
-  it.each([
-    'c6e52g2mrqcjl44hf179',
-    '9M4E2MR0UI3E8A215N4G',
-  ])('rejects invalid XID %s across all implementations', (id) => {
-    expect(xid.isValid(id)).toBe(false)
-    expect(() => xid.toBytes(id)).toThrow()
-    expect(() => npmXid.parse(id)).toThrow()
-    expect(() => npmNeXid.fromString(id)).toThrow()
-  })
+  it.each(['c6e52g2mrqcjl44hf179', '9M4E2MR0UI3E8A215N4G'])(
+    'rejects invalid XID %s across all implementations',
+    (id) => {
+      expect(xid.isValid(id)).toBe(false)
+      expect(() => xid.toBytes(id)).toThrow()
+      expect(() => npmXid.parse(id)).toThrow()
+      expect(() => npmNeXid.fromString(id)).toThrow()
+    },
+  )
 })

@@ -1,13 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, Blocks, Box, Cpu, Gauge, Globe2, TerminalSquare } from 'lucide-react'
 import { HomeLayout } from 'fumadocs-ui/layouts/home'
+import { ArrowRight, Blocks, Box, Cpu, Gauge, Globe2, TerminalSquare } from 'lucide-react'
 import { baseOptions } from '@/lib/layout'
 
-const idRail = [
-  '019b8f1e-70d4-7c5a-b7d2-18f5cc7b95f0',
-  '01JPNBWW9Q54Y5DVXR8F11H3TM',
-  'user_01h2xcejqtf2nbrexx3vqjhp41',
-]
+const idRail = ['019b8f1e-70d4-7c5a-b7d2-18f5cc7b95f0', '01JPNBWW9Q54Y5DVXR8F11H3TM', 'user_01h2xcejqtf2nbrexx3vqjhp41']
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -22,8 +18,9 @@ function Home() {
             <p className="eyebrow">Eleven type-safe strategies. One API.</p>
             <h1>One install. Every ID strategy.</h1>
             <p className="hero-summary">
-              <code>uniku</code> puts UUID v4/v5/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID behind one
-              consistent API. Each generator has a direct entry point, with published compatibility and performance measurements.
+              <code>uniku</code> puts UUID v4/v5/v7, ULID, TypeID, CUID v2, Nanoid, KSUID, ObjectID, XID, and TSID
+              behind one consistent API. Each generator has a direct entry point, with published compatibility and
+              performance measurements.
             </p>
             <div className="hero-actions">
               <Link className="primary-action" to="/docs/$" params={{ _splat: '' }}>
@@ -40,7 +37,9 @@ function Home() {
               <span>UUID v7 · ULID · TypeID and more</span>
             </div>
             <pre className="atlas-code" aria-label="uniku library example">
-              <code>import {'{'} uuidv7 {'}'} from 'uniku/uuid/v7'</code>
+              <code>
+                import {'{'} uuidv7 {'}'} from 'uniku/uuid/v7'
+              </code>
               <code>const id = uuidv7()</code>
             </pre>
             <div className="atlas-rail">
@@ -83,9 +82,14 @@ function Home() {
           <div>
             <p className="eyebrow">The CLI companion</p>
             <h2>Generate, inspect, and validate from your terminal.</h2>
-            <p>Install <code>@uniku/cli</code> when the ID belongs in a shell script, a migration, or a debugging session.</p>
+            <p>
+              Install <code>@uniku/cli</code> when the ID belongs in a shell script, a migration, or a debugging
+              session.
+            </p>
           </div>
-          <pre aria-label="uniku CLI example"><TerminalSquare aria-hidden="true" size={17} /> uniku uuid -v 7</pre>
+          <pre aria-label="uniku CLI example">
+            <TerminalSquare aria-hidden="true" size={17} /> uniku uuid -v 7
+          </pre>
           <Link className="text-link" to="/docs/$" params={{ _splat: 'cli' }}>
             Explore the CLI <ArrowRight aria-hidden="true" size={15} />
           </Link>

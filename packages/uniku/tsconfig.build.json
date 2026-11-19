@@ -4,6 +4,6 @@
   "compilerOptions": {
     "outDir": "build",
     "composite": false,
-    "emitDeclarationOnly": false,
-  },
+    "emitDeclarationOnly": false
+  }
 }

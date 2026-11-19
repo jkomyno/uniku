@@ -1,0 +1,107 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/node_modules",
+    "**/build",
+    "**/coverage",
+    "**/dist",
+    "apps/docs/.source",
+    "apps/docs/src/generated",
+    "apps/docs/src/routeTree.gen.ts",
+    "**/.turbo",
+    "public",
+    "repos",
+    "plans",
+    "**/.claude",
+    ".agents",
+    ".impeccable",
+    ".context",
+    "tools/oxlint/**"
+  ],
+  // The anti-slop rules are vendored from the no-slop skill; see tools/oxlint/anti-slop/LICENSE.
+  "jsPlugins": [
+    { "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" },
+    { "name": "anti-slop-effect", "specifier": "./tools/oxlint/anti-slop/effect/index.ts" },
+    { "name": "no-slop", "specifier": "./tools/oxlint/no-slop/index.ts" }
+  ],
+  "rules": {
+    "anti-slop/no-chained-type-assertions": "error",
+    "anti-slop/no-conditional-empty-object-spread": "error",
+    "anti-slop/no-known-value-widening": "error",
+    "anti-slop/no-module-mocking": "error",
+    "anti-slop/no-object-parameters": "error",
+    "anti-slop/no-reflect-apply": "error",
+    "anti-slop/no-reflect-get": "error",
+    "anti-slop/no-runtime-typeof": ["error", { "allowInTypeGuards": true }],
+    "anti-slop/no-shape-in-symbol-names": "error",
+    "anti-slop/no-unknown-parameters": "error",
+    "anti-slop/no-unknown-returns": "error",
+    "anti-slop/no-unknown-type-aliases": "error",
+    "anti-slop/no-unsafe-dictionary-type": "error",
+    "anti-slop/no-widen-then-assert": "error",
+    "anti-slop/require-safety-comment-for-type-assertion": "error",
+    "no-slop/no-broad-return-types": "error",
+    "no-slop/no-broad-type-aliases": "error",
+    // Effect.gen bodies often build a value without yielding.
+    "require-yield": "off",
+    // Generator hot paths preallocate fixed-length arrays on purpose.
+    "unicorn/no-new-array": "off"
+  },
+  "overrides": [
+    {
+      "files": ["packages/cli/**", "examples/**"],
+      "rules": {
+        "anti-slop-effect/no-service-constructor-imports": "error"
+      }
+    },
+    {
+      // The library's public API is the parsing boundary: every isValid() is a type guard over unknown,
+      // and overloads tell string inputs from Uint8Array or option objects at runtime.
+      "files": ["packages/uniku/src/**"],
+      "rules": {
+        "anti-slop/no-unknown-parameters": "off",
+        "anti-slop/no-runtime-typeof": "off",
+        // The library runs on every JavaScript runtime, so binary data is always a Uint8Array.
+        "no-restricted-globals": [
+          "error",
+          { "name": "Buffer", "message": "Node.js Buffer is not portable. Use Uint8Array." }
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              { "name": "buffer", "message": "Node.js Buffer is not portable. Use Uint8Array." },
+              { "name": "node:buffer", "message": "Node.js Buffer is not portable. Use Uint8Array." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      // Tests, smoke checks, and runnable examples assert runtime representations and feed
+      // deliberately untyped values to public boundaries.
+      "files": ["**/__tests__/**", "packages/uniku/scripts/*-smoke*", "examples/**"],
+      "rules": {
+        "anti-slop/no-runtime-typeof": "off",
+        "anti-slop/no-unknown-parameters": "off",
+        "anti-slop/no-unknown-returns": "off",
+        "anti-slop/require-safety-comment-for-type-assertion": "off"
+      }
+    },
+    {
+      // Mirrors the client lookup of @tanstack/start-static-server-functions, which handles arbitrary seroval data.
+      "files": ["apps/docs/src/lib/static-server-fn.ts"],
+      "rules": {
+        "anti-slop/no-runtime-typeof": "off",
+        "anti-slop/no-unknown-parameters": "off",
+        "anti-slop/no-unknown-returns": "off",
+        "anti-slop/no-unsafe-dictionary-type": "off",
+        "anti-slop/require-safety-comment-for-type-assertion": "off"
+      }
+    }
+  ]
+}

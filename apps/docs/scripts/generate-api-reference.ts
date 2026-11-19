@@ -319,9 +319,11 @@ const generators: GeneratorDefinition[] = [
 ]
 
 function jsDocText(node: ts.Node): string | undefined {
+  // SAFETY: the TypeScript parser attaches parsed JSDoc blocks to nodes as `jsDoc`, which the public types omit.
   const jsDoc = (node as ts.Node & { jsDoc?: readonly ts.JSDoc[] }).jsDoc ?? []
   const comments = jsDoc
     .flatMap((comment) => {
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- TypeScript types a JSDoc comment as string | NodeArray<JSDocComment>
       if (typeof comment.comment === 'string') return [comment.comment]
       return comment.comment?.map((part) => part.text) ?? []
     })
@@ -471,7 +473,7 @@ function membersFor(
   return members
 }
 
-function generate(): Record<string, GeneratorApi> {
+function generate() {
   const sourcePaths = generators.map(({ sourcePath }) => resolve(repositoryRoot, sourcePath))
   const program = ts.createProgram(sourcePaths, { target: ts.ScriptTarget.ES2022 })
   const apis: Record<string, GeneratorApi> = {}
@@ -536,7 +538,7 @@ let existingSource: string | undefined
 try {
   existingSource = readFileSync(outputPath, 'utf8')
 } catch (error) {
-  if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+  if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
 }
 
 if (existingSource !== source) {

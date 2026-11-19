@@ -16,7 +16,7 @@ Use this skill for typecheck failures, declaration emit constraints, exported AP
 - Read the local `tsconfig*.json`, package scripts, and nearby code before changing TypeScript patterns.
 - Treat uniku as strict TypeScript with `isolatedModules`, `isolatedDeclarations`, and `verbatimModuleSyntax`.
 - The library package emits declarations with `isolatedDeclarations`; exported values usually need explicit return types.
-- Defer formatting and import ordering to Biome; do not hand-align style beyond what the tools enforce.
+- Defer formatting and import ordering to oxfmt; do not hand-align style beyond what the tools enforce.
 
 ## Types And Type Safety
 
