@@ -10,54 +10,55 @@ Treat every ratio on this page as an order of magnitude, not a guarantee. Read
 
 ## Generation speed [#generation-speed]
 
-The ranges below combine a [four-repetition CI run](https://github.com/jkomyno/uniku/actions/runs/43760726485)
-on November 15, 2026 (UTC) with repeat runs of the same command on different
-hardware. Node.js \`25.9.0\`, GitHub-hosted \`ubuntu-latest\` for the CI half. Each
-ratio divides uniku's median throughput by the reference package's median
-throughput; values above 1 favor uniku.
+The ratios below come from a [four-repetition CI run](https://github.com/jkomyno/uniku/actions/runs/44526064575)
+on November 19, 2026 (UTC), on Node.js \`25.9.0\` and a GitHub-hosted
+\`ubuntu-latest\` runner (Ubuntu 26.04 image). Each ratio divides uniku's median
+throughput by the reference package's median throughput, and values above 1 favor
+uniku. The percentage next to each ratio is its spread across the run's four
+repetitions, as \`bench-summary\` prints it in the \`Spread\` column.
 
 | Generator               | Reference                    | uniku / reference | What the row actually compares                                                  |
 | ----------------------- | ---------------------------- | ----------------: | ------------------------------------------------------------------------------- |
-| UUID v4                 | \`uuid@14.0.3\`                |          \\~1–1.6× | Same native primitive behind two wrappers — see below                           |
-| UUID v5 (short name)    | \`uuid@14.0.3\`                |            \\~2–3× | SHA-1 over a 15-byte name                                                       |
-| UUID v5 (256-char name) | \`uuid@14.0.3\`                |          \\~1.4–2× | SHA-1 over a 256-byte name                                                      |
-| UUID v7                 | \`uuid@14.0.3\`                |          \\~6–7.5× | Both encode timestamp, counter, and random tail                                 |
-| ULID                    | \`ulid@3.0.2\`                 |         \\~85–165× | Different random-draw strategy on both sides — see below                        |
-| TypeID                  | \`typeid-js@1.2.0\`            |        \\~2.5–3.5× | uniku returns a string; the reference builds an object, then calls \`toString()\` |
-| Nanoid (21 chars)       | \`nanoid@6.0.2\`               |           \\~0.65× | Both draw from a pooled random source                                           |
-| Nanoid (10 chars)       | \`nanoid@6.0.2\`               |       \\~0.6–0.65× | Same, with a shorter output                                                     |
-| CUID2                   | \`@paralleldrive/cuid2@3.3.0\` |            \\~7–9× | SHA3-512 over time, salt, counter, and fingerprint                              |
-| KSUID                   | \`@owpz/ksuid@25.7.21\`        |        \\~1.5–1.7× | uniku returns a string; the reference builds a KSUID object                     |
-| ObjectID                | \`bson@7.3.4\`                 |        \\~0.6–0.7× | Both cache the process-random field and increment a 24-bit counter              |
-| TSID                    | \`tsid-ts@0.0.9\`              |          \\~2–2.6× | uniku returns a \`bigint\`; the reference builds a TSID object                    |
-| XID                     | \`nexid@2.1.0\`                |            \\~1.3× | Both encode seconds, identity, and a 24-bit counter                             |
+| UUID v4                 | \`uuid@14.0.3\`                |       1.3× (±15%) | Same native primitive behind two wrappers (see below)                           |
+| UUID v5 (short name)    | \`uuid@14.0.3\`                |        4.9× (±4%) | SHA-1 over a 15-byte name                                                       |
+| UUID v5 (256-char name) | \`uuid@14.0.3\`                |        2.3× (±4%) | SHA-1 over a 256-byte name                                                      |
+| UUID v7                 | \`uuid@14.0.3\`                |        7.2× (±3%) | Both encode timestamp, counter, and random tail                                 |
+| ULID                    | \`ulid@3.0.2\`                 |        183× (±7%) | Different random-draw strategy on both sides (see below)                        |
+| TypeID                  | \`typeid-js@1.2.0\`            |        4.2× (±4%) | uniku returns a string; the reference builds an object, then calls \`toString()\` |
+| Nanoid (21 chars)       | \`nanoid@6.0.2\`               |       0.39× (±1%) | Both draw from a pooled random source                                           |
+| Nanoid (10 chars)       | \`nanoid@6.0.2\`               |       0.44× (±1%) | Same, with a shorter output                                                     |
+| CUID2                   | \`@paralleldrive/cuid2@3.3.0\` |        6.9× (±1%) | SHA3-512 over time, salt, counter, and fingerprint                              |
+| KSUID                   | \`@owpz/ksuid@25.7.21\`        |        1.7× (±2%) | uniku returns a string; the reference builds a KSUID object                     |
+| ObjectID                | \`bson@7.3.4\`                 |       0.92× (±3%) | Both cache the process-random field and increment a 24-bit counter              |
+| TSID                    | \`tsid-ts@0.0.9\`              |        2.0× (±3%) | uniku returns a \`bigint\`; the reference builds a TSID object                    |
+| XID                     | \`nexid@2.1.0\`                |        1.8× (±2%) | Both encode seconds, identity, and a 24-bit counter                             |
 
 ## How to read these numbers [#how-to-read-these-numbers]
 
-**They are not reproducible to the digit.** Two runs of the same command on the
-same machine moved the small-ratio rows by up to 22% (UUID v4, TSID, ObjectID,
-XID), and a different machine moved the ULID row from 163× to \\~85×. That is why
-the table reports ranges rounded to about one significant figure instead of the
-four significant figures a single run prints.
+**They are not reproducible to the digit.** Across the four repetitions of the
+linked run, the UUID v4 ratio spread by ±15%, almost all of it on the \`uuid\` side,
+and the ULID ratio by ±7%. Every other row stayed within about ±4%. That spread
+describes one runner in one run. It does not show how far the ratios move between
+runners or machines, which is why the table rounds each ratio instead of quoting
+the raw medians.
 
-A note on provenance, so the ranges are not mistaken for something better than
-they are: the upper bounds come from the linked CI run, which is published and
-auditable. The lower bounds and the repeat-run figures come from runs on a
-maintainer machine (macOS arm64, Node.js \`25.9.0\`, same command, same commit) that
-are not published as artefacts. Re-running the commands below on your own hardware
-is the only way to get a number that applies to your hardware, and that is the
-point — treat the table as a shape, not a scoreboard.
+A note on provenance: every figure in the table comes from the linked CI run,
+which is published and auditable, and its aggregate is the first entry in the
+rolling baseline. No figure comes from an unpublished local run. Re-running the
+commands below on your own hardware is the only way to get a number that applies
+to your hardware, so treat the table as a shape, not a scoreboard.
 
 **The UUID v4 row compares two wrappers, not two algorithms.** Both sides end in
 the same native call, but not by the same route: uniku resolves
 \`crypto.randomUUID\` once at module load and calls the bound function, while
 \`uuid@14.0.3\` re-reads \`crypto.randomUUID\` on every invocation. Measured on a
 per-call basis that is zero property reads against two. So this row measures
-wrapper overhead on top of a shared native primitive — a real cost that callers
-pay, but not evidence that uniku generates UUIDs faster, and not a noise control.
-It is also the row that moved most between runs (1.2× to 1.6×).
+wrapper overhead on top of a shared native primitive. That is a real cost that
+callers pay, but it is not evidence that uniku generates UUIDs faster, and it is
+not a noise control. It is also the row with the widest spread across the run's
+repetitions (±15%).
 
-**Two rows are not like-for-like on work done.** The TypeID, KSUID, and TSID rows
+**Three rows are not like-for-like on work done.** The TypeID, KSUID, and TSID rows
 compare uniku returning its primary value directly against a reference that
 allocates an object first. That gap is real for callers, but it measures API shape
 as much as encoding speed.
@@ -119,7 +120,7 @@ Shared-runner benchmarks stay directional. They report possible regressions
 instead of blocking a release, and the deterministic build, type, test,
 packed-package, runtime, and bundle checks are the actual gates.
 
-Recorded results live in [the CI run](https://github.com/jkomyno/uniku/actions/runs/43760726485),
+Recorded results live in [the CI run](https://github.com/jkomyno/uniku/actions/runs/44526064575),
 and the [rolling baseline](https://raw.githubusercontent.com/jkomyno/uniku/gh-benchmarks/baseline.json)
 tracks later runs.
 
@@ -194,28 +195,24 @@ bun scripts/bundle-summary.ts --baseline /tmp/uniku-bench-ab/bundle-base.json
 rather than asserted. Results depend on the format: in this snapshot, Nanoid 6 and
 BSON ObjectID generate faster than uniku, while the other measured formats favor
 uniku. Application performance still depends on where and how IDs are created.`},{heading:void 0,content:`Treat every ratio on this page as an order of magnitude, not a guarantee. Read
-how to read these numbers before quoting one.`},{heading:`generation-speed`,content:`The ranges below combine a four-repetition CI run
-on November 15, 2026 (UTC) with repeat runs of the same command on different
-hardware. Node.js \`25.9.0\`, GitHub-hosted \`ubuntu-latest\` for the CI half. Each
-ratio divides uniku's median throughput by the reference package's median
-throughput; values above 1 favor uniku.`},{heading:`generation-speed`,content:`Generator`},{heading:`generation-speed`,content:`Reference`},{heading:`generation-speed`,content:`uniku / reference`},{heading:`generation-speed`,content:`What the row actually compares`},{heading:`generation-speed`,content:`UUID v4`},{heading:`generation-speed`,content:"`uuid@14.0.3`"},{heading:`generation-speed`,content:`\\~1–1.6×`},{heading:`generation-speed`,content:`Same native primitive behind two wrappers — see below`},{heading:`generation-speed`,content:`UUID v5 (short name)`},{heading:`generation-speed`,content:"`uuid@14.0.3`"},{heading:`generation-speed`,content:`\\~2–3×`},{heading:`generation-speed`,content:`SHA-1 over a 15-byte name`},{heading:`generation-speed`,content:`UUID v5 (256-char name)`},{heading:`generation-speed`,content:"`uuid@14.0.3`"},{heading:`generation-speed`,content:`\\~1.4–2×`},{heading:`generation-speed`,content:`SHA-1 over a 256-byte name`},{heading:`generation-speed`,content:`UUID v7`},{heading:`generation-speed`,content:"`uuid@14.0.3`"},{heading:`generation-speed`,content:`\\~6–7.5×`},{heading:`generation-speed`,content:`Both encode timestamp, counter, and random tail`},{heading:`generation-speed`,content:`ULID`},{heading:`generation-speed`,content:"`ulid@3.0.2`"},{heading:`generation-speed`,content:`\\~85–165×`},{heading:`generation-speed`,content:`Different random-draw strategy on both sides — see below`},{heading:`generation-speed`,content:`TypeID`},{heading:`generation-speed`,content:"`typeid-js@1.2.0`"},{heading:`generation-speed`,content:`\\~2.5–3.5×`},{heading:`generation-speed`,content:"uniku returns a string; the reference builds an object, then calls `toString()`"},{heading:`generation-speed`,content:`Nanoid (21 chars)`},{heading:`generation-speed`,content:"`nanoid@6.0.2`"},{heading:`generation-speed`,content:`\\~0.65×`},{heading:`generation-speed`,content:`Both draw from a pooled random source`},{heading:`generation-speed`,content:`Nanoid (10 chars)`},{heading:`generation-speed`,content:"`nanoid@6.0.2`"},{heading:`generation-speed`,content:`\\~0.6–0.65×`},{heading:`generation-speed`,content:`Same, with a shorter output`},{heading:`generation-speed`,content:`CUID2`},{heading:`generation-speed`,content:"`@paralleldrive/cuid2@3.3.0`"},{heading:`generation-speed`,content:`\\~7–9×`},{heading:`generation-speed`,content:`SHA3-512 over time, salt, counter, and fingerprint`},{heading:`generation-speed`,content:`KSUID`},{heading:`generation-speed`,content:"`@owpz/ksuid@25.7.21`"},{heading:`generation-speed`,content:`\\~1.5–1.7×`},{heading:`generation-speed`,content:`uniku returns a string; the reference builds a KSUID object`},{heading:`generation-speed`,content:`ObjectID`},{heading:`generation-speed`,content:"`bson@7.3.4`"},{heading:`generation-speed`,content:`\\~0.6–0.7×`},{heading:`generation-speed`,content:`Both cache the process-random field and increment a 24-bit counter`},{heading:`generation-speed`,content:`TSID`},{heading:`generation-speed`,content:"`tsid-ts@0.0.9`"},{heading:`generation-speed`,content:`\\~2–2.6×`},{heading:`generation-speed`,content:"uniku returns a `bigint`; the reference builds a TSID object"},{heading:`generation-speed`,content:`XID`},{heading:`generation-speed`,content:"`nexid@2.1.0`"},{heading:`generation-speed`,content:`\\~1.3×`},{heading:`generation-speed`,content:`Both encode seconds, identity, and a 24-bit counter`},{heading:`how-to-read-these-numbers`,content:`**They are not reproducible to the digit.** Two runs of the same command on the
-same machine moved the small-ratio rows by up to 22% (UUID v4, TSID, ObjectID,
-XID), and a different machine moved the ULID row from 163× to \\~85×. That is why
-the table reports ranges rounded to about one significant figure instead of the
-four significant figures a single run prints.`},{heading:`how-to-read-these-numbers`,content:`A note on provenance, so the ranges are not mistaken for something better than
-they are: the upper bounds come from the linked CI run, which is published and
-auditable. The lower bounds and the repeat-run figures come from runs on a
-maintainer machine (macOS arm64, Node.js \`25.9.0\`, same command, same commit) that
-are not published as artefacts. Re-running the commands below on your own hardware
-is the only way to get a number that applies to your hardware, and that is the
-point — treat the table as a shape, not a scoreboard.`},{heading:`how-to-read-these-numbers`,content:`**The UUID v4 row compares two wrappers, not two algorithms.** Both sides end in
+how to read these numbers before quoting one.`},{heading:`generation-speed`,content:"The ratios below come from a four-repetition CI run\non November 19, 2026 (UTC), on Node.js `25.9.0` and a GitHub-hosted\n`ubuntu-latest` runner (Ubuntu 26.04 image). Each ratio divides uniku's median\nthroughput by the reference package's median throughput, and values above 1 favor\nuniku. The percentage next to each ratio is its spread across the run's four\nrepetitions, as `bench-summary` prints it in the `Spread` column."},{heading:`generation-speed`,content:`Generator`},{heading:`generation-speed`,content:`Reference`},{heading:`generation-speed`,content:`uniku / reference`},{heading:`generation-speed`,content:`What the row actually compares`},{heading:`generation-speed`,content:`UUID v4`},{heading:`generation-speed`,content:"`uuid@14.0.3`"},{heading:`generation-speed`,content:`1.3× (±15%)`},{heading:`generation-speed`,content:`Same native primitive behind two wrappers (see below)`},{heading:`generation-speed`,content:`UUID v5 (short name)`},{heading:`generation-speed`,content:"`uuid@14.0.3`"},{heading:`generation-speed`,content:`4.9× (±4%)`},{heading:`generation-speed`,content:`SHA-1 over a 15-byte name`},{heading:`generation-speed`,content:`UUID v5 (256-char name)`},{heading:`generation-speed`,content:"`uuid@14.0.3`"},{heading:`generation-speed`,content:`2.3× (±4%)`},{heading:`generation-speed`,content:`SHA-1 over a 256-byte name`},{heading:`generation-speed`,content:`UUID v7`},{heading:`generation-speed`,content:"`uuid@14.0.3`"},{heading:`generation-speed`,content:`7.2× (±3%)`},{heading:`generation-speed`,content:`Both encode timestamp, counter, and random tail`},{heading:`generation-speed`,content:`ULID`},{heading:`generation-speed`,content:"`ulid@3.0.2`"},{heading:`generation-speed`,content:`183× (±7%)`},{heading:`generation-speed`,content:`Different random-draw strategy on both sides (see below)`},{heading:`generation-speed`,content:`TypeID`},{heading:`generation-speed`,content:"`typeid-js@1.2.0`"},{heading:`generation-speed`,content:`4.2× (±4%)`},{heading:`generation-speed`,content:"uniku returns a string; the reference builds an object, then calls `toString()`"},{heading:`generation-speed`,content:`Nanoid (21 chars)`},{heading:`generation-speed`,content:"`nanoid@6.0.2`"},{heading:`generation-speed`,content:`0.39× (±1%)`},{heading:`generation-speed`,content:`Both draw from a pooled random source`},{heading:`generation-speed`,content:`Nanoid (10 chars)`},{heading:`generation-speed`,content:"`nanoid@6.0.2`"},{heading:`generation-speed`,content:`0.44× (±1%)`},{heading:`generation-speed`,content:`Same, with a shorter output`},{heading:`generation-speed`,content:`CUID2`},{heading:`generation-speed`,content:"`@paralleldrive/cuid2@3.3.0`"},{heading:`generation-speed`,content:`6.9× (±1%)`},{heading:`generation-speed`,content:`SHA3-512 over time, salt, counter, and fingerprint`},{heading:`generation-speed`,content:`KSUID`},{heading:`generation-speed`,content:"`@owpz/ksuid@25.7.21`"},{heading:`generation-speed`,content:`1.7× (±2%)`},{heading:`generation-speed`,content:`uniku returns a string; the reference builds a KSUID object`},{heading:`generation-speed`,content:`ObjectID`},{heading:`generation-speed`,content:"`bson@7.3.4`"},{heading:`generation-speed`,content:`0.92× (±3%)`},{heading:`generation-speed`,content:`Both cache the process-random field and increment a 24-bit counter`},{heading:`generation-speed`,content:`TSID`},{heading:`generation-speed`,content:"`tsid-ts@0.0.9`"},{heading:`generation-speed`,content:`2.0× (±3%)`},{heading:`generation-speed`,content:"uniku returns a `bigint`; the reference builds a TSID object"},{heading:`generation-speed`,content:`XID`},{heading:`generation-speed`,content:"`nexid@2.1.0`"},{heading:`generation-speed`,content:`1.8× (±2%)`},{heading:`generation-speed`,content:`Both encode seconds, identity, and a 24-bit counter`},{heading:`how-to-read-these-numbers`,content:`**They are not reproducible to the digit.** Across the four repetitions of the
+linked run, the UUID v4 ratio spread by ±15%, almost all of it on the \`uuid\` side,
+and the ULID ratio by ±7%. Every other row stayed within about ±4%. That spread
+describes one runner in one run. It does not show how far the ratios move between
+runners or machines, which is why the table rounds each ratio instead of quoting
+the raw medians.`},{heading:`how-to-read-these-numbers`,content:`A note on provenance: every figure in the table comes from the linked CI run,
+which is published and auditable, and its aggregate is the first entry in the
+rolling baseline. No figure comes from an unpublished local run. Re-running the
+commands below on your own hardware is the only way to get a number that applies
+to your hardware, so treat the table as a shape, not a scoreboard.`},{heading:`how-to-read-these-numbers`,content:`**The UUID v4 row compares two wrappers, not two algorithms.** Both sides end in
 the same native call, but not by the same route: uniku resolves
 \`crypto.randomUUID\` once at module load and calls the bound function, while
 \`uuid@14.0.3\` re-reads \`crypto.randomUUID\` on every invocation. Measured on a
 per-call basis that is zero property reads against two. So this row measures
-wrapper overhead on top of a shared native primitive — a real cost that callers
-pay, but not evidence that uniku generates UUIDs faster, and not a noise control.
-It is also the row that moved most between runs (1.2× to 1.6×).`},{heading:`how-to-read-these-numbers`,content:`**Two rows are not like-for-like on work done.** The TypeID, KSUID, and TSID rows
+wrapper overhead on top of a shared native primitive. That is a real cost that
+callers pay, but it is not evidence that uniku generates UUIDs faster, and it is
+not a noise control. It is also the row with the widest spread across the run's
+repetitions (±15%).`},{heading:`how-to-read-these-numbers`,content:`**Three rows are not like-for-like on work done.** The TypeID, KSUID, and TSID rows
 compare uniku returning its primary value directly against a reference that
 allocates an object first. That gap is real for callers, but it measures API shape
 as much as encoding speed.`},{heading:`how-to-read-these-numbers`,content:"**The ULID row measures two different random-draw strategies.** `ulid@3.0.2` runs\n`detectPRNG()` — feature detection plus `detectRoot()` — on every `ulid()` call,\ndraws its 16 random characters through 16 separate\n`getRandomValues(new Uint8Array(1))` calls, and builds the string by prepending.\nuniku draws 16 bytes once per millisecond and increments the existing 80-bit tail\nfor every further call in that millisecond, so most iterations of a tight\nbenchmark loop perform no random draw at all. Both behaviours are deliberate, and\nboth are part of the ratio; describing only the reference's overhead would leave\nthe largest number on this page under-qualified."},{heading:`how-to-read-these-numbers`,content:`**Everything here is one engine.** These are Node.js numbers on V8, and several
@@ -253,34 +250,35 @@ uniku. Application performance still depends on where and how IDs are created.`}
 `,(0,n.jsxs)(t.p,{children:[`Treat every ratio on this page as an order of magnitude, not a guarantee. Read
 `,(0,n.jsx)(t.a,{href:`#how-to-read-these-numbers`,children:`how to read these numbers`}),` before quoting one.`]}),`
 `,(0,n.jsx)(t.h2,{id:`generation-speed`,children:`Generation speed`}),`
-`,(0,n.jsxs)(t.p,{children:[`The ranges below combine a `,(0,n.jsx)(t.a,{href:`https://github.com/jkomyno/uniku/actions/runs/43760726485`,children:`four-repetition CI run`}),`
-on November 15, 2026 (UTC) with repeat runs of the same command on different
-hardware. Node.js `,(0,n.jsx)(t.code,{children:`25.9.0`}),`, GitHub-hosted `,(0,n.jsx)(t.code,{children:`ubuntu-latest`}),` for the CI half. Each
-ratio divides uniku's median throughput by the reference package's median
-throughput; values above 1 favor uniku.`]}),`
-`,(0,n.jsxs)(t.table,{children:[(0,n.jsx)(t.thead,{children:(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.th,{children:`Generator`}),(0,n.jsx)(t.th,{children:`Reference`}),(0,n.jsx)(t.th,{style:{textAlign:`right`},children:`uniku / reference`}),(0,n.jsx)(t.th,{children:`What the row actually compares`})]})}),(0,n.jsxs)(t.tbody,{children:[(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`UUID v4`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`uuid@14.0.3`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~1–1.6×`}),(0,n.jsx)(t.td,{children:`Same native primitive behind two wrappers — see below`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`UUID v5 (short name)`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`uuid@14.0.3`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~2–3×`}),(0,n.jsx)(t.td,{children:`SHA-1 over a 15-byte name`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`UUID v5 (256-char name)`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`uuid@14.0.3`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~1.4–2×`}),(0,n.jsx)(t.td,{children:`SHA-1 over a 256-byte name`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`UUID v7`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`uuid@14.0.3`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~6–7.5×`}),(0,n.jsx)(t.td,{children:`Both encode timestamp, counter, and random tail`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`ULID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`ulid@3.0.2`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~85–165×`}),(0,n.jsx)(t.td,{children:`Different random-draw strategy on both sides — see below`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`TypeID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`typeid-js@1.2.0`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~2.5–3.5×`}),(0,n.jsxs)(t.td,{children:[`uniku returns a string; the reference builds an object, then calls `,(0,n.jsx)(t.code,{children:`toString()`})]})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`Nanoid (21 chars)`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`nanoid@6.0.2`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~0.65×`}),(0,n.jsx)(t.td,{children:`Both draw from a pooled random source`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`Nanoid (10 chars)`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`nanoid@6.0.2`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~0.6–0.65×`}),(0,n.jsx)(t.td,{children:`Same, with a shorter output`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`CUID2`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`@paralleldrive/cuid2@3.3.0`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~7–9×`}),(0,n.jsx)(t.td,{children:`SHA3-512 over time, salt, counter, and fingerprint`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`KSUID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`@owpz/ksuid@25.7.21`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~1.5–1.7×`}),(0,n.jsx)(t.td,{children:`uniku returns a string; the reference builds a KSUID object`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`ObjectID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`bson@7.3.4`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~0.6–0.7×`}),(0,n.jsx)(t.td,{children:`Both cache the process-random field and increment a 24-bit counter`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`TSID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`tsid-ts@0.0.9`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~2–2.6×`}),(0,n.jsxs)(t.td,{children:[`uniku returns a `,(0,n.jsx)(t.code,{children:`bigint`}),`; the reference builds a TSID object`]})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`XID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`nexid@2.1.0`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`~1.3×`}),(0,n.jsx)(t.td,{children:`Both encode seconds, identity, and a 24-bit counter`})]})]})]}),`
+`,(0,n.jsxs)(t.p,{children:[`The ratios below come from a `,(0,n.jsx)(t.a,{href:`https://github.com/jkomyno/uniku/actions/runs/44526064575`,children:`four-repetition CI run`}),`
+on November 19, 2026 (UTC), on Node.js `,(0,n.jsx)(t.code,{children:`25.9.0`}),` and a GitHub-hosted
+`,(0,n.jsx)(t.code,{children:`ubuntu-latest`}),` runner (Ubuntu 26.04 image). Each ratio divides uniku's median
+throughput by the reference package's median throughput, and values above 1 favor
+uniku. The percentage next to each ratio is its spread across the run's four
+repetitions, as `,(0,n.jsx)(t.code,{children:`bench-summary`}),` prints it in the `,(0,n.jsx)(t.code,{children:`Spread`}),` column.`]}),`
+`,(0,n.jsxs)(t.table,{children:[(0,n.jsx)(t.thead,{children:(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.th,{children:`Generator`}),(0,n.jsx)(t.th,{children:`Reference`}),(0,n.jsx)(t.th,{style:{textAlign:`right`},children:`uniku / reference`}),(0,n.jsx)(t.th,{children:`What the row actually compares`})]})}),(0,n.jsxs)(t.tbody,{children:[(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`UUID v4`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`uuid@14.0.3`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`1.3× (±15%)`}),(0,n.jsx)(t.td,{children:`Same native primitive behind two wrappers (see below)`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`UUID v5 (short name)`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`uuid@14.0.3`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`4.9× (±4%)`}),(0,n.jsx)(t.td,{children:`SHA-1 over a 15-byte name`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`UUID v5 (256-char name)`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`uuid@14.0.3`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`2.3× (±4%)`}),(0,n.jsx)(t.td,{children:`SHA-1 over a 256-byte name`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`UUID v7`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`uuid@14.0.3`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`7.2× (±3%)`}),(0,n.jsx)(t.td,{children:`Both encode timestamp, counter, and random tail`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`ULID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`ulid@3.0.2`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`183× (±7%)`}),(0,n.jsx)(t.td,{children:`Different random-draw strategy on both sides (see below)`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`TypeID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`typeid-js@1.2.0`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`4.2× (±4%)`}),(0,n.jsxs)(t.td,{children:[`uniku returns a string; the reference builds an object, then calls `,(0,n.jsx)(t.code,{children:`toString()`})]})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`Nanoid (21 chars)`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`nanoid@6.0.2`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`0.39× (±1%)`}),(0,n.jsx)(t.td,{children:`Both draw from a pooled random source`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`Nanoid (10 chars)`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`nanoid@6.0.2`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`0.44× (±1%)`}),(0,n.jsx)(t.td,{children:`Same, with a shorter output`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`CUID2`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`@paralleldrive/cuid2@3.3.0`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`6.9× (±1%)`}),(0,n.jsx)(t.td,{children:`SHA3-512 over time, salt, counter, and fingerprint`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`KSUID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`@owpz/ksuid@25.7.21`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`1.7× (±2%)`}),(0,n.jsx)(t.td,{children:`uniku returns a string; the reference builds a KSUID object`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`ObjectID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`bson@7.3.4`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`0.92× (±3%)`}),(0,n.jsx)(t.td,{children:`Both cache the process-random field and increment a 24-bit counter`})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`TSID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`tsid-ts@0.0.9`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`2.0× (±3%)`}),(0,n.jsxs)(t.td,{children:[`uniku returns a `,(0,n.jsx)(t.code,{children:`bigint`}),`; the reference builds a TSID object`]})]}),(0,n.jsxs)(t.tr,{children:[(0,n.jsx)(t.td,{children:`XID`}),(0,n.jsx)(t.td,{children:(0,n.jsx)(t.code,{children:`nexid@2.1.0`})}),(0,n.jsx)(t.td,{style:{textAlign:`right`},children:`1.8× (±2%)`}),(0,n.jsx)(t.td,{children:`Both encode seconds, identity, and a 24-bit counter`})]})]})]}),`
 `,(0,n.jsx)(t.h2,{id:`how-to-read-these-numbers`,children:`How to read these numbers`}),`
-`,(0,n.jsxs)(t.p,{children:[(0,n.jsx)(t.strong,{children:`They are not reproducible to the digit.`}),` Two runs of the same command on the
-same machine moved the small-ratio rows by up to 22% (UUID v4, TSID, ObjectID,
-XID), and a different machine moved the ULID row from 163× to ~85×. That is why
-the table reports ranges rounded to about one significant figure instead of the
-four significant figures a single run prints.`]}),`
-`,(0,n.jsxs)(t.p,{children:[`A note on provenance, so the ranges are not mistaken for something better than
-they are: the upper bounds come from the linked CI run, which is published and
-auditable. The lower bounds and the repeat-run figures come from runs on a
-maintainer machine (macOS arm64, Node.js `,(0,n.jsx)(t.code,{children:`25.9.0`}),`, same command, same commit) that
-are not published as artefacts. Re-running the commands below on your own hardware
-is the only way to get a number that applies to your hardware, and that is the
-point — treat the table as a shape, not a scoreboard.`]}),`
+`,(0,n.jsxs)(t.p,{children:[(0,n.jsx)(t.strong,{children:`They are not reproducible to the digit.`}),` Across the four repetitions of the
+linked run, the UUID v4 ratio spread by ±15%, almost all of it on the `,(0,n.jsx)(t.code,{children:`uuid`}),` side,
+and the ULID ratio by ±7%. Every other row stayed within about ±4%. That spread
+describes one runner in one run. It does not show how far the ratios move between
+runners or machines, which is why the table rounds each ratio instead of quoting
+the raw medians.`]}),`
+`,(0,n.jsx)(t.p,{children:`A note on provenance: every figure in the table comes from the linked CI run,
+which is published and auditable, and its aggregate is the first entry in the
+rolling baseline. No figure comes from an unpublished local run. Re-running the
+commands below on your own hardware is the only way to get a number that applies
+to your hardware, so treat the table as a shape, not a scoreboard.`}),`
 `,(0,n.jsxs)(t.p,{children:[(0,n.jsx)(t.strong,{children:`The UUID v4 row compares two wrappers, not two algorithms.`}),` Both sides end in
 the same native call, but not by the same route: uniku resolves
 `,(0,n.jsx)(t.code,{children:`crypto.randomUUID`}),` once at module load and calls the bound function, while
 `,(0,n.jsx)(t.code,{children:`uuid@14.0.3`}),` re-reads `,(0,n.jsx)(t.code,{children:`crypto.randomUUID`}),` on every invocation. Measured on a
 per-call basis that is zero property reads against two. So this row measures
-wrapper overhead on top of a shared native primitive — a real cost that callers
-pay, but not evidence that uniku generates UUIDs faster, and not a noise control.
-It is also the row that moved most between runs (1.2× to 1.6×).`]}),`
-`,(0,n.jsxs)(t.p,{children:[(0,n.jsx)(t.strong,{children:`Two rows are not like-for-like on work done.`}),` The TypeID, KSUID, and TSID rows
+wrapper overhead on top of a shared native primitive. That is a real cost that
+callers pay, but it is not evidence that uniku generates UUIDs faster, and it is
+not a noise control. It is also the row with the widest spread across the run's
+repetitions (±15%).`]}),`
+`,(0,n.jsxs)(t.p,{children:[(0,n.jsx)(t.strong,{children:`Three rows are not like-for-like on work done.`}),` The TypeID, KSUID, and TSID rows
 compare uniku returning its primary value directly against a reference that
 allocates an object first. That gap is real for callers, but it measures API shape
 as much as encoding speed.`]}),`
@@ -333,7 +331,7 @@ smaller than that spread.`]}),`
 `,(0,n.jsx)(t.p,{children:`Shared-runner benchmarks stay directional. They report possible regressions
 instead of blocking a release, and the deterministic build, type, test,
 packed-package, runtime, and bundle checks are the actual gates.`}),`
-`,(0,n.jsxs)(t.p,{children:[`Recorded results live in `,(0,n.jsx)(t.a,{href:`https://github.com/jkomyno/uniku/actions/runs/43760726485`,children:`the CI run`}),`,
+`,(0,n.jsxs)(t.p,{children:[`Recorded results live in `,(0,n.jsx)(t.a,{href:`https://github.com/jkomyno/uniku/actions/runs/44526064575`,children:`the CI run`}),`,
 and the `,(0,n.jsx)(t.a,{href:`https://raw.githubusercontent.com/jkomyno/uniku/gh-benchmarks/baseline.json`,children:`rolling baseline`}),`
 tracks later runs.`]}),`
 `,(0,n.jsx)(t.h2,{id:`bundle-size`,children:`Bundle size`}),`
