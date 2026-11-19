@@ -66,8 +66,9 @@ Repo-local skills live under `.agents/skills`:
 - Unit tests validate generator output and edge cases
 - Integration tests cross-validate with npm reference packages
 - E2E tests run in Cloudflare Workers environment
-- Vitest 5 is the default (`catalog:`). `packages/uniku` (benchmarks use the `bench()` API Vitest 5 removed) and the Cloudflare e2e workspace (`@cloudflare/vitest-pool-workers` requires Vitest 4) use the `vitest4` catalog in `pnpm-workspace.yaml`
+- Vitest 5 is the default (`catalog:`). Only the Cloudflare e2e workspace uses the `vitest4` catalog in `pnpm-workspace.yaml`, because `@cloudflare/vitest-pool-workers` requires Vitest 4
 - CI compatibility benchmarks run each implementation in a fresh process, alternate balanced launch orders across four repetitions, aggregate per-row medians, and retain rolling action-level baselines; cold starts stay separate from warmed throughput.
+- Benchmarks use the Vitest 5 `bench` fixture in the `benchmarks (bench)` project. They import the built package (`uniku/*`) through plain Node imports, so run `pnpm build` first, and they time calls in calibrated batches through `__tests__/bench/harness.ts`
 
 ## Package Guidelines
 

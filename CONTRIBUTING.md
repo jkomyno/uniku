@@ -66,6 +66,9 @@ packages need Node.js matrix coverage.
 ### Benchmarks
 
 ```bash
+# Benchmarks measure the built package, so build first
+pnpm build
+
 # Run all benchmarks
 pnpm bench
 

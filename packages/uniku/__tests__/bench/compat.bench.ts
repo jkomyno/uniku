@@ -6,6 +6,17 @@ import { init as initNeXid, XID as npmNeXid } from 'nexid'
 import { TSID as npmTsid } from 'tsid-ts'
 import { typeid as npmTypeid, fromString as npmTypeidFromString } from 'typeid-js'
 import { isValid as npmIsValidUlid, ulid as npmUlid } from 'ulid'
+import { cuid2 } from 'uniku/cuid2'
+import { ksuid } from 'uniku/ksuid'
+import { nanoid } from 'uniku/nanoid'
+import { objectid } from 'uniku/objectid'
+import { tsid } from 'uniku/tsid'
+import { typeid } from 'uniku/typeid'
+import { ulid } from 'uniku/ulid'
+import { uuidv4 } from 'uniku/uuid/v4'
+import { uuidv5 } from 'uniku/uuid/v5'
+import { uuidv7 } from 'uniku/uuid/v7'
+import { xid } from 'uniku/xid'
 import {
   v4 as npmUuidV4,
   v5 as npmUuidV5,
@@ -13,40 +24,30 @@ import {
   validate as uuidValidate,
   version as uuidVersion,
 } from 'uuid'
-import { describe, bench as registerBench } from 'vitest'
-import { cuid2 } from '@/src/cuid2/cuid2'
-import { ksuid } from '@/src/ksuid/ksuid'
-import { nanoid } from '@/src/nanoid/nanoid'
-import { objectid } from '@/src/objectid/objectid'
-import { tsid } from '@/src/tsid/tsid'
-import { typeid } from '@/src/typeid/typeid'
-import { ulid } from '@/src/ulid/ulid'
-import { uuidv4 } from '@/src/uuid/v4'
-import { uuidv5 } from '@/src/uuid/v5'
-import { uuidv7 } from '@/src/uuid/v7'
-import { xid } from '@/src/xid/xid'
-
-// Benchmark options for stable, reproducible results.
-// Four CI repetitions use balanced launch orders and this 1500ms / 750ms /
-// 100-iteration budget. The total action-level measurement time stays stable
-// while each implementation runs in a fresh process.
-const benchOptions = {
-  iterations: 100,
-  time: 1500,
-  warmupTime: 750,
-  warmupIterations: 100,
-}
+import { describe, test } from 'vitest'
+import { BENCH_RUN_OPTIONS, batched } from './harness.ts'
 
 const benchmarkImplementation = process.env.UNIKU_BENCH_IMPLEMENTATION ?? 'all'
 if (!['all', 'uniku', 'reference'].includes(benchmarkImplementation)) {
   throw new Error('UNIKU_BENCH_IMPLEMENTATION must be all, uniku, or reference')
 }
 
-function bench(name: string, task: () => void, options: typeof benchOptions): void {
-  const selected = name === 'uniku' ? 'uniku' : 'reference'
-  if (benchmarkImplementation === 'all' || benchmarkImplementation === selected) {
-    registerBench(name, task, options)
-  }
+type Task = () => unknown
+
+type RowTasks = { readonly uniku: Task } & ({ readonly npm: Task } | { readonly regex: Task })
+
+function isSelected(implementation: string): boolean {
+  if (benchmarkImplementation === 'all') return true
+  return (implementation === 'uniku') === (benchmarkImplementation === 'uniku')
+}
+
+function row(name: string, tasks: RowTasks): void {
+  test(name, async ({ bench }) => {
+    const [first, ...rest] = Object.entries(tasks)
+      .filter(([implementation]) => isSelected(implementation))
+      .map(([implementation, task]) => bench(implementation, batched(task)))
+    await (rest.length === 0 ? first.run(BENCH_RUN_OPTIONS) : bench.compare(first, ...rest, BENCH_RUN_OPTIONS))
+  })
 }
 
 const nexid = await initNeXid()
@@ -80,421 +81,85 @@ const testIds = {
 }
 
 describe('Generation', () => {
-  describe('UUID v4', () => {
-    bench(
-      'uniku',
-      () => {
-        uuidv4()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmUuidV4()
-      },
-      benchOptions,
-    )
+  row('UUID v4', { uniku: () => uuidv4(), npm: () => npmUuidV4() })
+  row('UUID v5', { uniku: () => uuidv5(V5_NAME, uuidv5.DNS), npm: () => npmUuidV5(V5_NAME, npmUuidV5.DNS) })
+  row('UUID v5 (256-char name)', {
+    uniku: () => uuidv5(V5_LONG_NAME, uuidv5.DNS),
+    npm: () => npmUuidV5(V5_LONG_NAME, npmUuidV5.DNS),
   })
-
-  describe('UUID v5', () => {
-    bench(
-      'uniku',
-      () => {
-        uuidv5(V5_NAME, uuidv5.DNS)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmUuidV5(V5_NAME, npmUuidV5.DNS)
-      },
-      benchOptions,
-    )
-  })
-
-  describe('UUID v5 (256-char name)', () => {
-    bench(
-      'uniku',
-      () => {
-        uuidv5(V5_LONG_NAME, uuidv5.DNS)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmUuidV5(V5_LONG_NAME, npmUuidV5.DNS)
-      },
-      benchOptions,
-    )
-  })
-
-  describe('UUID v7', () => {
-    bench(
-      'uniku',
-      () => {
-        uuidv7()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmUuidV7()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('ULID', () => {
-    bench(
-      'uniku',
-      () => {
-        ulid()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmUlid()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('TypeID', () => {
-    bench(
-      'uniku',
-      () => {
-        typeid('user')
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmTypeid('user').toString()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('NanoID', () => {
-    bench(
-      'uniku',
-      () => {
-        nanoid()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmNanoid()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('NanoID (10)', () => {
-    bench(
-      'uniku',
-      () => {
-        nanoid(10)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmNanoid(10)
-      },
-      benchOptions,
-    )
-  })
-
-  describe('CUID2', () => {
-    bench(
-      'uniku',
-      () => {
-        cuid2()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmCuid2()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('KSUID', () => {
-    bench(
-      'uniku',
-      () => {
-        ksuid()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        /**
-         * Note: npmKsuid.random() returns a Buffer wrapper, not a string by default.
-         */
-        npmKsuid.random().toString()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('ObjectID', () => {
-    bench(
-      'uniku',
-      () => {
-        objectid()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        new NpmObjectId().toHexString()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('TSID', () => {
-    bench(
-      'uniku',
-      () => {
-        tsid()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmTsid.create()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('XID', () => {
-    bench(
-      'uniku',
-      () => {
-        xid()
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        nexid.fastId()
-      },
-      benchOptions,
-    )
-  })
+  row('UUID v7', { uniku: () => uuidv7(), npm: () => npmUuidV7() })
+  row('ULID', { uniku: () => ulid(), npm: () => npmUlid() })
+  row('TypeID', { uniku: () => typeid('user'), npm: () => npmTypeid('user').toString() })
+  row('NanoID', { uniku: () => nanoid(), npm: () => npmNanoid() })
+  row('NanoID (10)', { uniku: () => nanoid(10), npm: () => npmNanoid(10) })
+  row('CUID2', { uniku: () => cuid2(), npm: () => npmCuid2() })
+  // npmKsuid.random() returns a Buffer wrapper, so the string conversion is part of the work.
+  row('KSUID', { uniku: () => ksuid(), npm: () => npmKsuid.random().toString() })
+  row('ObjectID', { uniku: () => objectid(), npm: () => new NpmObjectId().toHexString() })
+  row('TSID', { uniku: () => tsid(), npm: () => npmTsid.create() })
+  row('XID', { uniku: () => xid(), npm: () => nexid.fastId() })
 })
 
 describe('Validation', () => {
-  describe('UUID v4', () => {
-    bench(
-      'uniku',
-      () => {
-        uuidv4.isValid(testIds.npmV4)
-      },
-      benchOptions,
-    )
-    bench('npm', () => uuidValidate(testIds.unikuV4) && uuidVersion(testIds.unikuV4) === 4, benchOptions)
+  row('UUID v4', {
+    uniku: () => uuidv4.isValid(testIds.npmV4),
+    npm: () => uuidValidate(testIds.unikuV4) && uuidVersion(testIds.unikuV4) === 4,
   })
-
-  describe('UUID v5', () => {
-    bench(
-      'uniku',
-      () => {
-        uuidv5.isValid(testIds.npmV5)
-      },
-      benchOptions,
-    )
-    bench('npm', () => uuidValidate(testIds.unikuV5) && uuidVersion(testIds.unikuV5) === 5, benchOptions)
+  row('UUID v5', {
+    uniku: () => uuidv5.isValid(testIds.npmV5),
+    npm: () => uuidValidate(testIds.unikuV5) && uuidVersion(testIds.unikuV5) === 5,
   })
-
-  describe('UUID v7', () => {
-    bench(
-      'uniku',
-      () => {
-        uuidv7.isValid(testIds.npmV7)
-      },
-      benchOptions,
-    )
-    bench('npm', () => uuidValidate(testIds.unikuV7) && uuidVersion(testIds.unikuV7) === 7, benchOptions)
+  row('UUID v7', {
+    uniku: () => uuidv7.isValid(testIds.npmV7),
+    npm: () => uuidValidate(testIds.unikuV7) && uuidVersion(testIds.unikuV7) === 7,
   })
-
-  describe('ULID', () => {
-    bench(
-      'uniku',
-      () => {
-        ulid.isValid(testIds.npmUlid)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmIsValidUlid(testIds.unikuUlid)
-      },
-      benchOptions,
-    )
+  row('ULID', { uniku: () => ulid.isValid(testIds.npmUlid), npm: () => npmIsValidUlid(testIds.unikuUlid) })
+  row('TypeID', {
+    uniku: () => typeid.isValid(testIds.npmTypeid),
+    npm: () => npmTypeidFromString(testIds.unikuTypeid, 'user'),
   })
-
-  describe('TypeID', () => {
-    bench(
-      'uniku',
-      () => {
-        typeid.isValid(testIds.npmTypeid)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmTypeidFromString(testIds.unikuTypeid, 'user')
-      },
-      benchOptions,
-    )
+  // Matches uniku's rule: any length > 0 with valid chars.
+  const NANOID_REGEX = /^[A-Za-z0-9_-]+$/
+  row('NanoID', { uniku: () => nanoid.isValid(testIds.npmNanoid), regex: () => NANOID_REGEX.test(testIds.unikuNanoid) })
+  row('CUID2', { uniku: () => cuid2.isValid(testIds.npmCuid2), npm: () => npmIsCuid(testIds.unikuCuid2) })
+  // uniku checks the format with a regex. @owpz/ksuid validates by parsing (Base62
+  // decode plus object creation), which is more thorough and slower.
+  row('KSUID', {
+    uniku: () => ksuid.isValid(testIds.npmKsuid),
+    npm: () => npmKsuid.parseOrNil(testIds.unikuKsuid).isNil(),
   })
-
-  describe('NanoID', () => {
-    // Matches uniku's actual any length > 0 with valid chars
-    const NANOID_REGEX = /^[A-Za-z0-9_-]+$/
-    bench(
-      'uniku',
-      () => {
-        nanoid.isValid(testIds.npmNanoid)
-      },
-      benchOptions,
-    )
-    bench(
-      'regex',
-      () => {
-        NANOID_REGEX.test(testIds.unikuNanoid)
-      },
-      benchOptions,
-    )
+  row('ObjectID', {
+    uniku: () => objectid.isValid(testIds.npmObjectid),
+    npm: () => NpmObjectId.isValid(testIds.unikuObjectid),
   })
-
-  describe('CUID2', () => {
-    bench(
-      'uniku',
-      () => {
-        cuid2.isValid(testIds.npmCuid2)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        npmIsCuid(testIds.unikuCuid2)
-      },
-      benchOptions,
-    )
+  // tsid.isValid checks a bigint range, not a string format, so validating a
+  // string goes through fromString first, as the CLI's validateTsid does.
+  // tsid-ts has no boolean isValid either: TSID.fromString throws on malformed input.
+  row('TSID', {
+    uniku: () => {
+      try {
+        return tsid.isValid(tsid.fromString(testIds.npmTsid))
+      } catch {
+        return false
+      }
+    },
+    npm: () => {
+      try {
+        return npmTsid.fromString(testIds.unikuTsid)
+      } catch {
+        return undefined
+      }
+    },
   })
-
-  describe('KSUID', () => {
-    // Note: uniku uses format validation (regex), npm uses parse-based validation.
-    // This tests format checking speed - npm's approach is more thorough but slower.
-    bench(
-      'uniku',
-      () => {
-        ksuid.isValid(testIds.npmKsuid)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        // @owpz/ksuid uses parseOrNil + isNil for validation (Base62 decode + object creation)
-        npmKsuid.parseOrNil(testIds.unikuKsuid).isNil()
-      },
-      benchOptions,
-    )
-  })
-
-  describe('ObjectID', () => {
-    bench(
-      'uniku',
-      () => {
-        objectid.isValid(testIds.npmObjectid)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        NpmObjectId.isValid(testIds.unikuObjectid)
-      },
-      benchOptions,
-    )
-  })
-
-  describe('TSID', () => {
-    // Note: tsid.isValid operates on a bigint (a near-trivial range check), not a
-    // string-format check, so validating a string goes through fromString first -
-    // mirroring the CLI's validateTsid pattern (fromString + try/catch instead of
-    // isValid directly). tsid-ts also has no cheap boolean isValid: TSID.fromString
-    // is the parse-and-discard equivalent, throwing on malformed input.
-    bench(
-      'uniku',
-      () => {
-        try {
-          tsid.isValid(tsid.fromString(testIds.npmTsid))
-        } catch {
-          // invalid
-        }
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        try {
-          npmTsid.fromString(testIds.unikuTsid)
-        } catch {
-          // invalid
-        }
-      },
-      benchOptions,
-    )
-  })
-
-  describe('XID', () => {
-    bench(
-      'uniku',
-      () => {
-        xid.isValid(testIds.npmXid)
-      },
-      benchOptions,
-    )
-    bench(
-      'npm',
-      () => {
-        try {
-          // NeXID has no boolean validation helper; parsing is the equivalent.
-          npmNeXid.fromString(testIds.unikuXid)
-        } catch {
-          // invalid
-        }
-      },
-      benchOptions,
-    )
+  // NeXID has no boolean validation helper; parsing is the equivalent.
+  row('XID', {
+    uniku: () => xid.isValid(testIds.npmXid),
+    npm: () => {
+      try {
+        return npmNeXid.fromString(testIds.unikuXid)
+      } catch {
+        return undefined
+      }
+    },
   })
 })

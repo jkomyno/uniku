@@ -1,6 +1,7 @@
 import {
   aggregateBenchResults,
   type BenchResults,
+  benchResultsFromVitestReport,
   benchmarkDispersion,
   collectBenchGroups,
   collectBenchmarks,
@@ -187,6 +188,55 @@ describe('benchmark results helpers', () => {
     })
 
     expect(result.rows[0]).toMatchObject({ combinedRme: 0.31, status: 'neutral' })
+  })
+})
+
+describe('Vitest JSON report conversion', () => {
+  function report(status: string, failureMessages: string[] = []) {
+    return {
+      success: status === 'passed',
+      testResults: [
+        {
+          name: '/repo/packages/uniku/__tests__/bench/compat.bench.ts',
+          status,
+          assertionResults: [
+            {
+              fullName: 'Generation UUID v4',
+              status,
+              failureMessages,
+              benchmarks: [
+                {
+                  name: 'Generation > UUID v4',
+                  tasks: [
+                    { name: 'uniku', rank: 1, latency: { mean: 0.0002, rme: 1.5 } },
+                    { name: 'npm', rank: 2, latency: { mean: 0.0004, rme: 2.5 } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+  }
+
+  it('maps each benchmark run to a group keyed like the previous reporter output', () => {
+    const results = benchResultsFromVitestReport(report('passed'))
+
+    expect(results.files[0].groups[0].fullName).toBe('__tests__/bench/compat.bench.ts > Generation > UUID v4')
+    const benchmarks = collectBenchmarks(results)
+    expect(benchmarks.get('__tests__/bench/compat.bench.ts > Generation > UUID v4 > uniku')).toMatchObject({
+      rank: 1,
+      rme: 1.5,
+    })
+    expect(benchmarks.get('__tests__/bench/compat.bench.ts > Generation > UUID v4 > uniku')?.hz).toBeCloseTo(5_000_000)
+    expect(benchmarks.get('__tests__/bench/compat.bench.ts > Generation > UUID v4 > npm')?.hz).toBeCloseTo(2_500_000)
+  })
+
+  it('rejects a report with a failed benchmark', () => {
+    expect(() => benchResultsFromVitestReport(report('failed', ['TypeError: boom']))).toThrow(
+      'Generation UUID v4: TypeError: boom',
+    )
   })
 })
 

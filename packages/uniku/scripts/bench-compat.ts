@@ -1,9 +1,12 @@
 #!/usr/bin/env bun
 
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import type { Benchmark, BenchResults } from './bench-results'
+import { type Benchmark, type BenchResults, benchResultsFromVitestReport, loadVitestJsonReport } from './bench-results'
+
+/** The project Vitest clones from `benchmarks` in vitest.config.ts to run benchmark files. */
+const BENCHMARK_PROJECT = 'benchmarks (bench)'
 
 export const BENCHMARK_ORDERS = ['uniku-first', 'reference-first'] as const
 export type BenchmarkOrder = (typeof BENCHMARK_ORDERS)[number]
@@ -80,9 +83,10 @@ async function run(): Promise<void> {
           './__tests__/bench/compat.bench.ts',
           '--run',
           '--project',
-          'unit',
-          '--outputJson',
-          isolatedOutput,
+          BENCHMARK_PROJECT,
+          '--reporter=default',
+          '--reporter=json',
+          `--outputFile.json=${isolatedOutput}`,
         ],
         {
           cwd: packageRoot,
@@ -96,8 +100,7 @@ async function run(): Promise<void> {
       if (exitCode !== 0) {
         throw new Error(`${implementation} benchmark process exited with code ${exitCode}`)
       }
-      // SAFETY: the child benchmark process above wrote this file in the BenchResults format.
-      results.push(JSON.parse(readFileSync(isolatedOutput, 'utf8')) as BenchResults)
+      results.push(benchResultsFromVitestReport(loadVitestJsonReport(isolatedOutput)))
     }
 
     writeFileSync(outputPath, `${JSON.stringify(mergeImplementationResults(results), null, 2)}\n`)

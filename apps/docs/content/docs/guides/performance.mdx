@@ -88,6 +88,12 @@ runs each implementation in a fresh process, so neither side inherits the other'
 warmed JIT state or shared buffers. CI balances both launch orders across four
 repetitions and reports the per-row median.
 
+Both sides import built packages through plain Node imports, so uniku is measured
+as it ships. Each sample times a batch of calls sized to last about 50 µs and
+records the mean time per call. The fastest rows take tens of nanoseconds per
+call, close to the timer's resolution, so timing one call at a time would mostly
+measure the timer and the harness.
+
 `bench-results.ts` carries the statistics:
 
 - dispersion uses the median absolute deviation scaled by 1.4826 rather than a
@@ -144,6 +150,7 @@ has no runtime dependency.
 Run the benchmark and bundle-size tooling from the repository root:
 
 ```sh
+pnpm build
 pnpm --filter uniku bench:compat
 pnpm bench:summary
 pnpm bundle:summary

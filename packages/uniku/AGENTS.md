@@ -16,6 +16,6 @@ For adding new ID generators, see `docs/ID_GENERATION.md`.
 
 ## Testing
 
-- Test files use `@/src/...` import alias
+- Test files use `@/src/...` import alias. Benchmarks are the exception: they import the built `uniku/*` entry points, so run `pnpm build` first
 - Use `random` option for deterministic output
 - Mock `Date.now()` for timestamp tests

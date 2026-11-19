@@ -180,7 +180,8 @@ release gates.
 
 The compatibility benchmark runs uniku and each reference implementation in
 fresh processes, with four repetitions split evenly between both launch
-orders. Its result is the per-row median, and the `gh-benchmarks` baseline
+orders. Each sample times a calibrated batch of calls against the built entry
+points. Its result is the per-row median, and the `gh-benchmarks` baseline
 retains a rolling history of action-level medians. Comparison uses each
 runner's RME, robust within-action repetition dispersion, and robust
 across-action baseline dispersion. Node cold starts are measured

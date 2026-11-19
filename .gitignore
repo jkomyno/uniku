@@ -34,6 +34,7 @@ coverage/
 .parcel-cache/
 *.tsbuildinfo
 bench-results.json
+bench-report.json
 
 # Package manager and pack output
 *.tgz

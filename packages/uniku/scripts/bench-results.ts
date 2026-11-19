@@ -74,6 +74,64 @@ export function isOwnedBenchmark(key: string): boolean {
  */
 export const DEFAULT_NOISE_MULTIPLIER = 2
 
+/** The slice of Vitest's JSON reporter output that carries benchmark results. */
+export type VitestJsonReport = {
+  success: boolean
+  testResults: {
+    name: string
+    status: string
+    message?: string
+    assertionResults: {
+      fullName: string
+      status: string
+      failureMessages: string[]
+      benchmarks?: {
+        name: string
+        tasks: { name: string; rank: number; latency: { mean: number; rme: number } }[]
+      }[]
+    }[]
+  }[]
+}
+
+export function loadVitestJsonReport(path: string): VitestJsonReport {
+  // SAFETY: the file is written by Vitest's json reporter, whose test cases carry a `benchmarks` field in Vitest 5.
+  return JSON.parse(readFileSync(path, 'utf-8')) as VitestJsonReport
+}
+
+/**
+ * Convert a Vitest JSON report into bench results. Each `bench()` run or
+ * `bench.compare()` call becomes one group, and throughput is derived from the
+ * mean per-call latency, which is what tinybench reported as `hz`.
+ */
+export function benchResultsFromVitestReport(report: VitestJsonReport): BenchResults {
+  const failures = report.testResults.flatMap((file) => [
+    ...(file.status === 'failed' && file.message ? [`${file.name}: ${file.message}`] : []),
+    ...file.assertionResults
+      .filter((testCase) => testCase.status === 'failed')
+      .map((testCase) => `${testCase.fullName}: ${testCase.failureMessages.join('\n')}`),
+  ])
+  if (!report.success || failures.length > 0) {
+    throw new Error(`Benchmark run failed:\n${failures.join('\n') || 'Vitest reported an unsuccessful run'}`)
+  }
+
+  return {
+    files: report.testResults.map((file) => ({
+      filepath: file.name,
+      groups: file.assertionResults.flatMap((testCase) =>
+        (testCase.benchmarks ?? []).map((benchmark) => ({
+          fullName: `${normalizeBenchFilepath(file.name)} > ${benchmark.name}`,
+          benchmarks: benchmark.tasks.map((task) => ({
+            name: task.name,
+            rank: task.rank,
+            hz: 1000 / task.latency.mean,
+            rme: task.latency.rme,
+          })),
+        })),
+      ),
+    })),
+  }
+}
+
 export function loadBenchResults(path: string): BenchResults {
   // SAFETY: bench result files are written only by this package's benchmark scripts, in the BenchResults format.
   return JSON.parse(readFileSync(path, 'utf-8')) as BenchResults
