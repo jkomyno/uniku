@@ -6,6 +6,8 @@ icon: ArrowUpDown
 
 UUID v7 keeps the UUID shape while embedding a millisecond timestamp. It is a strong default for database primary keys when you want chronological locality without creating a custom ID column.
 
+In MySQL, store it in a `BINARY(16)` column and leave out the `UUID_TO_BIN` swap flag. [Storing IDs in a database](/docs/guides/choosing-an-id#storing-ids-in-a-database) explains why.
+
 ```ts
 import { uuidv7 } from 'uniku/uuid/v7'
 

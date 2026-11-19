@@ -15,4 +15,6 @@ const sessionId = uuidv4()
 
 Use `toBytes()` when the destination stores UUIDs as 16-byte binary values. Use `isValid()` before accepting an unknown UUID v4 string at an application boundary.
 
+Random values make a poor clustered primary key, because every insert lands at a random position in the index. [Storing IDs in a database](/docs/guides/choosing-an-id#storing-ids-in-a-database) covers the alternatives.
+
 <ApiReference generator="uuid-v4" />
